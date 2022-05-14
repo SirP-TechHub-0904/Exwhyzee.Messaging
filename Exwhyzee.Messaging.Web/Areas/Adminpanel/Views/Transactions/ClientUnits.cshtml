@@ -1,0 +1,92 @@
+﻿@model IEnumerable<Exwhyzee.Messaging.Web.Models.Client>
+@using Exwhyzee.Messaging.Web.Services;
+
+@{
+    ViewBag.Title = "ClientUnits";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small>Manage Users</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Manage users</a></li>
+        <li class="active">User List</li>
+    </ol>
+</section>
+
+<section class="content">
+
+    <div class="row">
+
+        <div class=" col-lg-3 col-xs-6">
+            <!-- small box -->
+            <div class="small-box bg-danger">
+                <div class="inner">
+                    <h3>@ViewBag.totalunits</h3>
+                    <p>Total Client Unit</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-users"></i>
+                </div>
+                <p class="small-box-footer"> All Units <i class="fa fa-arrow-circle-right"></i></p>
+            </div>
+        </div><!-- ./col -->
+    </div>
+    @Html.Partial("_ResponseMessagePartial")
+
+    <div class="box">
+        <div class="box-header">
+           
+        </div>
+        <div class="box-body table-responsive">
+            <table id="example1" border="1" class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Unit</th>
+                        <th>Name</th>
+                        
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                    <tr>
+                        <td>@item.Units</td>
+
+                        <td>
+                            @if (item.User != null)
+                            {
+
+
+                                @item.User.UserName
+                            }
+                        </td>
+
+
+                    </tr>
+
+                    }
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+</section>
+
+@section scripts{
+
+    <script src="~/Content/Dashboard/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/Dashboard/plugins/datatables/dataTables.bootstrap.min.js"></script>
+
+    <script>
+        $(function () {
+            $("#example1").DataTable({
+                "order": [[0]]
+            });
+
+        });
+    </script>
+}

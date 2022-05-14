@@ -1,0 +1,98 @@
+﻿@model IEnumerable<Exwhyzee.Messaging.Web.Models.Group>
+
+@{
+    ViewBag.Title = "Address Book";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+        <small>Address Book</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Address Book</a></li>
+        <li class="active">Groups</li>
+    </ol>
+</section>
+
+<section class="content">
+
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">Groups </h3>
+
+            <span class="pull-right">
+                <a href="@Url.Content(" ../../ClientPanel/AddressBook/Create")" class="btn btn-primary btn-lg"><i class="fa fa-plus-circle"></i><br />Add Group</a>
+            </span>
+        </div>
+        <div class="box-body table-responsive">
+            <table class="table table-bordered table-striped" id="example1">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Name)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Description)
+                        </th>
+                        <th>
+                            <b>Date Created</b>
+                            @*@Html.DisplayNameFor(model => model.DateCreated)*@
+                        </th>
+                        <th>Number Of Contacts</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.OrderByDescending(x=>x.DateCreated))
+                    {
+                    <tr>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-danger dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Action <i class="caret"></i>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton" style="background-color:whitesmoke;">
+                                    <li>@Html.ActionLink("Edit", "Edit", new { id = item.GroupId })</li>
+                                    <li>@Html.ActionLink("Details", "Details", new { id = item.GroupId })</li>
+                                    <li>@Html.ActionLink("Delete", "Delete", new { id = item.GroupId })</li>
+                                    <li>@Html.ActionLink("Delete All Contacts", "DeleteAll", new { id = item.GroupId })</li>
+                                </ul>
+                            </div>
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Name)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Description)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.DateCreated)
+                        </td>
+                        <td>
+                            @item.Contacts.Count()
+                        </td>
+
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+@section scripts{
+
+    <script src="~/Content/Dashboard/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/Dashboard/plugins/datatables/dataTables.bootstrap.min.js"></script>
+
+    <script>
+        $(function () {
+            $("#example1").DataTable({
+                "order": [[0]]
+            });
+
+        });
+    </script>
+}

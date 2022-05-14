@@ -1,0 +1,89 @@
+﻿@model Exwhyzee.Messaging.Web.Models.Contact
+
+@{
+   ViewBag.Title = "Add Many Contact";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+        <small>Address Book</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Address Book</a></li>
+        <li class="active">Add Contacts</li>
+    </ol>
+</section>
+
+<section class="content">
+
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">Add Contacts</h3>
+
+            <span class="pull-right">
+                <a href="@Url.Content(" ../../ClientPanel/AddressBook")" class="btn btn-lg btn-primary"><i class="fa fa-backward"></i><br />Back</a>
+            </span>
+        </div>
+        <div class="box-body">
+            <div class="col-md-6 col-md-offset-3">
+                <div>
+                    <h3>Enter Numbers in the format</h3>
+                    <p class="label-primary" style="padding:10px;">08165680904,009087789876,09177238384</p>
+                </div>
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+
+                    if (TempData["cont"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissable">
+                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                           @TempData["cont"]
+                        </div>
+                    }
+                        <div class="form-horizontal">
+
+                            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                            <div class="form-group">
+                                @Html.Label("Name", htmlAttributes: new { @class = "control-label col-md-2" })
+                                <div class="col-md-10">
+                                   <input name="Name" class="form-control" />
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                @Html.Label("Description", htmlAttributes: new { @class = "control-label col-md-2" })
+                                <div class="col-md-10">
+                                    <textarea class="form-control" cols="6" id="Description" name="Description"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                @Html.Label("Phone Numbers", htmlAttributes: new { @class = "control-label col-md-2" })
+
+                                <div class="col-md-10">
+
+                                    <textarea name="contact" cols="6" class="form-control"></textarea>
+
+                                </div>
+                            </div>
+
+
+                            <div class="form-group">
+                                <div></div>
+                                <div class="col-md-offset-2 col-md-10">
+                                    <input type="submit" value="Add Contacts" class="btn btn-primary" />
+                                </div>
+                            </div>
+                        </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script src="~/Scripts/moment.js"></script>
+  
+}

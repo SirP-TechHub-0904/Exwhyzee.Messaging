@@ -1,0 +1,81 @@
+﻿@model Exwhyzee.Messaging.Web.Models.Client
+
+@{
+    ViewBag.Title = "Details";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small> User  Details</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Profile</a></li>
+        <li class="active">Details</li>
+    </ol>
+</section>
+
+<section class="content">
+
+    <div class="box">
+        <div class="box-header">
+            <h3 class="box-title">Profile</h3>
+
+            <span class="pull-right">
+                @*<a href="@Url.Action("Details",new { area = "ClientPanel" })" class="btn btn-app"><i class="fa fa-backward"></i>Back</a>*@
+                <a href="@Url.Action("EditClient", new { id = Model.ClientId, area = "ClientPanel" })" class="btn btn-app"><i class="fa fa-pencil"></i>Edit</a>
+            </span>
+        </div>
+        <div class="box-body">
+            <div class="col-md-6 col-sm-12 col-md-offset-3">
+                <dl class="dl-horizontal">
+                   
+                    <dt>
+                        @Html.DisplayNameFor(model => model.Units)
+                    </dt>
+
+                    <dd>
+                        @Html.DisplayFor(model => model.Units)
+                    </dd>
+
+                    <dt>
+                        @Html.DisplayNameFor(model => model.Surname)
+                    </dt>
+
+                    <dd>
+                        @Html.DisplayFor(model => model.Surname)
+                    </dd>
+
+                    <dt>
+                        @Html.DisplayNameFor(model => model.FirstName)
+                    </dt>
+
+                    <dd>
+                        @Html.DisplayFor(model => model.FirstName)
+                    </dd>
+
+                    <dt>
+                        @Html.DisplayNameFor(model => model.OtherNames)
+                    </dt>
+
+                    <dd>
+                        @Html.DisplayFor(model => model.OtherNames)
+                    </dd>
+
+                    <dt>
+                        @Html.DisplayNameFor(model => model.Discount)
+                    </dt>
+
+                    <dd>
+                        @Html.DisplayFor(model => model.Discount)
+                    </dd>
+
+                
+                </dl>
+            </div>
+            <p style="margin:10px;">
+               
+            </p>
+            </div>
+        </div>
+    </section>

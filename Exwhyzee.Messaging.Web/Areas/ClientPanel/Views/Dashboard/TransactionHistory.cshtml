@@ -1,0 +1,127 @@
+﻿@model IEnumerable<Exwhyzee.Messaging.Web.Models.Transaction>
+@{
+    ViewBag.Title = "Transaction History";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+        <small>Transaction History</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Transaction History</a></li>
+        <li class="active">Transactions</li>
+    </ol>
+</section>
+
+
+<section class="content">
+    @Html.Partial("_ResponseMessagePartial")
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">Transaction History </h3>
+
+            @*<span class="pull-right">
+                    <a href="@Url.Content(" ../../apisettings/Create")" class="btn btn-app"><i class="fa fa-plus-circle"></i>Add API Setting</a>
+                </span>*@
+        </div>
+        <div class="box-body">
+            <table class="table table-bordered table-striped" id="example1">
+                <thead>
+                    <tr>
+                        <th>
+                            <b>Trans ID</b>
+                        </th>
+                        <th>
+                            @*@Html.DisplayNameFor(model => model.)*@
+                            <b>Units</b>
+                        </th>
+                        <th>
+                            @*@Html.DisplayNameFor(model => model.)*@
+                            <b>Amount</b>
+                        </th>
+                        <th>
+                            <b>Amount Paid</b>
+                            @*@Html.DisplayNameFor(model => model.AmountPaid)*@
+                        </th>
+
+                        <th>
+                            <b>Transaction Type</b>
+                            @*@Html.DisplayNameFor(model => model.TransactionType)*@
+                        </th>
+                        <th>
+                            <b>Date Created</b>
+                            @*@Html.DisplayNameFor(model => model.DateCreated)*@
+                        </th>
+                        <th>
+                            <b>Date Approved</b>
+                            @*@Html.DisplayNameFor(model => model.DateApproved)*@
+                        </th>
+                        <th>
+                            <b>Status</b>
+                            @*@Html.DisplayNameFor(model => model.)*@
+                        </th>
+
+                        @*<th></th>*@
+                    </tr>
+                </thead>
+                <tbody>
+
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.TransactionId)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Units)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Amount)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.AmountPaid)
+                            </td>
+
+                            <td>
+                                @Html.DisplayFor(modelItem => item.TransactionType)
+                            </td>
+
+                            <td>
+                                @Html.DisplayFor(modelItem => item.DateCreated)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.DateApproved)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Status)
+                            </td>
+
+                            @*<td>
+                                    @Html.ActionLink("Edit", "Edit", new { id=item.TransactionId }) |
+                                    @Html.ActionLink("Details", "Details", new { id=item.TransactionId }) |
+                                    @Html.ActionLink("Delete", "Delete", new { id=item.TransactionId })
+                                </td>*@
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+</section>
+
+@section scripts{
+
+    <script src="~/Content/Dashboard/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/Dashboard/plugins/datatables/dataTables.bootstrap.min.js"></script>
+
+    <script>
+        $(function () {
+            $("#example1").DataTable({
+                "order": [[0]]
+            });
+
+        });
+    </script>
+}

@@ -1,0 +1,109 @@
+﻿@model Exwhyzee.Messaging.Web.Models.Transaction
+@using Exwhyzee.Messaging.Web.Services
+
+@{
+    ViewBag.Title = "Transaction Details";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small>Transactions</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Transactions</a></li>
+        <li class="active">Transaction Details</li>
+
+    </ol>
+</section>
+
+
+<section class="content">
+    @Html.Partial("_ResponseMessagePartial")
+    <div class="box box-primary">
+        <div class="box-header">
+            <h3 class="box-title">Transaction Details</h3>
+            <span class="pull-right">
+                <a href="@Url.Content("../../dashboard/transactionhistory")" class="btn btn-app"><i class="fa fa-backward"></i>Back</a>
+            </span>
+        </div>
+        <div class="box-body">
+            <div class="col-md-8">
+                <strong><i class="fa fa-user margin-r-5"></i>  Client</strong>
+                <p class="text-muted">
+                    @GeneralServices.ClientName(Model.ClientId)
+                </p>
+                <hr>
+
+                <strong><i class="fa fa-user-secret margin-r-5"></i>  Approved By</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.ApprovedBy)
+                </p>
+                <hr>
+
+                <strong><i class="fa fa-send margin-r-5"></i>  @Html.DisplayNameFor(model => model.Units)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.Units)
+                </p>
+                <hr>
+
+                <strong><i class="fa fa-money margin-r-5"></i>  @Html.DisplayNameFor(model => model.Amount)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.Amount)
+                </p>
+                <hr>
+                <strong><i class="fa fa-money margin-r-5"></i>  @Html.DisplayNameFor(model => model.AmountPaid)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.AmountPaid)
+                </p>
+                <hr>
+                <strong><i class="fa fa-bars margin-r-5"></i>  @Html.DisplayNameFor(model => model.TransactionType)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.TransactionType)
+                </p>
+                <hr>
+
+              
+
+                <strong><i class="fa fa-calendar-plus-o margin-r-5"></i>  @Html.DisplayNameFor(model => model.DateCreated)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.DateCreated)
+                </p>
+                <hr>
+
+                <strong><i class="fa fa-calendar-check-o margin-r-5"></i>  @Html.DisplayNameFor(model => model.DateApproved)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.DateApproved)
+                </p>
+                <hr>
+
+                <strong><i class="fa fa-tags margin-r-5"></i>  @Html.DisplayNameFor(model => model.Status)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.Status)
+                </p>
+                <hr>
+
+                <strong><i class="fa fa-sticky-note margin-r-5"></i>  @Html.DisplayNameFor(model => model.Note)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.Note)
+                </p>
+                <hr>
+            </div>
+            <div class="col-md-4">
+                <div class="" style="margin-bottom:10px;">
+                    @if (Model.Status == Exwhyzee.Messaging.Web.Models.TransactionStatus.Approved)
+                    {
+                        <button type="button" class="btn btn-block btn-lg btn-success">APPROVED</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-block btn-lg btn-danger">NOT APPROVED</button>
+                    }
+                </div>
+
+           
+
+            </div>
+        </div>
+    </div>
+</section>

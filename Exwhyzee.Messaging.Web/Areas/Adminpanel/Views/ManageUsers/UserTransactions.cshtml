@@ -1,0 +1,95 @@
+﻿@model IEnumerable<Exwhyzee.Messaging.Web.Models.Transaction>
+
+@{
+    ViewBag.Title = "User Transactions";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small>Manage Users</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Manage users</a></li>
+        <li class="active">Transaction History</li>
+    </ol>
+</section>
+<section class="content">
+    <div class="box box-primary">
+        <div class="box-header">
+            <h3 class="box-title pull-left">Client's Transaction History </h3>
+        </div>
+        <div class="box-body">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>
+                            <b>Date Created</b>
+                        </th>
+
+                        <th>
+                            @Html.DisplayNameFor(model => model.Units)
+                        </th>
+
+                        <th>
+                            @Html.DisplayNameFor(model => model.Amount)
+                        </th>
+                        <th>
+                            <b>Amount Paid</b>
+                        </th>
+
+                        <th>
+                            <b>Transaction Type</b>
+                        </th>
+
+                        <th>
+                            <b>Date Approved</b>
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Status)
+                        </th>
+
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.DateCreated)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Units)
+                            </td>
+
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Amount)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.AmountPaid)
+                            </td>
+
+                            <td>
+                                @Html.DisplayFor(modelItem => item.TransactionType)
+                            </td>
+
+                            <td>
+                                @Html.DisplayFor(modelItem => item.DateApproved)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Status)
+                            </td>
+
+                            <td>
+
+                                @Html.ActionLink("Details", "Details", "Transactions", new { id = item.TransactionId }, null)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

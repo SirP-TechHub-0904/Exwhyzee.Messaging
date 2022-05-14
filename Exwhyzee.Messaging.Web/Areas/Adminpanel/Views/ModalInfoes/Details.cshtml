@@ -1,0 +1,45 @@
+﻿@model Exwhyzee.Messaging.Web.Models.ModalInfo
+
+@{
+    /**/
+
+    ViewBag.Title = "Details";
+}
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small>Manage Modal</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Manage Modal</a></li>
+        <li class="active">Information</li>
+    </ol>
+</section>
+
+<section class="content">
+    <div class="col-md-8 col-md-offset-2">
+        <div class="box box-danger">
+            <h2>Details</h2>
+
+            <div>
+                <h4>ModalInfo</h4>
+                <hr />
+                <dl class="dl-horizontal">
+                    <dt>
+                        @Html.DisplayNameFor(model => model.Modal)
+                    </dt>
+
+                    <dd>
+                        @Html.DisplayFor(model => model.Modal)
+                    </dd>
+
+                </dl>
+            </div>
+            <p>
+                @Html.ActionLink("Edit", "Edit", new { id = Model.Id }) |
+                @Html.ActionLink("Back to List", "Index")
+            </p>
+        </div>
+    </div>
+  
+</section>

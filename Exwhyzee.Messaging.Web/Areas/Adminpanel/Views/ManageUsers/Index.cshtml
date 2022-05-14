@@ -1,0 +1,103 @@
+﻿@using Exwhyzee.Messaging.Web.Services;
+@{
+    ViewBag.Title = "Manage Users";
+
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small>Manage Users</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Manage users</a></li>
+        <li class="active">User List</li>
+    </ol>
+</section>
+
+<section class="content">
+    @Html.Partial("_ResponseMessagePartial")
+   
+    <div class="box">
+        <div class="box-header">
+            <h3 class="box-title">Users <small class="label bg-green"> @ViewBag.Users.Count</small></h3>
+        </div>
+        <div class="box-body table-responsive">
+            <table id="example1" class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Actions</th>
+                        <th>Name</th>
+                        
+                        <th>Phone Number</th>
+                        <th>Date of Birth</th>
+
+                        @foreach (var item in ViewBag.Roles)
+                        {
+                            <th>@item.Name</th>
+                        }
+
+                       
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in ViewBag.Users)
+                    {
+                        <tr>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-info btn-sm">Action</button>
+                                    <button type="button" class="btn btn-info dropdown-toggle btn-sm" data-toggle="dropdown">
+                                        <span class="caret"></span>
+                                        <span class="sr-only">Toggle Dropdown</span>
+                                    </button>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li><a href="@Url.Content("~/adminpanel/manageusers/clientdetails/"+ item.Id)">Details</a></li>
+                                     
+                                    </ul>
+                                </div>
+                            </td>
+                            <td>@item.UserName
+                            <br />
+                            @item.Email</td>
+                            
+                            <td>@item.PhoneNumber</td>
+                            <td>@item.DateOfBirth.ToShortDateString()</td>
+                            @foreach (var role in ViewBag.Roles)
+                            {
+                                <td>
+                                    @using (Html.BeginForm("UserToRole", "ManageUsers"))
+                                    {
+                                        <input type="hidden" value="@item.Id" name="userId" />
+                                        <input type="hidden" value="@role.Name" name="rolename" />
+                                        <input type="checkbox" class="icheckbox_minimal-blue" name="ischecked" onclick="this.form.submit();" value="true" checked="@GeneralServices.IsUserInRole(item.Id, role.Name)" />
+
+                                    }
+                                </td>
+                            }
+
+                           
+                        </tr>
+
+                    }
+                </tbody>
+                @{ 
+                    var s = "dddd";
+                }
+            </table>
+        </div>
+    </div>
+</section>
+
+@section scripts{
+
+    <script src="~/Content/Dashboard/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/Dashboard/plugins/datatables/dataTables.bootstrap.min.js"></script>
+
+    <script>
+        $(function () {
+            $("#example1").DataTable();
+
+        });
+    </script>
+}

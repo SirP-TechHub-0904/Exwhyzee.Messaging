@@ -1,0 +1,55 @@
+﻿
+@model PagedList.IPagedList<Exwhyzee.Messaging.Web.Models.Message>
+@using PagedList.Mvc;
+<link href="~/Content/PagedList.css" rel="stylesheet" />
+@{
+    ViewBag.Title = "contactD";
+}
+
+<h2>contactD</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+<table class="table">
+    <tr>
+        
+        <th>
+         sender id
+        </th>
+        <th>
+           recipiant
+        </th>
+       
+        <th>
+           used unit
+        </th>
+       
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+       
+        <td>
+            @Html.DisplayFor(modelItem => item.SenderId)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Recipients)
+        </td>
+       
+        <td>
+            @Html.DisplayFor(modelItem => item.UnitsUsed)
+        </td>
+       
+    
+    </tr>
+}
+
+</table>
+<div class="container text-center page" style="margin-left:auto;margin-right:auto;">
+
+    <p>Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount</p>
+
+    @Html.PagedListPager(Model, page => Url.Action("contactD",
+    new { page }))
+</div>

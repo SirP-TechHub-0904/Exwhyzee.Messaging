@@ -1,0 +1,25 @@
+﻿Content-Type: text/html; charset=utf-8
+
+<html>
+<body>
+    <div style="text-align:center;">
+        <img src="~/Content/image/SMS LOGO.png" style="width:200px;" />
+        <h3>Dear New User,</h3>
+        <p>Thank you for registering with Exwhyzee Technologies Ltd Bulk Sms (XYZ)</p>
+        <p>
+            Please confirm your account by clicking @Html.Raw(ViewBag.Link)
+        </p> 
+        <br />
+        
+        <p>
+            If this button does not respond, please copy and paste the link directly into your browser.<br />
+            @ViewBag.Link
+       <br />    
+            Please ensure that you complete this email verification, otherwise it may result in your account being restricted form Login.
+
+            </p> 
+        <h4>Wishing you all the Best.</h4>
+        <h4>Exwhyzee Team</h4>
+    </div>
+</body>
+</html>

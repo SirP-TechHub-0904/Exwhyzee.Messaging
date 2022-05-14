@@ -1,0 +1,98 @@
+﻿@model Exwhyzee.Messaging.Web.Models.Contact
+
+@{
+    ViewBag.Title = "DeleteContact";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+        <small>Address Book</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Address Book</a></li>
+        <li class="active">Delete Contact</li>
+    </ol>
+</section>
+
+<section class="content">
+
+    <div class="box">
+        <div class="box-header">
+            <h3 class="box-title">Delete Contact </h3>
+
+            <span class="pull-right">
+                <a href="@Url.Content(" ../../addressbook/details/"+Model.GroupId)" class="btn btn-app"><i class="fa fa-backward"></i>Back</a>
+            </span>
+        </div>
+        <div class="box-body">
+            <h3 class="alert alert-danger">Are you sure you want to delete this?</h3>
+            <div>
+                <div>
+                    <h4>Contact</h4>
+                    <hr />
+                    <dl class="dl-horizontal">
+                        <dt>
+                            @Html.DisplayNameFor(model => model.Group.Name)
+                        </dt>
+
+                        <dd>
+                            @Html.DisplayFor(model => model.Group.Name)
+                        </dd>
+
+                        <dt>
+                            @Html.DisplayNameFor(model => model.PhoneNumber)
+                        </dt>
+
+                        <dd>
+                            @Html.DisplayFor(model => model.PhoneNumber)
+                        </dd>
+
+                        <dt>
+                            @Html.DisplayNameFor(model => model.Surname)
+                        </dt>
+
+                        <dd>
+                            @Html.DisplayFor(model => model.Surname)
+                        </dd>
+
+                        <dt>
+                            @Html.DisplayNameFor(model => model.Othernames)
+                        </dt>
+
+                        <dd>
+                            @Html.DisplayFor(model => model.Othernames)
+                        </dd>
+
+                        <dt>
+                            @Html.DisplayNameFor(model => model.DateAddded)
+                        </dt>
+
+                        <dd>
+                            @Html.DisplayFor(model => model.DateAddded)
+                        </dd>
+
+                        <dt>
+                            @Html.DisplayNameFor(model => model.Note)
+                        </dt>
+
+                        <dd>
+                            @Html.DisplayFor(model => model.Note)
+                        </dd>
+                    </dl>
+
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <div class="form-actions no-color">
+                            <input type="submit" value="Delete" class="btn btn-warning" /> 
+                          
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+

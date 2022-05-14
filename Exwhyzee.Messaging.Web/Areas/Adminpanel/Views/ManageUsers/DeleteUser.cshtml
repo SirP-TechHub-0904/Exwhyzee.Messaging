@@ -1,0 +1,75 @@
+﻿@model Exwhyzee.Messaging.Web.Models.ApplicationUser
+
+@{
+    ViewBag.Title = "DeleteUser";
+}
+
+
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+        <small>SMS Client</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> SMS Client</a></li>
+        <li class="active">Delete Client</li>
+    </ol>
+</section>
+
+<section class="content">
+
+    <div class="box">
+        <div class="box-header">
+            <h3 class="box-title">Delete Client </h3>
+
+            <span class="pull-right">
+                <a href="@Url.Content(" ../../ManageUsers/ClientDetails/"+Model.Id)" class="btn btn-primary"><i class="fa fa-backward"></i><br />Back</a>
+            </span>
+        </div>
+        <div class="box-body">
+            <h3 class="alert alert-danger">Are you sure you want to delete this?</h3>
+
+            <h3 class="alert alert-warning">Deleting this removes the client messages, transaction etc. it can not be undo</h3>
+            <div>
+                <dl class="dl-horizontal">
+
+
+                    <dt>
+                        @Html.DisplayNameFor(model => model.UserName)
+                    </dt>
+
+                    <dd>
+                        @Html.DisplayFor(model => model.UserName)
+                    </dd>
+
+                    <dt>
+                        @Html.DisplayNameFor(model => model.Email)
+                    </dt>
+
+                    <dd>
+                        @Html.DisplayFor(model => model.Email)
+                    </dd>
+
+                    <dt>
+                        @Html.DisplayNameFor(model => model.PhoneNumber)
+                    </dt>
+
+                    <dd>
+                        @Html.DisplayFor(model => model.PhoneNumber)
+                    </dd>
+
+                </dl>
+
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-actions no-color">
+                        <input type="submit" value="Delete" class="btn btn-warning" />
+
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>

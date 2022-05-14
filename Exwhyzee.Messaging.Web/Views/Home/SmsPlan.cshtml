@@ -1,0 +1,59 @@
+﻿
+@{
+    ViewBag.Title = "SmsPlan";
+}
+
+
+<!--/ pricing-->
+<div class="pricing text-center">
+    <div class="container">
+        <h1 style="color:red;" class="text-center"><span style="color:red;">Exwhyzee SMS Plan</span></h1>
+        <br />
+        <div class="inner_sec_info_w3ls_agile text-center">
+            <div class="col-md-2 pricing_inner_main">
+            </div>
+            <div class="col-md-4 pricing_inner_main">
+                <div class="pricing-top">
+                    <h3>Gold Plan</h3>
+                    <p>#<span>3.5 / Sms</span></p>
+                </div>
+                <div class="pricing-bottom">
+                    <div class="pricing-bottom-bottom">
+                        <p>Send to DND Numbers <i class="fa fa-check-circle"></i></p>
+
+                        <p>Instant Delivery <i class="fa fa-check-circle"></i></p>
+                        <p>No Technical Skills Required <i class="fa fa-check-circle"></i></p>
+
+
+                    </div>
+
+                    <div class="sign text-center">
+                        <a class="btn btn-primary" href="@Url.Action("ChangePlan", "Dashboard", new { area = "ClientPanel" })">SELECT NOW</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 pricing_inner_main">
+                <div class="pricing-top purple">
+                    <h3>Silver Plan</h3>
+                    <p>#<span>2.0 / Sms</span></p>
+                </div>
+                <div class="pricing-bottom">
+                    <div class="pricing-bottom-bottom">
+                        <p>Send to DND Numbers <i class="fa fa-times-circle-o"></i></p>
+                        <p>Instant Delivery <i class="fa fa-check-circle"></i></p>
+                        <p>No Technical Skills Required <i class="fa fa-check-circle"></i></p>
+                    </div>
+
+                    <div class="sign text-center">
+                        <a class="btn btn-primary" href="@Url.Action("ChangePlan", "Dashboard", new { area = "ClientPanel" })">SELECT NOW</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 pricing_inner_main">
+            </div>
+            <div class="clearfix"></div>
+        </div>
+        </div>
+</div>
+

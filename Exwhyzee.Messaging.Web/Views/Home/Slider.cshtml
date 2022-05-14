@@ -1,0 +1,127 @@
+﻿@model Exwhyzee.Messaging.Web.Areas.Content.Models.Slider
+
+@{
+    ViewBag.Title = "AddSlider";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+        <small>Slider</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+        <li class="active">Slider</li>
+    </ol>
+</section>
+<div class="content">
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">New Slide</h3>
+        </div>
+        <div class="box-body">
+           
+@using (Html.BeginForm("AddSlider", "Home", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                @Html.LabelFor(model => model.ImageName, htmlAttributes: new { @class = "control-label" })
+                <div class="">
+                    @Html.EditorFor(model => model.ImageName, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.ImageName, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+       
+        <div class="col-md-4">
+            <div class="form-group">
+                @Html.LabelFor(model => model.Caption, htmlAttributes: new { @class = "control-label" })
+                <div class="">
+                    @Html.EditorFor(model => model.Caption, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Caption, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+
+                 @Html.Label("Upload Slide", htmlAttributes: new { @class = "control-label" })
+               
+                <div class="">
+                    <input class="form-control" name="ImageUrl" id="ImageName" type="file" placeholder="Image Name">
+                </div>
+            </div>
+        </div>
+        </div>
+
+      <div>
+          <p class="text-center">
+              <input type="submit" value="Upload" class="btn btn-info" />
+              @Html.ActionLink("Back to List", "Index", null, new { @class = "btn btn-info" })
+
+
+          </p>
+          </div>     
+          
+}
+</div>
+
+</div>
+
+    @Html.Partial("_ResponseMessagePartial")
+   
+
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">All Slides</h3>
+        </div>
+        <div class="box-body">
+            <table class="table table-responsive table-striped">
+                <thead>
+                    <tr>
+                        <th>
+                            Name
+                        </th>
+                        <th>
+                            Caption
+                        </th>
+                        <th>
+                            Status
+                        </th>
+                        <th>
+                            Image
+                        </th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach(var slide in ViewBag.slides)
+                    {
+                        <tr>
+                            <td>
+                                @slide.ImageName
+                            </td>
+                            <td>
+                                @slide.Caption
+                            </td>
+                            <td>
+                                @slide.Status
+                            </td>
+                            <td>
+                                <img src="~/SliderImage/@slide.ImageUrl" class="img-responsive" style="max-height: 100px;" />
+                            </td>
+                            <td>
+                                @Html.ActionLink("Delete", "DeleteSlider", new { id = slide.SliderId }, new { @class = "btn btn-info" })
+
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            </div>
+        </div>
+        </div>

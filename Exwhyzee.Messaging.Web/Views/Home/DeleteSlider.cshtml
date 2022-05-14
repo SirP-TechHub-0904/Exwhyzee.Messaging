@@ -1,0 +1,83 @@
+﻿@model Exwhyzee.Messaging.Web.Areas.Content.Models.Slider
+
+@{
+    ViewBag.Title = "DeleteSlider";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+        <small>Slide</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Slide</a></li>
+        <li class="active">Delete Slide</li>
+    </ol>
+</section>
+<section class="content">
+   
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">Delete Slide</h3>
+        </div>
+        <div class="box-body">
+            <div class="row">
+                <div class="col-lg-offset-2 col-lg-8 delete-style">
+                    <div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                @Html.DisplayNameFor(model => model.ImageName)
+                            </div>
+                            <div class="col-md-6">
+                                @Model.ImageName
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                @Html.DisplayNameFor(model => model.Caption)
+                            </div>
+                            <div class="col-md-6">
+                                @Model.Caption
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                @Html.DisplayNameFor(model => model.Status)
+                            </div>
+                            <div class="col-md-6">
+                                @Model.Status
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                @Html.DisplayNameFor(model => model.ImageUrl)
+                            </div>
+                            <div class="col-md-6">
+                              <img src="~/SliderImage/@Model.ImageUrl" class="img-responsive" style="max-height: 200px;" />  
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br />
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="form-actions no-color text-center">
+                    <input type="submit" value="Delete" class="btn btn-info" /> 
+                    @Html.ActionLink("Back", "Slider", null, new { @class = "btn btn-info" })
+                </div>
+            }
+            </div>
+        </div>
+    </section>
+            
+                   
+             

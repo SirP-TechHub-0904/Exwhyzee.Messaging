@@ -1,0 +1,54 @@
+﻿
+@{
+    ViewBag.Title = "Voucher Report";
+}
+
+
+<section class="content-header">
+<h1>
+    Dashboard(Client)
+    <small>Voucher Report</small>
+</h1>
+<ol class="breadcrumb">
+    <li><a href="#"><i class="fa fa-dashboard"></i> Voucher Report</a></li>
+    <li class="active">Status</li>
+</ol>
+</section>
+
+
+<section class="content">
+
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">Voucher Report </h3>
+
+            @*<span class="pull-right">
+                    <a href="@Url.Content(" ../../apisettings/Create")" class="btn btn-app"><i class="fa fa-plus-circle"></i>Add API Setting</a>
+                </span>*@
+        </div>
+        <div class="box-body">
+            <div class="text-center" style="padding:40px; background-color:#3c8dbc; color:#ffffff">
+                @if (TempData["success"] != null)
+                {
+                    
+                    <span>You have @TempData["success"] Recharged @TempData["unit"] on the @TempData["date"]</span>
+
+
+                }
+                else if (TempData["check"] != null)
+                {
+                    <span style="color:red;"> @TempData["check"]</span>
+                }
+               
+
+                <h3>Thanks for using xyz sms... The best you can Trust</h3>
+            </div>
+            </div>
+        </div>
+    </section>
+
+            
+            
+           
+
+            
