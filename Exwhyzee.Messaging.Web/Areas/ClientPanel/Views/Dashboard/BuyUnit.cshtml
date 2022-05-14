@@ -1,0 +1,92 @@
+﻿@model Exwhyzee.Messaging.Web.ViewModels.BuyUnitsViewModel
+
+@{
+    ViewBag.Title = "BuyUnit";
+    var price = ViewBag.PricePerUnit;
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small>Buy SMS Units</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Client</a></li>
+        <li class="active">Buy Units</li>
+    </ol>
+</section>
+
+<section class="content">
+    @Html.Partial("_ResponseMessagePartial")
+
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">Buy Units</h3>
+        </div>
+        <div class="box-body">
+            <div class="col-md-6 col-md-offset-3">
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-horizontal">
+
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.PricePerUnit, htmlAttributes: new { @class = "control-label col-md-3" })
+                            <div class="col-md-9">
+                                @Html.EditorFor(model => model.PricePerUnit, new { htmlAttributes = new { @class = "form-control", @Value = ViewBag.PricePerUnit } })
+                                @Html.ValidationMessageFor(model => model.PricePerUnit, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Units, htmlAttributes: new { @class = "control-label col-md-3" })
+                            <div class="col-md-9">
+                                @Html.EditorFor(model => model.Units, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.Units, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.PaymentMethod, htmlAttributes: new { @class = "control-label col-md-3" })
+                            <div class="col-md-9">
+                                <select id="PaymentMethod" name="PaymentMethod" class="form-control">
+
+                                    <option value="OnlinePayment">Pay Now (Online)</option>
+                                    <option value="BankDeposit">Bank Deposit</option>
+                                </select>
+                                @Html.ValidationMessageFor(model => model.PaymentMethod, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label col-md-3">Total</label>
+                            <div class="col-md-9">
+                                <label id="total" class="control-label text-primary"><strong>0.00</strong></label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-md-offset-3 col-md-9">
+                                <input type="submit" value="Continue" class="btn btn-primary pull-right" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+
+    <script>
+        $("#Units").keyup(function () {
+            $("#total").text("NGN " + $(this).val() * $("#PricePerUnit").val());
+        });
+      
+    </script>
+}

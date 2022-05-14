@@ -1,0 +1,40 @@
+﻿
+@{
+    ViewBag.Title = "GetUserGroupContact";
+}
+
+<section class="content">
+
+
+    <div class="box box-success">
+        <div class="box-header">
+
+        </div>
+        <div class="box-body">
+            @if (TempData["msgg"] != null)
+            {
+                <p class="label-warning">@TempData["msgg"]</p>
+            }
+            else if (TempData["bad"] != null)
+            {
+                <p class="label-danger">@TempData["bad"]</p>
+            }
+
+
+            <div class="col-md-8 col-md-offset-2">
+
+                @using (Html.BeginForm("GetUserGroupContact", "Dashboard", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <label>jsonGrpId</label>    <input name="jsonGrpId" type="text" />
+
+
+                    <label> GroupId </label>   <input name="GroupId" type="text" />
+
+
+                    <input value="fetch" type="submit" />
+                }
+            </div>
+        </div>
+    </div>
+</section>

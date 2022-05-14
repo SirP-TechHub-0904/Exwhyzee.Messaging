@@ -1,0 +1,120 @@
+﻿@model Exwhyzee.Messaging.Web.Models.Group
+
+@{
+    ViewBag.Title = "Group Details";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+        <small>Address Book</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Address Book</a></li>
+        <li class="active">Group Details</li>
+    </ol>
+</section>
+
+<section class="content">
+    @Html.Partial("_ResponseMessagePartial")
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">Group Details</h3>
+
+            <span class="pull-right">
+                <a href="@Url.Content(" ../../AddressBook")" class="btn btn-lg btn-primary"><i class="fa fa-backward"></i><br />Back</a>
+                <a href="@Url.Content(" ../../AddressBook/addcontact/"+Model.GroupId)" class="btn btn-lg btn-primary"><i class="fa fa-user-plus"></i><br />Add Single Contact</a>
+                <a href="@Url.Content(" ../../AddressBook/AddManyContact/"+Model.GroupId)" class="btn btn-lg btn-primary"><i class="fa fa-user-plus"></i><br />Add Many Contact</a>
+                <a href="@Url.Content(" ../../AddressBook/DeleteAll/"+Model.GroupId)" class="btn btn-lg btn-danger"><i class="fa fa-user-plus"></i><br />Add Many Contact</a>
+
+            </span>
+        </div>
+        <div class="box-body">
+            <div class="col-md-4 col-xs-12">
+                <strong><i class="fa fa-book margin-r-5"></i>  @Html.DisplayNameFor(model => model.Name)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.Name)
+                </p>
+                <hr>
+            </div>
+            <div class="col-md-4 col-xs-12">
+                <strong><i class="fa fa-book margin-r-5"></i>  @Html.DisplayNameFor(model => model.Description)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.Description)
+                </p>
+                <hr>
+            </div>
+            <div class="col-md-4 col-xs-12">
+                <strong><i class="fa fa-book margin-r-5"></i>  @Html.DisplayNameFor(model => model.DateCreated)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.DateCreated)
+                </p>
+                <hr>
+            </div>
+        </div>
+    </div>
+
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">Contacts</h3>
+        </div>
+        <div class="box-body table-responsive">
+            <table class="table table-striped" id="example1">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Surname</th>
+                        <th>Other Names</th>
+                        <th>Phone Number</th>
+                        <th>Date of Birth</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Contacts)
+                    {
+                        <tr>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-info btn-sm">Action</button>
+                                    <button type="button" class="btn btn-info dropdown-toggle btn-sm" data-toggle="dropdown">
+                                        <span class="caret"></span>
+                                        <span class="sr-only">Toggle Dropdown</span>
+                                    </button>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li><a href="@Url.Content("../../addressbook/editcontact/"+item.ContactId)">Edit</a></li>
+                                        <li><a href="@Url.Content("../../addressbook/DeleteContact/"+item.ContactId)">Delete</a></li>
+                                    </ul>
+                                </div>
+                            </td>
+                            <td>@Html.DisplayFor(modelItem => item.Surname) </td>
+                            <td>@Html.DisplayFor(modelItem => item.Othernames) </td>
+                            <td>@Html.DisplayFor(modelItem => item.PhoneNumber) </td>
+                            <td>
+                                @if (item.DateOfBirth.HasValue)
+                                {
+                                    @item.DateOfBirth.Value.ToLongDateString();
+                                }
+
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+@section scripts{
+
+    <script src="~/Content/Dashboard/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/Dashboard/plugins/datatables/dataTables.bootstrap.min.js"></script>
+
+    <script>
+        $(function () {
+            $("#example1").DataTable();
+
+        });
+    </script>
+}

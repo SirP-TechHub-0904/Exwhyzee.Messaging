@@ -1,0 +1,64 @@
+﻿@model Exwhyzee.Messaging.Web.ViewModels.LoadVourcherViewModel
+
+@{
+    ViewBag.Title = "LoadVoucher";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+        <small>Top Up</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Top Up</a></li>
+        <li class="active">Load Units</li>
+    </ol>
+</section>
+
+<section class="content">
+
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">Load Voucher</h3>
+        </div>
+        <div class="box-body">
+            <div class="col-md-6 col-md-offset-3">
+
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-horizontal">
+                        
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Pin, htmlAttributes: new { @class = "control-label col-md-4" })
+                            <div class="col-md-8">
+                                @Html.EditorFor(model => model.Pin, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.Pin, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.Label("Serial Number", htmlAttributes: new { @class = "control-label col-md-4" })
+                            <div class="col-md-8">
+                                @Html.EditorFor(model => model.BatchNumber, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.BatchNumber, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-md-offset-4 col-md-8">
+                                <input type="submit" value="Load" class="btn btn-primary" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

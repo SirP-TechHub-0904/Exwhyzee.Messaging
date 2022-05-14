@@ -1,0 +1,53 @@
+﻿@model Exwhyzee.Messaging.Web.ViewModels.AddUnitViewModel
+@{
+    ViewBag.Title = "AddUnit";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small>Manage Users</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Manage users</a></li>
+        <li class="active">Add Units</li>
+    </ol>
+</section>
+
+<section class="content">
+    <div class="col-md-8 col-md-offset-2">
+        <div class="box box-danger">
+            <div class="box-header">
+                <h3 class="box-title">User <small class="label bg-green"> @ViewBag.Client.User.UserName</small></h3>
+            </div>
+            <div class="box-body">
+                @using (Html.BeginForm())
+                {
+                    <div class="form-horizontal">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Units, htmlAttributes: new { @class = "control-label col-md-2" })
+                            <div class="col-md-10">
+                                @Html.EditorFor(model => model.Units, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.Units, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.Label("Amount Paid", htmlAttributes: new { @class = "control-label col-md-2" })
+                            <div class="col-md-10">
+                                @Html.EditorFor(model => model.AmountPaid, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.AmountPaid, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-md-offset-2 col-md-10">
+                                <input type="submit" value="Update Units" class="btn btn-primary" />
+                            </div>
+                        </div>
+                        </div>
+                 }
+             </div>
+        </div>
+    </div>
+</section>

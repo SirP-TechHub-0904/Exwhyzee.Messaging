@@ -1,0 +1,44 @@
+﻿
+@{
+    ViewBag.Title = "DefaultSenderId";
+}
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+        <small>Default Sender ID</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Sender ID</a></li>
+       <li class="active">Default</li>
+    </ol>
+
+</section>
+<section class="content">
+
+  
+
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">Default Sender ID</h3>
+        </div>
+        <div class="box-body">
+            <div class="col-md-8 col-md-offset-2">
+
+                <ul style="text-transform:uppercase;">
+                    <li>COMMITTEE</li>
+                    <li>meeting</li>
+                    <li>WELFARE</li>
+                    <li>EXCUTIVE</li>
+                    <li>ELECTION</li>
+                    <li>seminar</li>
+                    <li>Burial</li>
+                    <li>Invitation</li>
+                </ul>
+            </div>
+            <div class="box-footer">
+                @Html.ActionLink("Back to Compose SMS", "Compose","Dashboard", null, new { @class= "btn btn-primary" })
+                
+            </div>
+        </div>
+</div>
+</section>

@@ -1,0 +1,26 @@
+﻿@{
+    ViewBag.Title = "Confirm Email";
+}
+<div class="container mail" style="margin-top: 210px;margin-bottom: 260px;">
+    <div class="row">
+        <div class="col-md-4"></div>
+        <div class="col-md-4">
+            <div class="panel">
+                <div class="panel-body mail-board">
+                    <p class="text-center">
+                        Email Has Been Confirmed. 
+                    </p>
+                   <p class="text-center">
+                       @Html.ActionLink("Click here to Log in", "Login", "Account", routeValues: null, htmlAttributes: new { id = "loginLink", @class = "btn", style = "background-color: white; color: #16ae0f;" })
+                   </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4"></div>
+    </div>
+</div>
+@*<div>
+    <p>
+        Thank you for confirming your email. Please @Html.ActionLink("Click here to Log in", "Login", "Account", routeValues: null, htmlAttributes: new { id = "loginLink" })
+    </p>
+</div>*@

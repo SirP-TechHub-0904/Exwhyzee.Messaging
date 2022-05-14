@@ -1,0 +1,67 @@
+﻿@using Exwhyzee.Messaging.Web.Models
+@model LoginViewModel
+
+@{
+    Layout = "~/views/shared/_LoginLayout.cshtml";
+
+    ViewBag.Title = "Log in";
+}
+<div class="login-box">
+    <!-- /.login-logo -->
+
+    <div class="login-logo">
+        <img class="logo img-responsive" src="~/Content/image/SMS LOGO.png" alt="Exwhyzee SMS" />
+    </div>
+    <div class="login-box-body">
+        <p class="login-box-msg">Sign in to start your session</p>
+        @if (TempData["error"] != null)
+        {
+            <p style="color:red;">@TempData["error"]</p>
+
+        }
+
+        @using (Html.BeginForm(new { ReturnUrl = ViewBag.ReturnUrl }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true)
+
+            <div class="form-group has-feedback">
+                <input type="text" class="form-control" name="UserName" placeholder="Username" />
+                <span class="fa fa-user form-control-feedback"></span>
+                @Html.ValidationMessageFor(m => m.UserName)
+            </div>
+            <div class="form-group has-feedback">
+                <input type="password" class="form-control" name="Password" placeholder="Password" />
+                <span class="fa fa-lock form-control-feedback"></span>
+                @Html.ValidationMessageFor(m => m.Password)
+            </div>
+            <div class="row">
+                <div class="col-xs-8">
+                    @Html.CheckBoxFor(m => m.RememberMe, new { @class = "checkbox icheck" })
+                    @Html.LabelFor(m => m.RememberMe, new { @class = "checkbox" })
+                </div><!-- /.col -->
+                <div class="col-xs-4">
+                    <button type="submit" class="btn btn-primary btn-block btn-flat">Sign In</button>
+                </div>
+
+                <!-- /.col -->
+            </div>
+
+                <div class="social-auth-links  text-center">
+                    <hr />
+                    @*<a href="#" class="btn btn-block btn-facebook btn-flat " style="background-color:#3b5998;color:white; border-radius:0px;"><i class="fa fa-facebook">Sign in using facebook</i></a>
+                        <a href="#" class="btn btn-block btn-facebook btn-flat " style="background-color:#dd4b39;color:white; border-radius:0px;"><i class="fa fa-google-plus">Sign in using google</i></a>*@
+                    @*<a href="#" class="pull-left"> I forgot my password</a><br>*@
+                    @Html.ActionLink("Register a new membership", "Register", "Account")
+                    
+                </div>
+                <hr />
+        }
+    </div>
+  
+</div>
+<!-- /.login-box -->
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

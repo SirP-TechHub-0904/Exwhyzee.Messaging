@@ -1,0 +1,315 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.Title</title>
+    <link href="~/Content/image/xyzico.png" rel="shortcut icon" type="image/x-icon" />
+    <meta name="viewport" content="width=device-width" />
+    <link href="~/Content/assets/css/main.css" rel="stylesheet" />
+    <link href="~/Content/assets/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="~/Content/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/Content/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="~/Content/Site.css" rel="stylesheet" />
+
+    @*@Styles.Render("~/Content/css")
+        @Scripts.Render("~/bundles/modernizr")*@
+    @RenderSection("myStyles", required: false)
+    <style>
+        body {
+            padding-top: 0px !important;
+            font-family: 'Palatino';
+        }
+        /*-- pricing --*/
+
+        .pricing {
+            background: #ffffff;
+            padding: 3em 0;
+        }
+
+        .pricing_inner_main {
+            margin: 0 auto;
+            /*width: 40%;*/
+            border: 1px solid #ffffff;
+            transition: 0.5s all;
+            -webkit-transition: 0.5s all;
+            -o-transition: 0.5s all;
+            -moz-transition: 0.5s all;
+            -ms-transition: 0.5s all;
+        }
+        h3.tittle-w3ls {
+            color: #1b1b1b;
+            font-size: 3.2em;
+            text-align: left;
+            text-transform: capitalize;
+            letter-spacing: 2px;
+            font-weight: 700;
+            margin-bottom: .7em;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+        }
+            h3.tittle-w3ls.cen {
+                color: #007acc;
+                text-align: center;
+            }
+
+            .pricing_inner_main:hover .pricing-top {
+                /*background: #ff6a00;*/
+            }
+
+            .pricing_inner_main:hover a.popup-with-zoom-anim {
+                /*background: #f60b0e;*/
+            }
+
+            .pricing_inner_main.active .pricing-top {
+                background: #f60b0e;
+            }
+
+        a.popup-with-zoom-anim.orange.active {
+            background: #f60b0e;
+        }
+
+        .pricing-top {
+            padding: 1.2em 0;
+            background: #007acc;
+            text-align: center;
+        }
+
+        .pop_up h4 {
+            text-align: center;
+            font-size: 2em;
+            margin: 1em 0 0.5em 0;
+            font-size: 1.8em;
+            color: #111;
+        }
+
+        .pricing-top h3 {
+            color: #FFF;
+            font-size: 2em;
+            margin: 0;
+            font-weight: 100;
+        }
+
+        .pricing-top p {
+            color: #FFF;
+            font-size: .875em;
+            margin: 1em 0 0 0;
+        }
+
+            .pricing-top p span {
+                font-size: 3em;
+                font-weight: 600;
+            }
+
+        .pricing-bottom {
+            background: #fff;
+            text-align: center;
+            padding: 4em 2em;
+        }
+
+        .pricing_inner_main:hover,
+        .pricing_inner_main.active {
+            transform: scale(1.05);
+            -webkit-transform: scale(1.05);
+            -moz-transform: scale(1.05);
+            -o-transform: scale(1.05);
+            -ms-transform: scale(1.05);
+        }
+
+        .pricing-bottom-bottom p {
+            color: #565656;
+            font-size: 1.4em;
+            margin: 0 0 1em 0;
+        }
+        .pricing-bottom-bottom fa {
+            color: #007acc !important;
+           
+        }
+
+            .pricing-bottom-bottom p span {
+                font-weight: 600;
+                color: #333;
+            }
+
+        p.text {
+            margin-bottom: 0;
+        }
+
+        .buy-button {
+            margin: 1.5em 0 0 0;
+        }
+
+            .buy-button a {
+                background: #fd5c63;
+                padding: .5em 2em;
+                border: solid 1px #fd5c63;
+                color: #fff;
+                transition: 0.5s all;
+                -webkit-transition: 0.5s all;
+                -moz-transition: 0.5s all;
+                -o-transition: 0.5s all;
+                -ms-transition: 0.5s all;
+                -webkit-appearance: none;
+            }
+
+                .buy-button a:hover {
+                    background: none;
+                    border: solid 1px #333;
+                    color: #333;
+                    text-decoration: none;
+                }
+
+                .buy-button a:focus {
+                    outline: none;
+                }
+
+        .green-button a {
+            background: #1d1c1c;
+            border: solid 1px #1d1c1c;
+        }
+
+        /*.pricing_inner_main:nth-child(1),
+        .pricing_inner_main:nth-child(3) {
+            margin-top: 4em;
+        }*/
+
+
+        /*-- //pricing --*/
+    </style>
+    <!--Start of Tawk.to Script-->
+    <!--Start of Tawk.to Script-->
+    <script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/5a5705274b401e45400bfcfd/default';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
+})();
+    </script>
+    <!--End of Tawk.to Script-->
+    <!--End of Tawk.to Script-->
+</head>
+<body>
+    <div class="navbar navbar-static-top" style="margin-bottom: 0px; border-bottom:1px solid #007acc;">
+        <div class="container-fluid">
+            <div class="navbar-header" style="vertical-align: middle;">
+                <button type="button" class="navbar-toggle nav-bot" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span style="font-weight:bold; margin-bottom: 5px;">MENU</span>
+                </button>
+                <img src="~/Uploads/BULK%20SMS.png" style="max-height:50px;" class="img-responsive" />
+            </div>
+            <div class="navbar-collapse collapse nav-link text-uppercase" style="font-weight: bold;">
+                @Html.Partial("_ClientPartial")
+                <ul class="nav navbar-nav navbar-right nav-right text-uppercase" style="font-weight: bold;">
+                    <li><a style="color:;" href="@Url.Content("~/Home/")"><span class="glyphicon glyphicon-home"></span> HOME</a> </li>
+                    <li>@Html.ActionLink("Features", "SmsFeatures", "Home")</li>
+
+
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    @RenderSection("Slider", required: false)
+
+    @RenderBody()
+
+    <!-- Footer -->
+    <div class="footer" style="bottom:0 !important; background-color:#007acc;padding-bottom:20px; padding-top:20px;">
+        <div class="container">
+            <div class="row text-center" style="background-color:#ffffff !important;margin-top:20px !important;">
+                <div class="col-md-4">
+                    <h4>Facebook Page</h4>
+                    <div class="fb-like" data-href="https://web.facebook.com/xyztech/" data-width="300px" data-layout="standard" data-action="like" data-size="small" data-show-faces="true" data-share="true"></div>
+
+                </div>
+                <div class="col-md-4">
+                    <h4>Office Address</h4>
+                    <p><i class="fa fa-address-card" style="color: #ff6a00;"></i><span style="color: #ff6a00;">Main:</span> NO. 44, Azikiwe Road, Umuahia.</p>
+                    <p><i class="fa fa-address-card" style="color: #ff6a00;"></i><span style="color: #ff6a00;">Branch:</span> NO. 21, Okigwe Road, Aba</p>
+                    <p><i class="fa fa-address-card" style="color: #ff6a00;"></i><span style="color: #ff6a00;">Branch:</span> NO. 5, Iyamoye Close,Area 11, Abuja.</p>
+
+                </div>
+                <div class="col-md-4">
+                    <h4>Contact Address</h4>
+                    <p><i class="fa fa-mobile-phone" style="color: #ff6a00;"></i>  08081155525, 07060530000</p>
+                    <p><i class="fa fa-envelope" style="color: #ff6a00;"></i> www.exwhyzee.ng, info&#64exwhyzee.ng</p>
+                </div>
+            </div>
+            <div class="text-center footer-m" style="padding:10px;color:#ffffff !important;">
+                <a href="http://exwhyzee.ng">EXWHYZEE TECHNOLOGIES LIMITED</a>
+            </div>
+        </div>
+    </div>
+    @*<footer id="footer">
+
+        <!-- Icons -->
+        @*<ul class="actions">
+            <li><a href="#" class="icon fa-twitter"><span class="label">Twitter</span></a></li>
+            <li><a href="https://www.facebook.com/xyztech/" class="icon fa-facebook"><span class="label">Facebook</span></a></li>
+            <li><a href="#" class="icon fa-google-plus"><span class="label">Google+</span></a></li>
+            <li><a href="#" class="icon fa-dribbble"><span class="label">Dribbble</span></a></li>
+            <li><a href="#" class="icon fa-pinterest"><span class="label">Pinterest</span></a></li>
+            <li><a href="#" class="icon fa-instagram"><span class="label">Instagram</span></a></li>
+        </ul>*
+        <div class="row">
+        <div class="col-md-4">
+                   <div class="">
+
+            </div>
+            </div>
+        <div class="col-md-4">
+
+        </div>
+        <div class="col-md-4">
+            <p><i class="fa fa-address-card"style="color: #ff6a00;"></i><span style="color: #ff6a00;">Main Office:</span> NO. 44, Azikiwe Road, Umuahia, Abia State.</p>
+            <p><i class="fa fa-address-card" style="color: #ff6a00;"></i><span style="color: #ff6a00;">Branch Office:</span> NO. 21, Okigwe Road, Aba</p>
+            <p><i class="fa fa-address-card"  style="color: #ff6a00;"></i><span style="color: #ff6a00;">Branch Office:</span> NO. 5, Iyamoye Close,Area 11, Abuja.</p>
+            <p><i class="fa fa-mobile-phone"  style="color: #ff6a00;"></i>08081155525, 07060530000</p>
+            <p><i class="fa fa-envelope" style="color: #ff6a00;"></i>www.exwhyzee.ng, info&#64exwhyzee.ng</p>
+        </div>
+           
+        </div>
+        <!-- Menu -->
+        @*<ul class="menu">
+            <li>&copy;</li>
+            <li><a href="http://exwhyzee.ng">EXWHYZEE TECHNOLOGIES</a></li>
+        </ul>*
+    </footer>*@
+    <script src="~/Scripts/jquery-1.12.4.js"></script>
+    <script src="~/Scripts/bootstrap.min.js"></script>
+
+    <script src="~/Content/assets/js/jquery.poptrox.min.js"></script>
+    <script src="~/Content/assets/js/jquery.scrolly.min.js"></script>
+    <script src="~/Content/assets/js/jquery.scrollex.min.js"></script>
+    <script src="~/Content/assets/js/skel.min.js"></script>
+    <script src="~/Content/assets/js/util.js"></script>
+    <script src="~/Content/assets/js/main.js"></script>
+
+    <script src="~/Content/nivoslider/jquery.nivo.slider.js"></script>
+    <script src="~/Content/nivoslider/jquery.scrollbox.js"></script>
+
+    @RenderSection("scripts", required: false)
+
+
+    <script type="text/javascript">
+        $(window).load(function () {
+            $('#slider').nivoSlider({
+                effect: 'random',
+                slices: 15,
+                boxCols: 8,
+                boxRows: 4,
+                animSpeed: 1000,
+                pauseTime: 5000
+
+            });
+            $('#maque').scrollbox({
+                delay: 5,
+                speed: 100
+            });
+        });
+    </script>
+
+</body>
+</html>

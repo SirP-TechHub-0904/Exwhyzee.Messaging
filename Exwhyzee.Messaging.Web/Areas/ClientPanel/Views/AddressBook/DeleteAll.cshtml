@@ -1,0 +1,80 @@
+﻿
+@model Exwhyzee.Messaging.Web.Models.Group
+
+@{
+    ViewBag.Title = "DeleteAll";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+        <small>Address Book</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Contacts</a></li>
+        <li class="active">Delete All Contact</li>
+    </ol>
+</section>
+
+<section class="content">
+
+    <div class="box">
+        <div class="box-header">
+            <h3 class="box-title">Delete Contact </h3>
+
+            <span class="pull-right">
+                <a href="@Url.Content(" ../../addressbook/details/"+Model.GroupId)" class="btn btn-app"><i class="fa fa-backward"></i>Back</a>
+            </span>
+        </div>
+        <div class="box-body">
+            <h3 class="alert alert-danger">Are you sure you want to delete all this? (@Model.Contacts.Count() contacts)</h3>
+            <div>
+                <div>
+                    <table class="table table-striped" id="example1">
+                        <thead>
+                            <tr>
+                                <th>Surname</th>
+
+                                <th>Phone Number</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Contacts)
+                            {
+                                <tr>
+
+                                    <td>@Html.DisplayFor(modelItem => item.Surname) </td>
+                                    <td>@Html.DisplayFor(modelItem => item.PhoneNumber) </td>
+
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    @using (Html.BeginForm())
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <div class="form-actions no-color">
+                            <input type="submit" value="Delete All" class="btn btn-warning" />
+
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section scripts{
+
+    <script src="~/Content/Dashboard/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/Dashboard/plugins/datatables/dataTables.bootstrap.min.js"></script>
+
+    <script>
+        $(function () {
+            $("#example1").DataTable();
+
+        });
+    </script>
+}

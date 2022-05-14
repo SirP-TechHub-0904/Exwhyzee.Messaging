@@ -1,0 +1,198 @@
+﻿@model Exwhyzee.Messaging.Web.ViewModels.ComposeViewModel
+@using Exwhyzee.Messaging.Web.Models;
+
+@{
+    ViewBag.Title = "Compose SMS";
+}
+
+@section Styles{
+    <link href="~/Content/multiple-select.css" rel="stylesheet" />
+
+    <link href="~/Content/bootstrap-datetimepicker.css" rel="stylesheet" />
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+        <small>Compose</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Compose</a></li>
+        <li class="active">Compose Sms</li>
+    </ol>
+
+</section>
+<section class="content">
+
+    @Html.Partial("_ResponseMessagePartial")
+
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">Compose SMS</h3>
+        </div>
+        <div class="box-body">
+            <div class="col-md-8 col-md-offset-2">
+                @using (Html.BeginForm("Compose", "Dashboard", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-horizontal">
+
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.SenderId, htmlAttributes: new { @class = "control-label col-md-2" })
+                            <div class="col-md-10">
+                                <input type="text" name="SenderId" maxlength="11" class="form-control" />
+
+                                @Html.ValidationMessageFor(model => model.SenderId, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label col-md-2">Address Book</label>
+                            <div class="col-md-10">
+                                @Html.DropDownList("GroupId", (MultiSelectList)ViewBag.GroupId, new { multiple = "multiple" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label col-md-2">Recipients From File</label>
+                            <div class="col-md-10">
+                                @Html.TextBox("file", "", new { type = "file" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Recipients, htmlAttributes: new { @class = "control-label col-md-2" })
+                            <div class="col-md-10">
+                                @Html.EditorFor(model => model.Recipients, new { htmlAttributes = new { @class = "form-control", @rows = "5" } })
+                                @Html.ValidationMessageFor(model => model.Recipients, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Content, htmlAttributes: new { @class = "control-label col-md-2" })
+                            <div class="col-md-10">
+                                @Html.EditorFor(model => model.Content, new { htmlAttributes = new { @class = "form-control", @rows = "7" } })
+                                @Html.ValidationMessageFor(model => model.Content, "", new { @class = "text-danger" })
+                                <p id="count"></p>
+                                <p id="page"></p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.SendOption, htmlAttributes: new { @class = "control-label col-md-2" })
+                            <div class="col-md-10">
+                                <select id="SendOption" name="SendOption" class="form-control">
+                                    <option value="SendNow">Send Now</option>
+                                    <option value="SendLater">Send Later</option>
+                                    <option value="SaveDraft">Save as Draft</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="sdate" id="sdate">
+                            <div class="form-group">
+                                @Html.LabelFor(model => model.ScheduleDate, htmlAttributes: new { @class = "control-label col-md-2" })
+                                <div class="col-md-10">
+                                    <div class='input-group date' id='datetimepicker1'>
+                                        <input type='text' class="form-control" name="ScheduleDate" placeholder="Select Date and Time" />
+                                        <span class="input-group-addon">
+                                            <span class="glyphicon glyphicon-calendar"></span>
+                                        </span>
+                                    </div>
+                                    @* @Html.EditorFor(model => model.ScheduleDate, new { htmlAttributes = new { @class = "form-control", @rows = "5",@id= "datetimepicker1" } })*@
+                                    @Html.ValidationMessageFor(model => model.ScheduleDate, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-offset-2 col-md-10">
+                                <input type="submit" value="Send Message" class="btn btn-primary" id="myButton" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@*<div>
+        @Html.ActionLink("Back to List", "Index")
+    </div>*@
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+
+    <script src="~/Content/multiple-select.js"></script>
+    <script src="~/Scripts/moment.js"></script>
+    <script type="text/javascript" src="/scripts/bootstrap-datetimepicker.js"></script>
+    <script>
+        $(function () {
+            $('#GroupId').change(function () {
+                console.log($(this).val());
+            }).multipleSelect({
+                width: '100%',
+                placeholder: "Recipients from Address Book. (Select Groups)"
+            });
+        });
+
+        $(function () {
+
+            $('#SendOption').change(function () {
+                $('#sdate').hide();
+                if (this.options[this.selectedIndex].value == 'SendLater') {
+                    $('#sdate').show();
+                }
+            });
+        });
+    </script>
+
+    <script>
+        $("#Content").keyup(function () {
+            // $("#count").text("Characters Type:" +$(this).val().length +"; Characters left: " + (320 - $(this).val().length));
+            //$("#count").text("Characters left: " + (500 - $(this).val().length));
+            if (($(this).val().length) <= 160) {
+                $("#page").text("Page(s): 1")
+                $("#count").text("Characters Type:" + $(this).val().length + "; Characters left: " + (160 - $(this).val().length));
+            }
+            else if (($(this).val().length) > 160 && ($(this).val().length) < 319) {
+                $("#page").text("Page(s): 2")
+                $("#count").text("Characters Type:" + $(this).val().length + "; Characters left: " + (320 - $(this).val().length));
+            }
+            else if (($(this).val().length) > 320 && ($(this).val().length) < 479) {
+                $("#page").text("Page(s): 3")
+                $("#count").text("Characters Type:" + $(this).val().length + "; Characters left: " + (480 - $(this).val().length));
+            }
+            else if (($(this).val().length) > 480 && ($(this).val().length) < 639) {
+                $("#page").text("Page(s): 4")
+                $("#count").text("Characters Type:" + $(this).val().length + "; Characters left: " + (640 - $(this).val().length));
+            }
+            else if (($(this).val().length) > 640 && ($(this).val().length) < 799) {
+                $("#page").text("Page(s): 5")
+                $("#count").text("Characters Type:" + $(this).val().length + "; Characters left: " + (800 - $(this).val().length));
+            }
+            else if (($(this).val().length) > 800 && ($(this).val().length) < 959) {
+                $("#page").text("Page(s): 6")
+                $("#count").text("Characters Type:" + $(this).val().length + "; Characters left: " + (960 - $(this).val().length));
+            }
+            else {
+                $("#page").text("Page(s): More than 6")
+                $("#count").text("Characters Type:" + $(this).val().length + "; Characters left: Text too long. Consider sending in batches.");
+
+            }
+        });
+
+        $(function () {
+            $('#datetimepicker1').datetimepicker({
+                format: 'DD/MM/YYYY hh:mm'
+            });
+        });
+    </script>
+    <script type="text/javascript">
+        $(window).load(function () {
+            $('#modal-defaul').modal('show');
+        });
+    </script>
+
+}

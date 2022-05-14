@@ -1,0 +1,300 @@
+﻿@{
+    ViewBag.Title = "Dashboard";
+}
+@using Exwhyzee.Messaging.Web.Services
+<section class="content-header">
+    <h1>
+        Dashboard(Admin)
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Admin </a></li>
+        <li class="active">Dashboard</li>
+    </ol>
+</section>
+<!-- Main content -->
+<section class="content">
+
+    <div class="row">
+
+        <div class=" col-lg-3 col-xs-6">
+            <!-- small box -->
+            <div class="small-box bg-red-gradient">
+                <div class="inner">
+                    <h3>@ViewBag.firstbalance.Balance</h3>
+                    <p>01: @ViewBag.firstbalance.Name</p>
+                    <p>Unit Balance</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-money"></i>
+                </div>
+                <p class="small-box-footer">Unit Balance<i class="fa fa-arrow-circle-right"></i></p>
+            </div>
+        </div><!-- ./col -->
+        <!-- Client Units-->
+        <div class=" col-lg-3 col-xs-6">
+            <!-- small box -->
+            <div class="small-box bg-orange">
+                <div class="inner">
+                    <h3>@ViewBag.secondbalance.Balance</h3>
+                    <p>02: @ViewBag.secondbalance.Name</p>
+                    <p>Unit Balance</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-money"></i>
+                </div>
+                <p class="small-box-footer">Unit Balance<i class="fa fa-arrow-circle-right"></i></p>
+            </div>
+        </div><!-- ./col -->
+        <!-- Pending transactions -->
+        <div class="col-lg-3 col-xs-6">
+            <!-- small box -->
+            <div class="small-box bg-primary">
+                <div class="inner">
+
+                    <h3>@ViewBag.Allmessage</h3>
+                    <p>  Total Sent Messages</p>
+                    <p> Today</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-envelope-square"></i>
+                </div>
+                <p class="small-box-footer"> Total Sent Messages Today <i class="fa fa-arrow-circle-right"></i></p>
+            </div>
+        </div><!-- ./col -->
+
+
+
+
+        <div class=" col-lg-3 col-xs-6">
+            <!-- small box -->
+            <div class="small-box bg-green">
+                <div class="inner">
+                    <h3>@ViewBag.allclienttoday</h3>
+                    <p>New Client(s)</p>
+                    <p>Today</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-users"></i>
+                </div>
+                <p class="small-box-footer"> All Registered Client(s) <i class="fa fa-arrow-circle-right"></i></p>
+            </div>
+        </div><!-- ./col -->
+    </div>
+    <div class="row">
+        <!-- left colume -->
+        <div class="col-lg-6">
+            <div class="box box-danger">
+                <div class="box-header btn-danger">
+                    <i class="fa fa-envelope"></i>
+                    <h3 class="box-title">Last Ten Failed/Pending Messages</h3>
+                </div>
+                <div class="box-body">
+                    <table class="table table-bordered table-striped table-responsive">
+                        <thead>
+                            <tr class="bg-danger">
+                                <th>
+                                    Sender ID
+                                </th>
+                                <th>
+                                    By
+                                </th>
+                                <th>
+                                    Date
+                                </th>
+                                <th>
+                                    Status
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            @foreach (var item in ViewBag.failmessage)
+                            {
+                                <tr>
+                                    <td>
+                                        @item.SenderId
+                                    </td>
+                                    <td>
+                                        @GeneralServices.UserName(item.UserId)
+
+                                    </td>
+                                    <td>
+                                        @item.DeliveredDate
+                                    </td>
+                                    <td>
+                                        @item.Status
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="box box-danger">
+                <div class="box-header btn-danger">
+                    <i class="fa fa-money"></i>
+                    <h3 class="box-title">Last Ten Failed Transactions</h3>
+                </div>
+                <div class="box-body">
+                    <table class="table table-bordered table-striped table-responsive">
+                        <thead>
+                            <tr class="bg-danger">
+                                <th>
+                                    Transaction Id
+                                </th>
+                                <th>Client</th>
+                                <th>By</th>
+                                <th>
+                                    Transaction Date
+                                </th>
+                                <th>
+                                    Transaction Status
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            @foreach (var item in ViewBag.lastTenFailedTransaction)
+                            {
+                                <tr>
+                                    <td>
+                                        @item.TransactionId
+                                    </td>
+                                    <td>
+                                        @GeneralServices.ClientName(item.ClientId)
+
+                                    </td>
+                                    <td>
+                                        @GeneralServices.UserName(item.UserId)
+
+                                    </td>
+                                    <td>
+                                        @item.DateCreated
+                                    </td>
+                                    <td>
+                                        @item.Status
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- right colume -->
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div class="row">
+        <!-- left colume -->
+        <div class="col-lg-6">
+            <div class="box box-success">
+                <div class="box-header btn-success">
+                    <i class="fa fa-envelope"></i>
+                    <h3 class="box-title">Last Ten Success Messages</h3>
+                </div>
+                <div class="box-body">
+                    <table class="table table-bordered table-striped table-responsive">
+                        <thead>
+                            <tr class="bg-success">
+                                <th>
+                                    Sender ID
+                                </th>
+                                <th>
+                                    By
+                                </th>
+                                <th>
+                                    Date
+                                </th>
+                                <th>
+                                    Status
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            @foreach (var item in ViewBag.successmessage)
+                            {
+                                <tr>
+                                    <td>
+                                        @item.SenderId
+                                    </td>
+                                    <td>
+                                        @GeneralServices.UserName(item.UserId)
+
+                                    </td>
+                                    <td>
+                                        @item.DeliveredDate
+                                    </td>
+                                    <td>
+                                        @item.Status
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="box box-success">
+                <div class="box-header btn-success">
+                    <i class="fa fa-money"></i>
+                    <h3 class="box-title">Last Ten Transactions</h3>
+                </div>
+                <div class="box-body">
+                    <table class="table table-bordered table-striped table-responsive">
+                        <thead>
+                            <tr class="bg-success">
+                                <th>
+                                    Transaction Id
+                                </th>
+                                <th>Client</th>
+                                <th>By</th>
+                                <th>
+                                    Transaction Date
+                                </th>
+                                <th>
+                                    Transaction Status
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            @foreach (var item in ViewBag.lastTenSuccessTransaction)
+                            {
+                                <tr>
+                                    <td>
+                                        @item.TransactionId
+                                    </td>
+                                    <td>
+                                        @GeneralServices.ClientName(item.ClientId)
+
+                                    </td>
+                                    <td>
+                                        @GeneralServices.UserName(item.UserId)
+
+                                    </td>
+                                    <td>
+                                        @item.DateCreated
+                                    </td>
+                                    <td>
+                                        @item.Status
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- right colume -->
+        </div>
+    </div>
+
+
+</section><!-- /.content -->
+
+

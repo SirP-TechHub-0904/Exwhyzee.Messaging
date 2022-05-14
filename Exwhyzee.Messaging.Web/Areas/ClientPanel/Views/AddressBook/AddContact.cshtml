@@ -1,0 +1,114 @@
+﻿@model Exwhyzee.Messaging.Web.Models.Contact
+
+@{
+    ViewBag.Title = "AddContact";
+}
+@section Styles{
+
+    <link href="~/Content/bootstrap-datetimepicker.css" rel="stylesheet" />
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+        <small>Address Book</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Address Book</a></li>
+        <li class="active">Add Contact</li>
+    </ol>
+</section>
+
+<section class="content">
+
+    <div class="box box-info">
+        <div class="box-header">
+            <h3 class="box-title">Add Contact</h3>
+
+            <span class="pull-right">
+                <a href="@Url.Content(" ../../ClientPanel/AddressBook")" class="btn btn-lg btn-primary"><i class="fa fa-backward"></i><br />Back</a>
+            </span>
+        </div>
+        <div class="box-body">
+            <div class="col-md-6 col-md-offset-3">
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-horizontal">
+
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                        <div class="form-group">
+                            @Html.Label("Phone Number", htmlAttributes: new { @class = "control-label col-md-4" })
+                            <div class="col-md-8">
+                                @Html.EditorFor(model => model.PhoneNumber, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.PhoneNumber, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.Label("Surname", htmlAttributes: new { @class = "control-label col-md-4" })
+                            <div class="col-md-8">
+                                @Html.EditorFor(model => model.Surname, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.Surname, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.Label("Other Names", htmlAttributes: new { @class = "control-label col-md-4" })
+                            <div class="col-md-8">
+                                @Html.EditorFor(model => model.Othernames, new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.Othernames, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.Label("Note", htmlAttributes: new { @class = "control-label col-md-4" })
+                            <div class="col-md-8">
+                                <textarea class="form-control" rows="3" name="Note" id="Note"></textarea>
+                                @* @Html.TextAreaFor(model => model.Note, new { htmlAttributes = new { @class = "form-control" ,@rows="3"} })*@
+                                @Html.ValidationMessageFor(model => model.Note, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+                        <div class="form-group has-feedback">
+                            @Html.Label("Date Of Birth", htmlAttributes: new { @class = "control-label col-md-4" })
+                            <div class="col-md-8">
+                                <div class='input-group date' id='datetimepicker1'>
+                                    <input type='text' class="form-control" name="dateBirth" placeholder="Date of Birth" />
+                                    <span class="input-group-addon">
+
+                                        <span class="fa fa-calendar"></span>
+                                    </span>
+                                </div>
+                                @*@Html.EditorFor(m => m.DateOfBirth, new { @class = "form-control", @placeholder = "Date of Birth" })*@
+                                <span class="fa fa-calendar form-control-feedback"></span>
+                            </div>
+                            </div>
+
+                        <div class="form-group">
+                            <div></div>
+                            <div class="col-md-offset-2 col-md-10">
+                                <input type="submit" value="Add" class="btn btn-primary" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script src="~/Scripts/moment.js"></script>
+    <script type="text/javascript" src="/scripts/bootstrap-datetimepicker.js"></script>
+    <script>
+        $(function () {
+            $('#datetimepicker1').datetimepicker({
+
+                format: 'L'
+
+            });
+        });
+    </script>
+}

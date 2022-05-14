@@ -1,0 +1,100 @@
+﻿
+@model Exwhyzee.Messaging.Web.Models.Message
+
+@{
+    ViewBag.Title = "Message Details";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard(Admin)
+        <small>Message History</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Message History</a></li>
+        <li class="active">Details</li>
+    </ol>
+</section>
+
+<div>
+    <section class="content">
+
+        <div class="box box-info">
+            <div class="box-header">
+                <h3 class="box-title">Message Details </h3>
+
+                @*<span class="pull-right">
+                        <a href="@Url.Content(" ../../apisettings/Create")" class="btn btn-app"><i class="fa fa-plus-circle"></i>Add API Setting</a>
+                    </span>*@
+            </div>
+            <div class="box-body">
+                <div class="col-md-6 col-sm-12">
+                    <strong><i class="fa fa-book margin-r-5"></i>  Sender Id</strong>
+                    <p class="text-muted">
+                        @Html.DisplayFor(model => model.SenderId)
+                    </p>
+                    <hr>
+
+                    <strong><i class="fa fa-book margin-r-5"></i>  Message Content</strong>
+                    <p class="text-muted">
+                        @Html.DisplayFor(model => model.MessageContent)
+                    </p>
+                    <hr>
+
+                    <strong><i class="fa fa-book margin-r-5"></i>  Summary Report</strong>
+                    <p class="text-muted">
+                        @Html.DisplayFor(model => model.SummaryReport)
+                    </p>
+                    <hr>
+
+                    <strong><i class="fa fa-book margin-r-5"></i>  Scheduled Date</strong>
+                    <p class="text-muted">
+                        @Html.DisplayFor(model => model.Scheduleddate)
+                    </p>
+                    <hr>
+
+                    <strong><i class="fa fa-book margin-r-5"></i>  Status</strong>
+                    <p class="text-muted">
+                        @Html.DisplayFor(model => model.Status)
+                    </p>
+                    <hr>
+                    <strong><i class="fa fa-book margin-r-5"></i>  Delivery Point</strong>
+                    <p class="text-muted">
+                        @Html.DisplayFor(model => model.Plan)
+                    </p>
+                    <hr>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                    <strong><i class="fa fa-book margin-r-5"></i>  Recipients</strong>
+                    <p class="text-muted" style="overflow-wrap:break-word">
+                        @Html.DisplayFor(model => model.Recipients)
+                    </p>
+                    <hr>
+
+                    <strong><i class="fa fa-book margin-r-5"></i>  Response</strong>
+                    <p class="text-muted">
+                        @Html.DisplayFor(model => model.Response)
+                    </p>
+                    <hr>
+
+                    <strong><i class="fa fa-book margin-r-5"></i>  Units Used</strong>
+                    <p class="text-muted">
+                        @Html.DisplayFor(model => model.UnitsUsed)
+                    </p>
+                    <hr>
+
+                    <strong><i class="fa fa-book margin-r-5"></i>  Delivered Date</strong>
+                    <p class="text-muted">
+                        @Html.DisplayFor(model => model.DeliveredDate)
+                    </p>
+                    <hr>
+                </div>
+
+              
+
+            </div>
+
+        </div>
+
+    </section>
+</div>

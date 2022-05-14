@@ -1,0 +1,75 @@
+﻿@model Exwhyzee.Messaging.Web.Models.PriceSetting
+
+@{
+    ViewBag.Title = "Price Setting Details";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small>Price Settings</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Price Settings</a></li>
+        <li class="active">Price Settings Details</li>
+    </ol>
+</section>
+
+<section class="content">
+
+    <div class="box">
+        <div class="box-header">
+            <h3 class="box-title">Price Settings Details </h3>
+
+            <span class="pull-right">
+                <a href="@Url.Content(" ../../pricesettings")" class="btn btn-app"><i class="fa fa-backward"></i>Back</a>
+                <a href="@Url.Content(" ../../pricesettings/edit/"+Model.PriceSettingId)" class="btn btn-app"><i class="fa fa-pencil-square-o"></i>Edit Setting</a>
+                <a href="@Url.Content(" ../../pricesettings/CreateDial/"+Model.PriceSettingId)" class="btn btn-app"><i class="fa fa-plus-square-o"></i>Add Code</a>
+            </span>
+        </div>
+        <div class="box-body">
+            <div class="col-md-6 col-sm-12 col-md-offset-2">
+                <strong><i class="fa fa-user-secret margin-r-5"></i>@Html.DisplayNameFor(model => model.Country)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.Country)
+                </p>
+                <hr>
+
+                <strong><i class="fa fa-user-secret margin-r-5"></i>@Html.DisplayNameFor(model => model.InternationalDialCode) </strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.InternationalDialCode)
+                </p>
+                <hr>
+                <strong><i class="fa fa-user-secret margin-r-5"></i>@Html.DisplayNameFor(model => model.NetworkProvider)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.NetworkProvider)
+                </p>
+                <hr>
+                <strong><i class="fa fa-user-secret margin-r-5"></i>@Html.DisplayNameFor(model => model.DigitCount)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.DigitCount)
+                </p>
+                <hr>
+                <strong><i class="fa fa-user-secret margin-r-5"></i>@Html.DisplayNameFor(model => model.UnitsPerSms)</strong>
+                <p class="text-muted">
+                    @Html.DisplayFor(model => model.UnitsPerSms)
+                </p>
+                <hr>
+            </div>
+            <div class="col-md-6 col-sm-12 col-md-offset-2">
+                <table class="table table-striped">
+                    <tr>
+                        <th>Codes</th>
+                    </tr>
+                    @foreach (var item in Model.DialCodes)
+                    {
+                        <tr>
+                            <td>@item.NumberPrefix</td>
+                            <td><a href="@Url.Content(" ../../pricesettings/DeleteDialCode/"+item.DialCodeId)" class="btn btn-xs btn-danger"><i class="fa fa-trash-o"> </i> Delete</a></td>
+                        </tr>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+</section>

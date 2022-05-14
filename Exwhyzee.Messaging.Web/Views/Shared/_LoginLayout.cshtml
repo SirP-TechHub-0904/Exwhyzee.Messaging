@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+
+<html lang="eng">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.Title - XYZSMS</title>
+    @RenderSection("meta", required: false)
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="~/Content/image/xyzico.png" rel="shortcut icon" type="image/x-icon" />
+
+    @Styles.Render("~/Admin/css")
+    @RenderSection("styles", required: false)
+</head>
+
+<body class="login-page">
+
+    @RenderBody()
+    @*<div class="container"</div>*@
+
+ 
+    @Scripts.Render("~/bundles/adminjs")
+    
+    @*<script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>*@
+    <script>
+        $.widget.bridge('uibutton', $.ui.button);
+    </script>
+   
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

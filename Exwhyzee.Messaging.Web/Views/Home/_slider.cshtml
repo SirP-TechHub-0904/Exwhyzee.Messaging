@@ -1,0 +1,21 @@
+﻿<div class="container-fluid" style="padding-left:0px; padding-right:0px;">
+    <div id="wrapper">
+        <div class="slider-wrapper theme-bar">
+            <div id="slider" class="nivoSlider">
+
+                @foreach (var slider in (IEnumerable<string>)ViewBag.slides)
+                {
+                    <div class="item">
+                        <img src="@Url.Content(slider)" class="img-responsive" alt="@ViewBag.Caption"/>
+                       
+                    </div>
+
+                }
+
+
+
+            </div>
+
+        </div>
+    </div>
+</div>

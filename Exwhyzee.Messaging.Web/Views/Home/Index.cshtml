@@ -1,0 +1,157 @@
+﻿@*@model IEnumerable<Exwhyzee.Messaging.Web.Areas.Content.Models.Post>*@
+
+@{
+    ViewBag.Title = "XYZ SMS";
+}
+
+@section myStyles{
+    <link href="~/Content/nivoslider/themes/bar/bar.css" rel="stylesheet" />
+    <link href="~/Content/nivoslider/nivo-slider.css" rel="stylesheet" />
+    <link href="~/Content/scroll/css/smoothDivScroll.css" rel="stylesheet" />
+    @*facebook plugin*@
+    <div id="fb-root"></div>
+    <script>
+        (function (d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s); js.id = id;
+            js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.9&appId=139598532805844";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+    </script>
+}
+
+<div class="container-fluid" style="margin-top:0px;">
+    @section Slider{
+      @*  @Html.Action("_slider", "Home")*@
+
+    }
+</div>
+<section class="cleaning-content-block why-choose-us">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="section-title text-center">
+                    <h2>Why Choose Us</h2>
+              
+                  </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="choose-reasons">
+                    <i class="fa fa-star"></i>
+                    <h4><i class="fa fa-envelope-o" style="color:#ff6a00;"></i> SMS FEATURES</h4>
+                    <div>
+                        <ul style="list-style:circle" class="comment more">
+
+                            <li>Compose SMS with dynamic sender ID</li>
+                            <li>
+                                Create SMS that automatically pick phone book names and inserts in
+
+                                your message
+                            </li>
+                            <li>
+                                Type multiple sms recipients, select recipient or recipient group
+
+                                from phonebook @Html.ActionLink(" Read More", "SmsFeatures", "Home")
+                            </li>
+                            
+                        </ul> 
+                    </div>               
+                 </div>
+
+                <div class="choose-reasons">
+                    <i class="fa fa-users"></i>
+                    <h4><i class="fa fa-send"></i> How It Works</h4>
+<div>
+    <div>
+        
+        <ul style="list-style-type: circle;" class="text-justify comment more">
+
+            <li>
+                Log on to your account on <b style="color: #ff6a00;">www.xyzsms.com</b> if you have registered. If not, click <b style="color: #ff6a00;">“Register”</b> and put in your details to get registered. You will get an activation link on your mail that you have registered. Click on it to get you registered.
+            @Html.ActionLink(" Read More", "SmsFeatures", "Home")
+            </li>
+          
+        </ul>
+    </div>
+</div>               
+                 </div>
+            </div>
+            <div class="col-md-4">
+                <div style="margin-top:30px;">
+                    <img src="~/Content/image/xyz.jpg" alt="" style="margin-right:auto !important;margin-left:auto !important;vertical-align:middle !important;">
+
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="choose-reasons">
+                    <i class="fa fa-wrench"></i>
+                    <h4><i class="fa fa-send"></i> How To Send SMS</h4>
+<div>
+    <ul class="text-justify comment more" style="list-style-type:circle;">
+        <li> Log on to your account <b style="color: #ff6a00;">www.xyzsms.com</b></li>
+        <li>
+            Click on <b style="color: #ff6a00;">“Compose SMS”</b> on the left hand side.
+        </li>
+        <li>
+            When the Compose page opens up, type your Sender ID. This is the name that you</li>
+   @Html.ActionLink( "Read More", "SmsFeatures", "Home")
+     </ul>
+</div>                
+                </div>
+
+                <div class="choose-reasons">
+                    <i class="fa fa-life-ring"></i>
+                    <h4><i class="fa fa-money"></i> Sms Unit Cost Per Page</h4>
+                    <div class="content box1 style21">
+
+                        <table class="table table-bordered table-responsive">
+                            <tr>
+                                <td>
+                                    
+                                </td>
+                                <td>
+                                    Unit
+                                </td>
+                                <td>
+                                    Per Sms
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    DND Enabled
+                                </td>
+                                <td>
+                                    3.5 unit
+                                </td>
+                                <td>
+                                    1 sms
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    DND Disabled
+                                </td>
+                                <td>
+                                    2 unit
+                                </td>
+                                <td>
+                                    1 sms
+                                </td>
+                            </tr>
+                           
+                        </table>
+                    </div>                
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+@section Scripts {
+    
+}

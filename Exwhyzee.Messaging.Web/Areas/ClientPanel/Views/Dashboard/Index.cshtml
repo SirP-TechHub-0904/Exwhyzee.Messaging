@@ -1,0 +1,248 @@
+﻿@{
+    ViewBag.Title = "Dashboard";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard(Client)
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Client </a></li>
+        <li class="active">Dashboard</li>
+    </ol>
+</section>
+<!-- Main content -->
+<section class="content">
+
+    <div class="row">
+
+        <!-- Pending transactions -->
+        <div class="col-lg-3 col-xs-6">
+            <!-- small box -->
+            <div class="small-box bg-red">
+                <div class="inner">
+                    <h3>@ViewBag.pendingTransactions</h3>
+                    <p>Transaction(s)</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-credit-card"></i>
+                </div>
+                <p class="small-box-footer">Pending Transactions <i class="fa fa-arrow-circle-right"></i></p>
+            </div>
+        </div><!-- ./col -->
+        <!-- Client Units-->
+        <div class="col-lg-3 col-xs-6">
+            <!-- small box -->
+            <div class="small-box bg-green">
+                <div class="inner">
+                    <h3>@ViewBag.clientUnit</h3>
+                    <p>Units</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-bar-chart"></i>
+                </div>
+                <p class="small-box-footer">Client Units <i class="fa fa-arrow-circle-right"></i></p>
+            </div>
+        </div><!-- ./col -->
+
+        <div class=" col-lg-3 col-xs-6">
+            <!-- small box -->
+            <div class="small-box bg-orange-active">
+                <div class="inner">
+                    <h3>@ViewBag.ScheduleCount</h3>
+                    <p>Messages</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-envelope"></i>
+                </div>
+                <p class="small-box-footer">Scheduled Messages<i class="fa fa-arrow-circle-right"></i></p>
+            </div>
+        </div>
+        <div class=" col-lg-3 col-xs-6">
+            <!-- small box -->
+            <div class="small-box bg-light-blue">
+                <div class="inner">
+                    <h3>0</h3>
+                    <p>Complain</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-commenting-o"></i>
+                </div>
+                <p class="small-box-footer">Complain<i class="fa fa-arrow-circle-right"></i></p>
+            </div>
+        </div><!-- ./col -->
+    </div>
+
+    <div class="row">
+        <!-- left colume -->
+        <div class="col-lg-6">
+            <div class="box box-info">
+                <div class="box-header">
+                    <i class="fa fa-envelope"></i>
+                    <h3 class="box-title">Last Ten Messages</h3>
+                </div>
+                <div class="box-body">
+                    <table class="table table-bordered table-striped table-responsive">
+                        <thead>
+                            <tr>
+                                <th>
+                                    Sender ID
+                                </th>
+                                <th>
+                                    Date
+                                </th>
+                                <th>
+                                    Status
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            @foreach (var item in ViewBag.LastTenMessage)
+                            {
+                                <tr>
+                                    <td>
+                                        @item.SenderId
+                                    </td>
+                                    <td>
+                                        @item.DeliveredDate
+                                    </td>
+                                    <td>
+                                        @item.Status
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!-- right colume -->
+        <div class="col-lg-6">
+
+            <div class="box box-warning">
+                <div class="box-header">
+                    <i class="fa fa-money"></i>
+                    <h3 class="box-title">Last Ten Transactions</h3>
+                </div>
+                <div class="box-body">
+                    <table class="table table-bordered table-striped table-responsive">
+                        <thead>
+                            <tr>
+                                <th>
+                                    Transaction Id
+                                </th>
+                                <th>
+                                    Transaction Date
+                                </th>
+                                <th>
+                                    Transaction Status
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ViewBag.LastTenTransaction != null)
+                            {
+                                foreach (var item in ViewBag.LastTenTransaction)
+                                {
+                                    <tr>
+                                        <td>
+                                            @item.TransactionId
+                                        </td>
+                                        <td>
+                                            @item.DateCreated
+                                        </td>
+                                        <td>
+                                            @item.Status
+                                        </td>
+                                    </tr>
+                                }
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="box box-info">
+                <div class="box-header box-info">
+                    <i class="fa fa-envelope"></i>
+                    <h3 class="box-title">Last Ten Scheduled Messages</h3>
+                </div>
+                <div class="box-body">
+                    <table class="table table-bordered table-striped table-responsive">
+                        <thead>
+                            <tr>
+                                <th>
+                                    Sender ID
+                                </th>
+                                <th>
+                                    Scheduled Date
+                                </th>
+                                <th>
+                                    Status
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            @foreach (var item in ViewBag.LastTenScheduledMessage)
+                            {
+                                <tr>
+                                    <td>
+                                        @item.SenderId
+                                    </td>
+                                    <td>
+                                        @item.Scheduleddate
+                                    </td>
+                                    <td>
+                                        @item.Status
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section><!-- /.content -->
+<div class="modal fade" id="abcdef" tabindex="-1" role="dialog" aria-labelledby="" style="top:100px;">
+    <div class="modal-dialog modal-smll" role="">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-center">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                <h2 class="modal-title" id="">User Guide.</h2>
+
+            </div>
+            <div class="modal-body">
+                <div class="">
+                    @if (ViewBag.Modal != null)
+                    {
+                        @Html.Raw(ViewBag.Modal.Modal)
+
+                    }
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts{
+
+    @if (ViewBag.Modal != null)
+    {
+        <script type="text/javascript">
+            $(window).on('load', function () {
+                $('#abcdef').modal('show');
+            });
+        </script>
+    }
+
+}

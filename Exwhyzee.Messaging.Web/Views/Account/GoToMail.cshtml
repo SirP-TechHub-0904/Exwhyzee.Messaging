@@ -1,0 +1,40 @@
+﻿
+@{
+    ViewBag.Title = "GoToMail";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<div class="container mail text-center" style="margin-top: 110px;margin-bottom: 260px;">
+    <div class="alert alert-success alert-dismissable">
+        Please, if your email address is not accessible. Kindly contact <b>08165680904</b> for assistance.
+    </div>
+    <br />
+    <br />
+    <div class="row">
+
+
+        <div class="col-md-4"></div>
+        <div class="col-md-4">
+            @Html.Partial("_ResponseMessagePartial")
+            <div class="panel">
+                <div class="panel-body mail-board">
+                    <p class="text-center">
+                        Login to your Email To Complete Registeration.
+                    </p>
+                    <p class="text-center">
+                        @Html.ActionLink("Back To Home", "Index", "Home", null, new { @class = "btn", style = "background-color: white; color: #16ae0f;" })
+                    </p>
+                    <p class="text-center">
+                        Didn't get mail in 5 min
+                    </p>
+
+                    <p class="text-center">
+                        @Html.ActionLink("Resend", "ResendActivationCode", "Account", new { id = ViewBag.id }, new { @class = "btn", style = "background-color: white; color: #16ae0f;" })
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4"></div>
+    </div>
+</div>

@@ -1,0 +1,46 @@
+﻿@{
+    ViewBag.Title = "Bankdetails";
+}
+
+@model Exwhyzee.Messaging.Web.Models.Transaction
+
+
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small> Bank  Details</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Details</a></li>
+        <li class="active">Bank Details</li>
+    </ol>
+</section>
+
+<section class="content">
+
+    <div class="box">
+        <div class="box-header">
+            <h3 class="box-title">Bank Details</h3>
+        </div>
+        <div class="box-body">
+            <div class="alert bg-primary">
+                <dl class="dl-horizontal">
+                    <dt>ACCOUNT NAME:</dt>
+                    <dd>EXWHYZEE TECHNOLOGIES LIMITED</dd>
+                    <dt>BANK NAME:</dt>
+                    <dd>UBA</dd>
+                    <dt>ACCOUNT NUMBER: </dt>
+                    <dd>1018822552</dd>
+                </dl>
+                <hr>
+                <p>
+                    <strong>NOTE:</strong> Please use your USERNAME as Name of Depositor. If after 1 hour of payment and your account is not credited, Call our Sales Rep. 08165680904 to send the details of your payment for your account to be Credited.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

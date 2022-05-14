@@ -1,0 +1,313 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="~/Content/image/xyzico.png" rel="shortcut icon" type="image/x-icon" />
+    <title>@ViewBag.Title - XYZSMS | Bulk Sms</title>
+    @Styles.Render("~/Admin/css")
+    @Scripts.Render("~/bundles/modernizr")
+    @RenderSection("Styles", required: false)
+
+    <!--Start of Tawk.to Script-->
+    <!--Start of Tawk.to Script-->
+    <script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/5a5705274b401e45400bfcfd/default';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
+})();
+    </script>
+    <!--End of Tawk.to Script-->
+    <!--End of Tawk.to Script-->
+   <style>
+    .example-modal .modal {
+      position: relative;
+      top: auto;
+      bottom: auto;
+      right: auto;
+      left: auto;
+      display: block;
+      z-index: 1;
+    }
+
+       .example-modal .modal {
+           background: transparent !important;
+       }
+  </style>
+</head>
+<body class="hold-transition skin-blue sidebar-mini">
+    <div class="wrapper">
+
+        <div class="modal fade" id="modal-default">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title" style="color:#3c8dbc;">IMPORTANT NOTIFICATION</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>Make sure that your <strong>SENDER ID</strong> is Registered Before Sending any message or you can use our Default Sender ID. or <strong> Contact Administrator</strong></p>
+
+                        <p>Thanks XYZSMS</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-warning pull-left" data-toggle="modal" data-target="#modal-senderid">Submit Sender ID</button>
+                        @Html.ActionLink("Default Sender ID", "DefaultSenderId", "Dashboard", null, new { @class = "btn btn-primary" })
+                       
+                    </div>
+                </div>
+                <!-- /.modal-content -->
+            </div>
+            <!-- /.modal-dialog -->
+        </div>
+
+         <div class="modal fade" id="modal-senderid">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title" style="color:#3c8dbc;">Submit Sender Id</h4>
+                        <p>You seperate the with comma <strong>eg. senderId 1, seenderId 2</strong></p>
+                    </div>
+
+                    @using (Html.BeginForm("SenderIdApply", "Dashboard", FormMethod.Post, new { enctype = "" }))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <div class="modal-body">
+
+
+                            <div class="">
+
+                                <div class="form-group">
+                                    @Html.Label("Sender Id(s)", htmlAttributes: new { @class = "control-label" })
+                                    <div class="">
+                                        <input type="text" name="text" class="form-control" />
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
+                            <input type="submit" value="Submit" class="btn btn-primary" />
+
+                        </div>
+                    }
+                    </div>
+                <!-- /.modal-content -->
+            </div>
+            <!-- /.modal-dialog -->
+        </div>
+        <!--comment-->
+
+        <header class="main-header">
+            <a href="#" class="logo">
+                <!-- mini logo for sidebar mini 50x50 pixels -->
+                <span class="logo-mini"><b>XYZ </b>SMS</span>
+                <!-- logo for regular state and mobile devices -->
+                <span class="logo-lg">
+                    <img class="logo img-responsive" src="~/Content/image/SMS LOGO.png" alt="xyzsms" />
+                </span>
+            </a>
+
+            <nav class="navbar navbar-static-top">
+                <!-- Sidebar toggle button-->
+                <a href="#" class="sidebar-toggle" data-toggle="offcanvas" role="button">
+                    <span class="sr-only">Toggle navigation</span>
+                </a>
+                <div class="navbar-custom-menu">
+                    <ul class="nav navbar-nav">
+                        <!-- Messages: style can be found in dropdown.less-->
+                        <!-- Notifications: style can be found in dropdown.less -->
+                        <!-- Tasks: style can be found in dropdown.less -->
+                        <!-- User Account: style can be found in dropdown.less -->
+                        @Html.Partial("_AccountPartialView")
+                        @*<li class="dropdown user user-menu">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                <img src="dist/img/user2-160x160.jpg" class="user-image" alt="User Image">
+                                <span class="hidden-xs">Alexander Pierce</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <!-- User image -->
+                                <li class="user-header">
+                                    <img src="dist/img/user2-160x160.jpg" class="img-circle" alt="User Image">
+                                    <p>
+                                        Alexander Pierce - Web Developer
+                                        <small>Member since Nov. 2012</small>
+                                    </p>
+                                </li>
+                                <!-- Menu Body -->
+                                <li class="user-body">
+                                    <div class="row">
+                                        <div class="col-xs-4 text-center">
+                                            <a href="#">Followers</a>
+                                        </div>
+                                        <div class="col-xs-4 text-center">
+                                            <a href="#">Sales</a>
+                                        </div>
+                                        <div class="col-xs-4 text-center">
+                                            <a href="#">Friends</a>
+                                        </div>
+                                    </div>
+                                    <!-- /.row -->
+                                </li>
+                                <!-- Menu Footer-->
+                                <li class="user-footer">
+                                    <div class="pull-left">
+                                        <a href="#" class="btn btn-default btn-flat">Profile</a>
+                                    </div>
+                                    <div class="pull-right">
+                                        <a href="#" class="btn btn-default btn-flat">Sign out</a>
+                                    </div>
+                                </li>
+                            </ul>
+                        </li>*@
+                        <!-- Control Sidebar Toggle Button -->
+                    </ul>
+                </div>
+            </nav>
+        </header>
+        <!-- Left side column. contains the logo and sidebar -->
+        <aside class="main-sidebar">
+            <!-- sidebar: style can be found in sidebar.less -->
+            <section class="sidebar">
+                <!-- Sidebar user panel -->
+                <div class="user-panel">
+                    <div class="pull-left image">
+                        <img src="~/Uploads/user.png" class="img-circle" alt="User Image">
+                    </div>
+                    <div class="pull-left info">
+                        <p>@User.Identity.Name </p>
+                        <a href="#"><i class="fa fa-circle text-success"></i> Online</a>
+                        <a href="#"><i class="fa fa-bitcoin text-success"></i> @Html.Partial("_UnitsPartial") </a>
+                    </div>
+                </div>
+                <!-- search form -->
+                @*<form action="#" method="get" class="sidebar-form">
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control" placeholder="Search...">
+                        <span class="input-group-btn">
+                            <button type="submit" name="search" id="search-btn" class="btn btn-flat">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        </span>
+                    </div>
+                </form>*@
+                <!-- /.search form -->
+                <!-- sidebar menu: : style can be found in sidebar.less -->
+                <ul class="sidebar-menu">
+                    <li class="header">MAIN NAVIGATION</li>
+                    <li>
+                        <a href="@Url.Content("~/clientpanel/Dashboard")">
+                            <i class="fa fa-dashboard"></i> <span>Dashboard</span>
+                        </a>
+                    </li>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <li>
+                            <a href="@Url.Content("~/adminpanel/main")">
+                                <i class="fa fa-dashboard"></i> <span>Admin Dashboard</span>
+                            </a>
+                        </li>
+                    }
+
+                    <li>
+                        <a href="@Url.Content("~/clientpanel/Dashboard/compose")">
+
+                            <i class="fa fa-envelope-o"></i> <span>Compose SMS</span>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="@Url.Content("~/clientpanel/Dashboard/MessageHistory")">
+                            <i class="fa fa-envelope-o"></i> <span>Message History</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Content("~/clientpanel/Dashboard/draftmessages")">
+                            <i class="fa fa-envelope-o"></i> <span>Draft Messages</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Content("~/clientpanel/Dashboard/transactionhistory")">
+                            <i class="fa fa-money"></i> <span>Transaction History</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Content("~/clientpanel/addressbook/")">
+                            <i class="fa fa-book"></i> <span>Address Book</span>
+                        </a>
+                    </li>
+
+                    <li class="treeview">
+                        <a href="#">
+                            <i class="fa fa-folder"></i> <span>Top Up Units</span>
+                            <span class="pull-right-container">
+                                <i class="fa fa-angle-left pull-right"></i>
+                            </span>
+                        </a>
+                        <ul class="treeview-menu">
+                            <li>@*<a href="@Url.Content("~/clientpanel/dashboard/buyunit")"><i class="fa fa-circle-o"></i>Buy SMS Units</a>*@</li>
+                            <li><a href="@Url.Content("~/clientpanel/dashboard/buyunit")"><i class="fa fa-circle-o"></i>Buy SMS Units</a></li>
+                            <li><a href="@Url.Content("~/clientpanel/dashboard/loadvoucher")"><i class="fa fa-circle-o"></i>Load Voucher</a></li>
+                        </ul>
+                    </li>
+                    <li class="treeview">
+                        <a href="#">
+                            <i class="fa fa-user"></i> <span>Profile</span>
+                            <span class="pull-right-container">
+                                <i class="fa fa-angle-left pull-right"></i>
+                            </span>
+                        </a>
+                        <ul class="treeview-menu">
+                            <li>
+                                <a href="@Url.Content("~/clientpanel/dashboard/Details")">
+                                    <i class="fa fa-gear"></i> <span>Profile</span>
+                                </a>
+                            </li>
+
+                            <li><a href="@Url.Action("ChangePassword","Account", new { area = "" })"><i class="fa fa-circle-o"></i>Change Password</a></li>
+                        </ul>
+                    </li>
+
+
+                    <li><a href="#"><i class="fa fa-book"></i> <span>Documentation</span></a></li>
+                    <li><a href="@Url.Content("~/Home/")"><i class="fa fa-home"></i> <span>Home</span></a></li>
+                    @*<li class="header">LABELS</li>
+                    <li><a href="#"><i class="fa fa-circle-o text-red"></i> <span>Important</span></a></li>
+                    <li><a href="#"><i class="fa fa-circle-o text-yellow"></i> <span>Warning</span></a></li>
+                    <li><a href="#"><i class="fa fa-circle-o text-aqua"></i> <span>Information</span></a></li>*@
+                </ul>
+            </section>
+            <!-- /.sidebar -->
+        </aside>
+
+        <div class="content-wrapper">
+            @RenderBody()
+        </div>
+        <div class="clearfix"></div>
+        <footer class="main-footer">
+            <div class="pull-right hidden-xs">
+                <b>Version</b> 3.0.0.0
+            </div>
+            <strong>Copyright &copy; 2016 <a href="www.exwhyzeetech.ng">Exwhyzee Technologies Ltd.</a>.</strong> All rights
+            reserved.
+        </footer>
+    </div>
+
+    @Scripts.Render("~/bundles/adminjs")
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>

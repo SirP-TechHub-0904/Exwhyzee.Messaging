@@ -1,0 +1,106 @@
+﻿@model Exwhyzee.Messaging.Web.Models.Client
+
+@{
+    ViewBag.Title = "Edit User Record";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small> User  Details</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Details</a></li>
+        <li class="active">Edit User Detail</li>
+    </ol>
+</section>
+
+<section class="content">
+
+    <div class="box">
+        <div class="box-header">
+            <h3 class="box-title">Edit User Details</h3>
+
+            <span class="pull-right">
+                <a href="@Url.Action("Details",new { area = "ClientPanel" })" class="btn btn-app"><i class="fa fa-backward"></i>Back</a>
+            </span>
+        </div>
+        <div class="box-body">
+            <div class="col-md-6 col-sm-12 col-md-offset-3">
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+
+                <div class="form-horizontal">
+
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                    @Html.HiddenFor(model => model.ClientId)
+                    @Html.HiddenFor(model => model.UserId)
+                    @Html.HiddenFor(model => model.Units)
+                    @Html.HiddenFor(model => model.Discount)
+                    @Html.HiddenFor(model => model.Plan)
+                  
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Units, htmlAttributes: new { @class = "control-label col-md-3" })
+                        <div class="col-md-9">
+                            @Html.EditorFor(model => model.Units, new { htmlAttributes = new { @class = "form-control", @disabled = "disabled" } })
+                            @Html.ValidationMessageFor(model => model.Units, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Surname, htmlAttributes: new { @class = "control-label col-md-3" })
+                        <div class="col-md-9">
+                            @Html.EditorFor(model => model.Surname, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.Surname, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("First Name", htmlAttributes: new { @class = "control-label col-md-3" })
+                        <div class="col-md-9">
+                            @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("Other Names", htmlAttributes: new { @class = "control-label col-md-3" })
+                        <div class="col-md-9">
+                            @Html.EditorFor(model => model.OtherNames, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.OtherNames, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Discount, htmlAttributes: new { @class = "control-label col-md-3" })
+                        <div class="col-md-9">
+                            @Html.EditorFor(model => model.Discount, new { htmlAttributes = new { @class = "form-control", @disabled = "disabled" } })
+                            @Html.ValidationMessageFor(model => model.Discount, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        @Html.Label("Allow Notifications", htmlAttributes: new { @class = "control-label col-md-3" })
+                        <div class="col-md-9">
+                            @Html.EnumDropDownListFor(model => model.AllowNotifications, htmlAttributes: new { @class = "form-control" })
+                            @Html.ValidationMessageFor(model => model.AllowNotifications, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-md-offset-2 col-md-10">
+                            <input type="submit" value="Save" class="btn btn-primary" />
+                        </div>
+                    </div>
+                </div>
+
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
