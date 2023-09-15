@@ -13,7 +13,7 @@
     margin-top: 40px;
 }
 .choose-reasons i {
-    background: #004e81 none repeat scroll 0 0;
+    background: #f40000 none repeat scroll 0 0;
     border-left: 2px solid #303030;
     border-radius: 0 25px 25px 0;
     color: #ffffff;
@@ -42,7 +42,7 @@
 }
 /* End why choose us */
 .section-title > h2::before {
-    background: #007acc none repeat scroll 0 0;
+    background: #f40000 none repeat scroll 0 0;
     bottom: 0;
     content: "";
     height: 4px;
@@ -73,5 +73,5 @@
  color:#ffffff !important;
         }
         .footer .container h4{
-            border-bottom:2px solid #007acc
+            border-bottom:2px solid #f40000
         }

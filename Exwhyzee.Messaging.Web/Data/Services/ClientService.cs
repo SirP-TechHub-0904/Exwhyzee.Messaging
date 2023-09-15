@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 using System.Web;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
+using System.Net.Http;
+using System.Configuration;
 
 namespace Exwhyzee.Messaging.Web.Data.Services
 {
@@ -68,7 +70,7 @@ namespace Exwhyzee.Messaging.Web.Data.Services
 
         public async Task<Client> GetClientDetailsByUserId(string userId)
         {
-            var clientDetails = await db.Clients.Include(x=>x.User).FirstOrDefaultAsync(x => x.UserId == userId);
+            var clientDetails = await db.Clients.Include(x => x.User).FirstOrDefaultAsync(x => x.UserId == userId);
 
             return clientDetails;
         }
@@ -122,23 +124,35 @@ namespace Exwhyzee.Messaging.Web.Data.Services
             await db.SaveChangesAsync();
         }
 
-        public async Task<string> SendSms(string senderId, string message, string recipients)
+        public async Task<SmsResponse> SendSms(string senderId, string message, string recipients)
         {
             //get API to use
-            var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
-            string apiSending = getApi.Sending.Replace("@@sender@@", HttpUtility.UrlEncode(senderId)).Replace("@@recipient@@", HttpUtility.UrlEncode(recipients)).Replace("@@message@@", HttpUtility.UrlEncode(message));
+            //var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
+            //string apiSending = getApi.Sending.Replace("@@sender@@", HttpUtility.UrlEncode(senderId)).Replace("@@recipient@@", HttpUtility.UrlEncode(recipients)).Replace("@@message@@", HttpUtility.UrlEncode(message));
 
-            HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(apiSending);
-            httpWebRequest.Method = "GET";
-            httpWebRequest.ContentType = "application/json";
-            httpWebRequest.Timeout = 25000;
+            //HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(apiSending);
+            //httpWebRequest.Method = "GET";
+            //httpWebRequest.ContentType = "application/json";
+            //httpWebRequest.Timeout = 25000;
 
-            //getting the respounce from the request
-            HttpWebResponse httpWebResponse = (HttpWebResponse)await httpWebRequest.GetResponseAsync();
-            Stream responseStream = httpWebResponse.GetResponseStream();
-            StreamReader streamReader = new StreamReader(responseStream);
-            string response = await streamReader.ReadToEndAsync();
-
+            ////getting the respounce from the request
+            //HttpWebResponse httpWebResponse = (HttpWebResponse)await httpWebRequest.GetResponseAsync();
+            //Stream responseStream = httpWebResponse.GetResponseStream();
+            //StreamReader streamReader = new StreamReader(responseStream);
+            //string response = await streamReader.ReadToEndAsync();
+            var client = new HttpClient();
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/sms");
+            var content = new MultipartFormDataContent();
+            content.Add(new StringContent("Sv9QJKbEuysLndpqT5r0tXIM2hFZxoVOjcPgfiD1H7UY64waeGCARBkWz83mlN"), "token");
+            content.Add(new StringContent("senderId"), "senderID");
+            content.Add(new StringContent(recipients), "recipients");
+            content.Add(new StringContent(message), "message");
+            content.Add(new StringContent("1"), "gateway");
+            request.Content = content;
+            var xresponse = await client.SendAsync(request);
+            xresponse.EnsureSuccessStatusCode();
+            string responseBody = await xresponse.Content.ReadAsStringAsync();
+            SmsResponse response = JsonConvert.DeserializeObject<SmsResponse>(responseBody);
             return response;
         }
 
@@ -264,9 +278,9 @@ namespace Exwhyzee.Messaging.Web.Data.Services
 
                 if (model.SendOption == "SendNow")
                 {
-                    var response = await SendSmsById(message.MessageId, totalUnitsNeeded);
+                    SmsResponse response = await SendSmsById(message.MessageId, totalUnitsNeeded);
                     var sentMessage = await GetMessage(message.MessageId);
-                    if (response.ToUpper().Contains("OK") || response.ToUpper().Contains("1701"))
+                    if (response.status.ToLower().Contains("success"))
                     {
                         //Update Client
                         client.Units = client.Units - totalUnitsNeeded;
@@ -274,7 +288,18 @@ namespace Exwhyzee.Messaging.Web.Data.Services
 
                         sentMessage.UnitsUsed = totalUnitsNeeded;
                         sentMessage.Status = MessageStatus.Sent;
-                        sentMessage.Response = response;
+                        sentMessage.Response = "";
+                        sentMessage.Response_status = response.status;
+                        sentMessage.Response_error_code = response.error_code;
+                        sentMessage.Response_cost = response.cost;
+                        sentMessage.Response_data = response.data;
+                        sentMessage.Response_msg = response.msg;
+                        sentMessage.Response_length = response.length;
+                        sentMessage.Response_page = response.page;
+                        sentMessage.Response_balance = response.balance;
+                        sentMessage.Response_BalanceResponse = response.BalanceResponse;
+
+
                         await UpdateMessageStatus(sentMessage);
 
                         return new SendMessageResponseDto
@@ -282,7 +307,7 @@ namespace Exwhyzee.Messaging.Web.Data.Services
                             Message = "Message has been sent successfully.",
                             Description = "Total Units used is " + totalUnitsNeeded + ".",
                             Success = true,
-                            ResponseCode = response
+                            ResponseCode = ""
                         };
 
 
@@ -294,7 +319,7 @@ namespace Exwhyzee.Messaging.Web.Data.Services
                             Message = "Sending Message Failed.",
                             Description = response + ". Sending Message Failed. Please try again or Contact the Administrator.",
                             Success = false,
-                            ResponseCode = response
+                            ResponseCode = ""
                         };
 
                     }
@@ -327,7 +352,7 @@ namespace Exwhyzee.Messaging.Web.Data.Services
 
                 }
             }
-            catch(Exception er)
+            catch (Exception er)
             {
                 return new SendMessageResponseDto
                 {
@@ -360,17 +385,26 @@ namespace Exwhyzee.Messaging.Web.Data.Services
             }
             else
             {
-                var response = await SendSmsById(messageId, totalUnitsNeeded);
-                if (response.ToUpper().Contains("OK") || response.ToUpper().Contains("1701"))
+                SmsResponse response = await SendSmsById(messageId, totalUnitsNeeded);
+                if (response.status.ToLower().Contains("success"))
                 {
                     //Update Client
                     client.Units = client.Units - totalUnitsNeeded;
-                    
+
                     await UpdateClient(client);
 
                     sentMessage.UnitsUsed = totalUnitsNeeded;
                     sentMessage.Status = MessageStatus.Sent;
-                    sentMessage.Response = response;
+                    sentMessage.Response = "";
+                    sentMessage.Response_status = response.status;
+                    sentMessage.Response_error_code = response.error_code;
+                    sentMessage.Response_cost = response.cost;
+                    sentMessage.Response_data = response.data;
+                    sentMessage.Response_msg = response.msg;
+                    sentMessage.Response_length = response.length;
+                    sentMessage.Response_page = response.page;
+                    sentMessage.Response_balance = response.balance;
+                    sentMessage.Response_BalanceResponse = response.BalanceResponse;
                     await UpdateMessageStatus(sentMessage);
                 }
                 else
@@ -380,36 +414,36 @@ namespace Exwhyzee.Messaging.Web.Data.Services
             }
         }
 
-        public async Task<string> SendSmsById(int messageHistoryId, decimal units)
+        public async Task<SmsResponse> SendSmsById(int messageHistoryId, decimal units)
         {
+            SmsResponse responsed = null;
+            
+            string apiToken = ConfigurationManager.AppSettings["ApiToken"];
             var messageHistory = await db.Messages.FindAsync(messageHistoryId);
             var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
             //check our balance and theirs
             var getApiBal = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
             string apiSendingbal = getApiBal.CheckBalance;
 
-            HttpWebRequest httpWebRequestBal = (HttpWebRequest)WebRequest.Create(apiSendingbal);
-            httpWebRequestBal.Method = "GET";
-            httpWebRequestBal.ContentType = "application/json";
-            httpWebRequestBal.Timeout = 25000;
 
-            //getting the respounce from the request
-            HttpWebResponse httpWebResponseBal = (HttpWebResponse)await httpWebRequestBal.GetResponseAsync();
-            Stream responseStreamBal = httpWebResponseBal.GetResponseStream();
-            StreamReader streamReaderBal = new StreamReader(responseStreamBal);
-            string responsebal = await streamReaderBal.ReadToEndAsync();
-            ////response = response.Remove(0, 11);
-            //// response = response.Substring(0, 5);
-            ///string inputStr =  "($23.01)";      
-            responsebal = Regex.Match(responsebal, @"\d+.+\d").Value;
-            responsebal = responsebal.Substring(0, responsebal.IndexOf(','));
-            decimal AdminBal = Convert.ToDecimal(responsebal);
-            if(units > AdminBal)
+
+            var clientbal = new HttpClient();
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/balance");
+            var content = new MultipartFormDataContent();
+            content.Add(new StringContent(apiToken), "token");
+            request.Content = content;
+            var balresponse = await clientbal.SendAsync(request);
+            balresponse.EnsureSuccessStatusCode();
+            var balanceresponse = await balresponse.Content.ReadAsStringAsync();
+            BalanceResponse balresponsed = JsonConvert.DeserializeObject<BalanceResponse>(balanceresponse);
+
+            decimal AdminBal = Convert.ToDecimal(balresponsed.msg);
+            if (units > AdminBal)
             {
-                string response1 = " error 88009-8899-333";
-            
-            return response1;
-        }
+                responsed.BalanceResponse = "message unit is greater than balance error 88009-8899-333";
+
+                return responsed;
+            }
             //get cost of message
 
             //end balance
@@ -418,80 +452,39 @@ namespace Exwhyzee.Messaging.Web.Data.Services
             string chunknumbersSend = "";
             string SenderIdEncode = System.Web.HttpUtility.UrlEncode(messageHistory.SenderId);
             List<string> smsnumbers = new List<string>(SmsServices.RemoveDuplicates(messageHistory.Recipients));
-            if (smsnumbers.Count() > 200)
+
+            try
+            {
+                var clientsend = new HttpClient();
+                var smsrequest = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/sms");
+                var smscontent = new MultipartFormDataContent();
+                smscontent.Add(new StringContent(apiToken), "token");
+                smscontent.Add(new StringContent(messageHistory.SenderId), "senderID");
+                smscontent.Add(new StringContent(messageHistory.Recipients), "recipients");
+                smscontent.Add(new StringContent(messageHistory.MessageContent), "message");
+                smscontent.Add(new StringContent("1"), "gateway");
+                smsrequest.Content = smscontent;
+                var xresponse = await clientsend.SendAsync(smsrequest);
+                xresponse.EnsureSuccessStatusCode();
+                string responseBody = await xresponse.Content.ReadAsStringAsync();
+                responsed = JsonConvert.DeserializeObject<SmsResponse>(responseBody);
+                return responsed;
+            }
+            catch (Exception c)
             {
 
-
-                
-
-
-                var chunknumbers = splitList(smsnumbers, 200);
-                
-                foreach (var n in chunknumbers)
-                {
-                    chunknumbersSend  = string.Join(",", n.ToList());
-
-                    string apiSending = getApi.Sending.Replace("@@sender@@", SenderIdEncode).Replace("@@recipient@@", HttpUtility.UrlEncode(chunknumbersSend)).Replace("@@message@@", HttpUtility.UrlEncode(messageHistory.MessageContent));
-
-                    HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(apiSending);
-                    httpWebRequest.Method = "GET";
-                    httpWebRequest.ContentType = "application/json";
-
-                    //getting the respounce from the request
-                    HttpWebResponse httpWebResponse = (HttpWebResponse)await httpWebRequest.GetResponseAsync();
-                    Stream responseStream = httpWebResponse.GetResponseStream();
-                    StreamReader streamReader = new StreamReader(responseStream);
-                    response = await streamReader.ReadToEndAsync();
-                    //response = "ok";
-
-                    MessageChunk chunk = new MessageChunk();
-                    chunk.MessageId = messageHistory.MessageId;
-                    chunk.Numbers = chunknumbersSend;
-                    chunk.Response = response;
-                    db.MessageChunks.Add(chunk);
-                    await db.SaveChangesAsync();
-
-                }
-                if (response.Contains("Insufficient funds"))
-                {
-                    response = "error 1001110_10";
-                }
-                return response;
             }
-            else
-            {
-                try
-                {
-                    
-                    string apiSending = getApi.Sending.Replace("@@sender@@", SenderIdEncode).Replace("@@recipient@@", HttpUtility.UrlEncode(messageHistory.Recipients)).Replace("@@message@@", HttpUtility.UrlEncode(messageHistory.MessageContent));
-                    
-                    HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(apiSending);
-                    httpWebRequest.Method = "GET";
-                    httpWebRequest.ContentType = "application/json";
+            //response = "ok";
+            responsed.msg = "Unable to send message";
 
-                    //getting the respounce from the request
-                    HttpWebResponse httpWebResponse = (HttpWebResponse)await httpWebRequest.GetResponseAsync();
-                    Stream responseStream = httpWebResponse.GetResponseStream();
-                    StreamReader streamReader = new StreamReader(responseStream);
-                    response = await streamReader.ReadToEndAsync();
-                }catch(Exception c)
-                {
+            return responsed;
 
-                }
-                //response = "ok";
-                if (response.Contains("Insufficient funds"))
-                {
-                    response = "error 1001110_10";
-                }
-               
-                return response;
-            }
 
-            
+
         }
 
 
-      
+
         //chunk
 
         public static IEnumerable<List<T>> splitList<T>(List<T> numbers, int nSize = 200)
@@ -514,11 +507,108 @@ namespace Exwhyzee.Messaging.Web.Data.Services
                 throw new Exception(ex.Message);
             }
         }
-      
+
         public async Task UpdateMessageStatus(Message item)
         {
             db.Entry(item).State = EntityState.Modified;
             await db.SaveChangesAsync();
+        }
+
+        public async Task<GeneralResponse> SubmitSenderId(string senderId, string senderMessage)
+        {
+            var clients = new HttpClient();
+            string apiToken = ConfigurationManager.AppSettings["ApiToken"];
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/senderID");
+            var content = new MultipartFormDataContent();
+            content.Add(new StringContent(apiToken), "token");
+            content.Add(new StringContent(senderId), "senderID");
+            content.Add(new StringContent(senderMessage), "message");
+            request.Content = content;
+            var response = await clients.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            var dataresponse = await response.Content.ReadAsStringAsync();
+            GeneralResponse outresponse = JsonConvert.DeserializeObject<GeneralResponse>(dataresponse);
+            return outresponse;
+        }
+
+        public async Task<GeneralResponse> VerifySenderId(string senderId)
+        {
+            var clients = new HttpClient();
+            string apiToken = ConfigurationManager.AppSettings["ApiToken"];
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/check_senderID");
+            var content = new MultipartFormDataContent();
+            content.Add(new StringContent(apiToken), "token");
+            content.Add(new StringContent(senderId), "senderID");
+            request.Content = content;
+            var response = await clients.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            var dataresponse = await response.Content.ReadAsStringAsync();
+            GeneralResponse outresponse = JsonConvert.DeserializeObject<GeneralResponse>(dataresponse);
+            return outresponse;
+        }
+
+        public async Task<string> AddSender(string userId, string senderId, string message)
+        {
+            var check = await db.XyzSenderIDs.FirstOrDefaultAsync(x => x.SenderId == senderId);
+            if (check == null)
+            {
+                XyzSenderID sid = new XyzSenderID();
+                var client = await db.Clients.FirstOrDefaultAsync(x => x.UserId == userId);
+                sid.ClientId = client.ClientId;
+                sid.SenderId = senderId;
+
+                try
+                {
+                    var response = await SubmitSenderId(senderId, message);
+                    sid.XYZ_error_code = response.error_code;
+                    sid.XYZ_msg = response.msg;
+                    sid.XYZ_status = response.status;
+                }
+                catch (Exception c)
+                {
+                    sid.XYZ_msg = c.ToString();
+                    sid.XYZ_status = "Not Verified and Submitted";
+                }
+
+                db.XyzSenderIDs.Add(sid);
+
+                await db.SaveChangesAsync();
+                return senderId + " has been added successfully";
+            }
+            else
+            {
+                return "Sender ID already registered";
+            }
+        }
+
+        public async Task<List<XyzSenderID>> GetAllSenderId()
+        {
+            var data = await db.XyzSenderIDs.Include(x => x.Client).ToListAsync();
+            return data;
+        }
+
+        public async Task<List<XyzSenderID>> GetAllSenderIdById(string userId)
+        {
+            var client = await db.Clients.FirstOrDefaultAsync(x => x.UserId == userId);
+            var data = await db.XyzSenderIDs.Include(x => x.Client).Where(x => x.ClientId == client.ClientId).ToListAsync();
+            return data;
+        }
+
+        public async Task<string> VerifySender(string senderId)
+        {
+            var xsenderid = await db.XyzSenderIDs.FirstOrDefaultAsync(x => x.SenderId == senderId);
+
+            try
+            {
+                var response = await VerifySenderId(xsenderid.SenderId);
+                xsenderid.Verify_msg = response.msg;
+
+            }
+            catch (Exception c)
+            {
+                xsenderid.Verify_msg = c.ToString();
+            }
+            return "success";
         }
     }
 
@@ -537,7 +627,8 @@ namespace Exwhyzee.Messaging.Web.Data.Services
                     var data = string.Join(",", rept.ToList());
                     return messages;
                 }
-            }catch(Exception c)
+            }
+            catch (Exception c)
             {
 
             }

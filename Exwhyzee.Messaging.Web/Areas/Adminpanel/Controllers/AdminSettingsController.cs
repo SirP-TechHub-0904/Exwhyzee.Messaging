@@ -118,8 +118,8 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
                     else
                     {
                         var responseMessage = await _clientService.SendSms(group.SenderId, group.Message, recipients);
-
-                        if (responseMessage.ToUpper().Contains("OK"))
+                        
+                        if (responseMessage.msg.ToUpper().Contains("OK"))
                         {
                             //Save message to History
                             var message = new Message()
@@ -145,7 +145,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
                                 MessageContent = group.Message,
                                 Recipients = recipients,
                                 Status = MessageStatus.Sent,
-                                Response = responseMessage,
+                                Response = responseMessage.msg,
                                 SenderId = group.SenderId,
                                 UserId = group.UserId
                             };

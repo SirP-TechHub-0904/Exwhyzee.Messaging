@@ -50,6 +50,12 @@
     <Reference Include="AutoMapper.Attributes, Version=6.0.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\AutoMapper.Attributes.6.0.1\lib\net45\AutoMapper.Attributes.dll</HintPath>
     </Reference>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
     <Reference Include="Hangfire.Core, Version=1.7.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Hangfire.Core.1.7.3\lib\net46\Hangfire.Core.dll</HintPath>
     </Reference>
@@ -177,12 +183,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="EntityFramework">
-      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
-    </Reference>
-    <Reference Include="EntityFramework.SqlServer">
-      <HintPath>..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.AspNet.Identity.Core">
       <HintPath>..\packages\Microsoft.AspNet.Identity.Core.2.2.2\lib\net45\Microsoft.AspNet.Identity.Core.dll</HintPath>
     </Reference>
@@ -248,17 +248,14 @@
     <Compile Include="Areas\Adminpanel\Controllers\PriceSettingsController.cs" />
     <Compile Include="Areas\Adminpanel\Controllers\TransactionsController.cs" />
     <Compile Include="Areas\Adminpanel\Controllers\VouchersController.cs" />
+    <Compile Include="Areas\Adminpanel\Controllers\XyzSenderIDsController.cs" />
     <Compile Include="Areas\ClientPanel\ClientPanelAreaRegistration.cs" />
     <Compile Include="Areas\ClientPanel\Controllers\AddressBookController.cs" />
     <Compile Include="Areas\ClientPanel\Controllers\DashboardController.cs" />
     <Compile Include="Areas\Content\ContentAreaRegistration.cs" />
     <Compile Include="Areas\Content\Models\Enum.cs" />
     <Compile Include="Areas\Content\Models\Slider.cs" />
-    <Compile Include="Auth\AuthFailureResult.cs" />
     <Compile Include="Auth\HttpAuthChallengeContextExtension.cs" />
-    <Compile Include="Auth\JwtAuthentication.cs" />
-    <Compile Include="Auth\JwtAuthManager.cs" />
-    <Compile Include="Auth\UnauthorizedResult.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\ApiXyzSmsController.cs" />
     <Compile Include="Controllers\AppController.cs" />
@@ -266,7 +263,6 @@
     <Compile Include="Controllers\GroupsController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
-    <Compile Include="Controllers\RequestTokenController.cs" />
     <Compile Include="Data\IServices\IPaystackTransactionService.cs" />
     <Compile Include="Data\IServices\IAddressBookService.cs" />
     <Compile Include="Data\IServices\IAdminSettings.cs" />
@@ -304,6 +300,7 @@
     <Compile Include="Dtos\Paystack\TransactionInitializationRequestModel.cs" />
     <Compile Include="Dtos\Paystack\TransactionResponse.cs" />
     <Compile Include="Dtos\SendMessageResponseDto.cs" />
+    <Compile Include="Dtos\SmsResponse.cs" />
     <Compile Include="Dtos\TransactionDto.cs" />
     <Compile Include="ExceptionUtility.cs" />
     <Compile Include="Global.asax.cs">
@@ -320,6 +317,10 @@
     <Compile Include="Migrations\202103120807338_userman.cs" />
     <Compile Include="Migrations\202103120807338_userman.Designer.cs">
       <DependentUpon>202103120807338_userman.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202309151605437_apiupdates.cs" />
+    <Compile Include="Migrations\202309151605437_apiupdates.Designer.cs">
+      <DependentUpon>202309151605437_apiupdates.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
@@ -351,6 +352,7 @@
     <Compile Include="Models\PriceSetting.cs" />
     <Compile Include="Models\Transaction.cs" />
     <Compile Include="Models\Voucher.cs" />
+    <Compile Include="Models\XyzSenderID.cs" />
     <Compile Include="Online.aspx.cs">
       <DependentUpon>Online.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -2002,6 +2004,14 @@
     <Content Include="fonts\fontawesome-webfont.svg" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
+    <Content Include="Areas\Adminpanel\Views\XyzSenderIDs\Create.cshtml" />
+    <Content Include="Areas\Adminpanel\Views\XyzSenderIDs\Delete.cshtml" />
+    <Content Include="Areas\Adminpanel\Views\XyzSenderIDs\Details.cshtml" />
+    <Content Include="Areas\Adminpanel\Views\XyzSenderIDs\Edit.cshtml" />
+    <Content Include="Areas\Adminpanel\Views\XyzSenderIDs\Index.cshtml" />
+    <Content Include="Areas\Adminpanel\Views\XyzSenderIDs\SenderByUser.cshtml" />
+    <Content Include="Areas\ClientPanel\Views\Dashboard\Create.cshtml" />
+    <Content Include="Areas\ClientPanel\Views\Dashboard\SenderByUser.cshtml" />
     <None Include="Json\jsonone.json" />
     <Content Include="HtmlPage1.html" />
     <Content Include="Online.aspx" />
@@ -2267,6 +2277,8 @@
     <Content Include="Areas\Adminpanel\Views\ModalInfoes\Edit.cshtml" />
     <Content Include="Areas\Adminpanel\Views\ModalInfoes\Index.cshtml" />
     <None Include="Properties\PublishProfiles\Default Settings.pubxml" />
+    <None Include="Properties\PublishProfiles\exwhyzee-001-site26 - FTP.pubxml" />
+    <None Include="Properties\PublishProfiles\exwhyzee-001-site26 - Web Deploy.pubxml" />
     <None Include="Properties\PublishProfiles\FolderProfile.pubxml" />
     <None Include="Scripts\jquery-1.12.4.intellisense.js" />
     <Content Include="Scripts\jquery-1.12.4.js" />
@@ -2287,6 +2299,9 @@
     <Content Include="Scripts\respond.js" />
     <Content Include="Scripts\respond.min.js" />
     <None Include="Scripts\_references.js" />
+    <Content Include="Sliderimage\288428924727Edit2.jpg" />
+    <Content Include="Sliderimage\575801122228Ed.png" />
+    <Content Include="Sliderimage\995786325347Edit.jpg" />
     <Content Include="Uploads\1.jpg" />
     <Content Include="Uploads\2.jpg" />
     <Content Include="Uploads\3.jpg" />
@@ -2360,7 +2375,6 @@
     <Folder Include="Areas\ClientPanel\Models\" />
     <Folder Include="Areas\Content\Controllers\" />
     <Folder Include="Areas\Content\Views\Shared\" />
-    <Folder Include="SliderImage\" />
     <Folder Include="Uploads\Contacts\" />
   </ItemGroup>
   <ItemGroup>
@@ -2380,6 +2394,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202103120807338_userman.resx">
       <DependentUpon>202103120807338_userman.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202309151605437_apiupdates.resx">
+      <DependentUpon>202309151605437_apiupdates.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

@@ -3454,11 +3454,11 @@ left: 70% !important;
     .sms{
         font-weight: bold;
         font-size: large;
-        color: #007acc;
+        color: #f40000;
     }
     .nav-link ul li a{
        text-decoration: none;
-       color: #007acc;
+       color: #f40000;
     }
     /*.nav-link ul li a:hover{
         background-color: #c7c7c7;
@@ -3469,11 +3469,11 @@ left: 70% !important;
         color: #ca5100;
     }
       .nav-link ul li a:visited{
-        color: #007acc;
+        color: #f40000;
     }
      .nav-link ul li a:focus{
         background-color: #d7ba7d;
-        color: #007acc;
+        color: #f40000;
     }
     .mail{
         vertical-align: middle;

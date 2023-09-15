@@ -133,46 +133,7 @@ s0.parentNode.insertBefore(s1,s0);
                         <!-- Tasks: style can be found in dropdown.less -->
                         <!-- User Account: style can be found in dropdown.less -->
                         @Html.Partial("_AccountPartialView")
-                        @*<li class="dropdown user user-menu">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                <img src="dist/img/user2-160x160.jpg" class="user-image" alt="User Image">
-                                <span class="hidden-xs">Alexander Pierce</span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                <!-- User image -->
-                                <li class="user-header">
-                                    <img src="dist/img/user2-160x160.jpg" class="img-circle" alt="User Image">
-                                    <p>
-                                        Alexander Pierce - Web Developer
-                                        <small>Member since Nov. 2012</small>
-                                    </p>
-                                </li>
-                                <!-- Menu Body -->
-                                <li class="user-body">
-                                    <div class="row">
-                                        <div class="col-xs-4 text-center">
-                                            <a href="#">Followers</a>
-                                        </div>
-                                        <div class="col-xs-4 text-center">
-                                            <a href="#">Sales</a>
-                                        </div>
-                                        <div class="col-xs-4 text-center">
-                                            <a href="#">Friends</a>
-                                        </div>
-                                    </div>
-                                    <!-- /.row -->
-                                </li>
-                                <!-- Menu Footer-->
-                                <li class="user-footer">
-                                    <div class="pull-left">
-                                        <a href="#" class="btn btn-default btn-flat">Profile</a>
-                                    </div>
-                                    <div class="pull-right">
-                                        <a href="#" class="btn btn-default btn-flat">Sign out</a>
-                                    </div>
-                                </li>
-                            </ul>
-                        </li>*@
+                         
                         <!-- Control Sidebar Toggle Button -->
                     </ul>
                 </div>
@@ -206,89 +167,94 @@ s0.parentNode.insertBefore(s1,s0);
                 </form>*@
                 <!-- /.search form -->
                 <!-- sidebar menu: : style can be found in sidebar.less -->
-                <ul class="sidebar-menu">
-                    <li class="header">MAIN NAVIGATION</li>
+            <ul class="sidebar-menu">
+                <li class="header">MAIN NAVIGATION</li>
+                <li>
+                    <a href="@Url.Content("~/clientpanel/Dashboard")">
+                        <i class="fa fa-dashboard"></i> <span>Dashboard</span>
+                    </a>
+                </li>
+                @if (User.IsInRole("Admin"))
+                {
                     <li>
-                        <a href="@Url.Content("~/clientpanel/Dashboard")">
-                            <i class="fa fa-dashboard"></i> <span>Dashboard</span>
+                        <a href="@Url.Content("~/adminpanel/main")">
+                            <i class="fa fa-dashboard"></i> <span>Admin Dashboard</span>
                         </a>
                     </li>
-                    @if (User.IsInRole("Admin"))
-                    {
+                }
+                <li>
+                    <a href="@Url.Content("~/clientpanel/Dashboard/SenderByUser")">
+
+                        <i class="fa fa-envelope-o"></i> <span>Sender IDs</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Content("~/clientpanel/Dashboard/compose")">
+
+                        <i class="fa fa-envelope-o"></i> <span>Compose SMS</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="@Url.Content("~/clientpanel/Dashboard/MessageHistory")">
+                        <i class="fa fa-envelope-o"></i> <span>Message History</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Content("~/clientpanel/Dashboard/draftmessages")">
+                        <i class="fa fa-envelope-o"></i> <span>Draft Messages</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Content("~/clientpanel/Dashboard/transactionhistory")">
+                        <i class="fa fa-money"></i> <span>Transaction History</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="@Url.Content("~/clientpanel/addressbook/")">
+                        <i class="fa fa-book"></i> <span>Address Book</span>
+                    </a>
+                </li>
+
+                <li class="treeview">
+                    <a href="#">
+                        <i class="fa fa-folder"></i> <span>Top Up Units</span>
+                        <span class="pull-right-container">
+                            <i class="fa fa-angle-left pull-right"></i>
+                        </span>
+                    </a>
+                    <ul class="treeview-menu">
+                        <li>@*<a href="@Url.Content("~/clientpanel/dashboard/buyunit")"><i class="fa fa-circle-o"></i>Buy SMS Units</a>*@</li>
+                        <li><a href="@Url.Content("~/clientpanel/dashboard/buyunit")"><i class="fa fa-circle-o"></i>Buy SMS Units</a></li>
+                        <li><a href="@Url.Content("~/clientpanel/dashboard/loadvoucher")"><i class="fa fa-circle-o"></i>Load Voucher</a></li>
+                    </ul>
+                </li>
+                <li class="treeview">
+                    <a href="#">
+                        <i class="fa fa-user"></i> <span>Profile</span>
+                        <span class="pull-right-container">
+                            <i class="fa fa-angle-left pull-right"></i>
+                        </span>
+                    </a>
+                    <ul class="treeview-menu">
                         <li>
-                            <a href="@Url.Content("~/adminpanel/main")">
-                                <i class="fa fa-dashboard"></i> <span>Admin Dashboard</span>
+                            <a href="@Url.Content("~/clientpanel/dashboard/Details")">
+                                <i class="fa fa-gear"></i> <span>Profile</span>
                             </a>
                         </li>
-                    }
 
-                    <li>
-                        <a href="@Url.Content("~/clientpanel/Dashboard/compose")">
-
-                            <i class="fa fa-envelope-o"></i> <span>Compose SMS</span>
-                        </a>
-                    </li>
-
-                    <li>
-                        <a href="@Url.Content("~/clientpanel/Dashboard/MessageHistory")">
-                            <i class="fa fa-envelope-o"></i> <span>Message History</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="@Url.Content("~/clientpanel/Dashboard/draftmessages")">
-                            <i class="fa fa-envelope-o"></i> <span>Draft Messages</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="@Url.Content("~/clientpanel/Dashboard/transactionhistory")">
-                            <i class="fa fa-money"></i> <span>Transaction History</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="@Url.Content("~/clientpanel/addressbook/")">
-                            <i class="fa fa-book"></i> <span>Address Book</span>
-                        </a>
-                    </li>
-
-                    <li class="treeview">
-                        <a href="#">
-                            <i class="fa fa-folder"></i> <span>Top Up Units</span>
-                            <span class="pull-right-container">
-                                <i class="fa fa-angle-left pull-right"></i>
-                            </span>
-                        </a>
-                        <ul class="treeview-menu">
-                            <li>@*<a href="@Url.Content("~/clientpanel/dashboard/buyunit")"><i class="fa fa-circle-o"></i>Buy SMS Units</a>*@</li>
-                            <li><a href="@Url.Content("~/clientpanel/dashboard/buyunit")"><i class="fa fa-circle-o"></i>Buy SMS Units</a></li>
-                            <li><a href="@Url.Content("~/clientpanel/dashboard/loadvoucher")"><i class="fa fa-circle-o"></i>Load Voucher</a></li>
-                        </ul>
-                    </li>
-                    <li class="treeview">
-                        <a href="#">
-                            <i class="fa fa-user"></i> <span>Profile</span>
-                            <span class="pull-right-container">
-                                <i class="fa fa-angle-left pull-right"></i>
-                            </span>
-                        </a>
-                        <ul class="treeview-menu">
-                            <li>
-                                <a href="@Url.Content("~/clientpanel/dashboard/Details")">
-                                    <i class="fa fa-gear"></i> <span>Profile</span>
-                                </a>
-                            </li>
-
-                            <li><a href="@Url.Action("ChangePassword","Account", new { area = "" })"><i class="fa fa-circle-o"></i>Change Password</a></li>
-                        </ul>
-                    </li>
+                        <li><a href="@Url.Action("ChangePassword","Account", new { area = "" })"><i class="fa fa-circle-o"></i>Change Password</a></li>
+                    </ul>
+                </li>
 
 
-                    <li><a href="#"><i class="fa fa-book"></i> <span>Documentation</span></a></li>
-                    <li><a href="@Url.Content("~/Home/")"><i class="fa fa-home"></i> <span>Home</span></a></li>
-                    @*<li class="header">LABELS</li>
-                    <li><a href="#"><i class="fa fa-circle-o text-red"></i> <span>Important</span></a></li>
-                    <li><a href="#"><i class="fa fa-circle-o text-yellow"></i> <span>Warning</span></a></li>
-                    <li><a href="#"><i class="fa fa-circle-o text-aqua"></i> <span>Information</span></a></li>*@
-                </ul>
+                <li><a href="#"><i class="fa fa-book"></i> <span>Documentation</span></a></li>
+                <li><a href="@Url.Content("~/Home/")"><i class="fa fa-home"></i> <span>Home</span></a></li>
+                @*<li class="header">LABELS</li>
+        <li><a href="#"><i class="fa fa-circle-o text-red"></i> <span>Important</span></a></li>
+        <li><a href="#"><i class="fa fa-circle-o text-yellow"></i> <span>Warning</span></a></li>
+        <li><a href="#"><i class="fa fa-circle-o text-aqua"></i> <span>Information</span></a></li>*@
+            </ul>
             </section>
             <!-- /.sidebar -->
         </aside>

@@ -49,7 +49,7 @@ namespace Exwhyzee.Messaging.Web.Models
         public DbSet<Slider> Sliders { get; set; }
         public DbSet<MessageChunk> MessageChunks { get; set; }
         public DbSet<ModalInfo> ModalInfos { get; set; }
-
+        public DbSet<XyzSenderID> XyzSenderIDs { get; set; }
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

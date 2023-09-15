@@ -21,5 +21,17 @@ namespace Exwhyzee.Messaging.Web.Models
         
         public ApplicationUser User { get; set; }
         public string Resent { get; set; }
+
+
+        public string Response_status { get; set; }
+        public string Response_error_code { get; set; }
+        public string Response_cost { get; set; }
+        public string[] Response_data { get; set; }
+        public string Response_msg { get; set; }
+        public int Response_length { get; set; }
+        public int Response_page { get; set; }
+        public string Response_balance { get; set; }
+
+        public string Response_BalanceResponse { get; set; }
     }
 }

@@ -23,7 +23,7 @@ namespace Exwhyzee.Messaging.Web.Auth
                 throw new ArgumentNullException(nameof(context));
             }
 
-            context.Result = new UnauthorizedResult(challenge, context.Result);
+            //context.Result = new UnauthorizedResult(challenge, context.Result);
         }
     }
 }
