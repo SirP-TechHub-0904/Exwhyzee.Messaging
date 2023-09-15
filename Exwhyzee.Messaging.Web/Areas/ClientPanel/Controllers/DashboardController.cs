@@ -402,7 +402,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
                 {
                     var response = await _clientService.SendSmsById(message.MessageId, totalUnitsNeeded);
                     var sentMessage = await _clientService.GetMessage(message.MessageId);
-                    if (response.ToUpper().Contains("OK") || response.ToUpper().Contains("1701"))
+                    if (response.status.ToLower().Contains("success"))
                     {
                         //Update Client
                         client.Units = client.Units - totalUnitsNeeded;
@@ -410,17 +410,46 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 
                         sentMessage.UnitsUsed = totalUnitsNeeded;
                         sentMessage.Status = MessageStatus.Sent;
-                        sentMessage.Response = response;
+                        sentMessage.Response = response.msg;
+                        sentMessage.Response_status = response.status;
+                        sentMessage.Response_error_code = response.error_code;
+                        sentMessage.Response_cost = response.cost;
+                        sentMessage.Response_data = response.data;
+                        sentMessage.Response_msg = response.msg;
+                        sentMessage.Response_length = response.length;
+                        sentMessage.Response_page = response.page;
+                        sentMessage.Response_balance = response.balance;
+                        sentMessage.Response_BalanceResponse = response.BalanceResponse;
                         await _clientService.UpdateMessageStatus(sentMessage);
 
                         ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
                         TempData["success"] = "Message has been sent successfully. Total Units used is " + totalUnitsNeeded + ".";
                         return RedirectToAction("Compose");
                     }
-                    else
+                    else if(response.status.ToLower().Contains("error"))
+                    {
+                        if(response.error_code == "106")
+                        {
+                            sentMessage.Response = response.msg;
+                            sentMessage.Response_status = response.status;
+                            sentMessage.Response_error_code = response.error_code;
+                            sentMessage.Response_cost = response.cost;
+                            sentMessage.Response_data = response.data;
+                            sentMessage.Response_msg = response.msg;
+                            sentMessage.Response_length = response.length;
+                            sentMessage.Response_page = response.page;
+                            sentMessage.Response_balance = response.balance;
+                            sentMessage.Response_BalanceResponse = response.BalanceResponse;
+                            await _clientService.UpdateMessageStatus(sentMessage);
+                            TempData["error"] = "The sender ID used do not exist or has not been approved.";
+                            ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
+                            return RedirectToAction("Compose");
+                            
+                        }
+                    }else
                     {
                         ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
-                        TempData["error"] = response + ". Sending Message Failed. Please try again or Contact the Administrator.";
+                        TempData["error"] = "Sending Message Failed. Please try again or Contact the Administrator.";
                         return View(model);
                     }
                 }
@@ -507,7 +536,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 
             var response = await _clientService.SendSmsById(message.MessageId, totalUnitsNeeded);
             var sentMessage = await _clientService.GetMessage(message.MessageId);
-            if (response.ToUpper().Contains("OK") || response.ToUpper().Contains("1701"))
+            if (response.status.ToLower().Contains("success"))
             {
                 //Update Client
                 client.Units = client.Units - totalUnitsNeeded;
@@ -515,7 +544,16 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 
                 sentMessage.UnitsUsed = totalUnitsNeeded;
                 sentMessage.Status = MessageStatus.Sent;
-                sentMessage.Response = response;
+                sentMessage.Response = response.msg;
+                sentMessage.Response_status = response.status;
+                sentMessage.Response_error_code = response.error_code;
+                sentMessage.Response_cost = response.cost;
+                sentMessage.Response_data = response.data;
+                sentMessage.Response_msg = response.msg;
+                sentMessage.Response_length = response.length;
+                sentMessage.Response_page = response.page;
+                sentMessage.Response_balance = response.balance;
+                sentMessage.Response_BalanceResponse = response.BalanceResponse;
                 await _clientService.UpdateMessageStatus(sentMessage);
 
 
@@ -666,7 +704,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
                 {
                     var response = await _clientService.SendSmsById(message.MessageId, totalUnitsNeeded);
                     var sentMessage = await _clientService.GetMessage(message.MessageId);
-                    if (response.ToUpper().Contains("OK") || response.ToUpper().Contains("1701"))
+                    if (response.status.ToLower().Contains("success"))
                     {
                         //Update Client
                         client.Units = client.Units - totalUnitsNeeded;
@@ -674,7 +712,16 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 
                         sentMessage.UnitsUsed = totalUnitsNeeded;
                         sentMessage.Status = MessageStatus.Sent;
-                        sentMessage.Response = response;
+                        sentMessage.Response = response.msg;
+                        sentMessage.Response_status = response.status;
+                        sentMessage.Response_error_code = response.error_code;
+                        sentMessage.Response_cost = response.cost;
+                        sentMessage.Response_data = response.data;
+                        sentMessage.Response_msg = response.msg;
+                        sentMessage.Response_length = response.length;
+                        sentMessage.Response_page = response.page;
+                        sentMessage.Response_balance = response.balance;
+                        sentMessage.Response_BalanceResponse = response.BalanceResponse;
                         await _clientService.UpdateMessageStatus(sentMessage);
 
                         ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
@@ -736,7 +783,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 
             return View(msg.OrderByDescending(x => x.DeliveredDate).ToPagedList(pageNumber, pageSize));
         }
-
+         
         public async Task<ActionResult> DraftMessages()
         {
             var user = await UserManager.FindByNameAsync(User.Identity.Name);
@@ -838,7 +885,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             else
             {
                 var response = await _clientService.SendSmsById(messageId, totalUnitsNeeded);
-                if (response.ToUpper().Contains("OK") || response.ToUpper().Contains("1701"))
+                if (response.status.ToLower().Contains("success"))
                 {
                     //Update Client
                     client.Units = client.Units - totalUnitsNeeded;
@@ -846,7 +893,16 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 
                     sentMessage.UnitsUsed = totalUnitsNeeded;
                     sentMessage.Status = MessageStatus.Sent;
-                    sentMessage.Response = response;
+                    sentMessage.Response = response.msg;
+                    sentMessage.Response_status = response.status;
+                    sentMessage.Response_error_code = response.error_code;
+                    sentMessage.Response_cost = response.cost;
+                    sentMessage.Response_data = response.data;
+                    sentMessage.Response_msg = response.msg;
+                    sentMessage.Response_length = response.length;
+                    sentMessage.Response_page = response.page;
+                    sentMessage.Response_balance = response.balance;
+                    sentMessage.Response_BalanceResponse = response.BalanceResponse;
                     await _clientService.UpdateMessageStatus(sentMessage);
                 }
                 else
@@ -1068,6 +1124,38 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             TempData["error"] = $"Transaction with Reference {tranxRef} failed.";
 
             return RedirectToAction("TransactionHistory");
+        }
+        public async Task<ActionResult> SenderByUser()
+        {
+            string userId = User.Identity.GetUserId();
+            var client = await _clientService.GetClientDetailsByUserId(userId);
+            ViewBag.name = client.Surname + " " + client.FirstName + " " + client.OtherNames;
+            return View(await _clientService.GetAllSenderIdById(userId));
+        }
+
+
+        // GET: Adminpanel/XyzSenderIDs/Create
+        public ActionResult Create()
+        {
+            return View();
+        }
+
+        // POST: Adminpanel/XyzSenderIDs/Create
+        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
+        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Create(string SenderId, string Message)
+        {
+            if (ModelState.IsValid)
+            {
+                string userId = User.Identity.GetUserId();
+                var response = await _clientService.AddSender(userId, SenderId, Message);
+                TempData["success"] = response;
+                return RedirectToAction("SenderByUser");
+            }
+            TempData["error"] = "unable to process";
+            return View(); 
         }
 
 

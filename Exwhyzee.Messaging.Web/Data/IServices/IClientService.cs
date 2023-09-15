@@ -27,9 +27,9 @@ namespace Exwhyzee.Messaging.Web.Data.IServices
         ///USERS END
         ///
 
-        Task<string> SendSms(string senderId, string message, string recipients);
+        Task<SmsResponse> SendSms(string senderId, string message, string recipients);
 
-        Task<string> SendSmsById(int messageHistoryId, decimal units);
+        Task<SmsResponse> SendSmsById(int messageHistoryId, decimal units);
 
         Task<List<Message>> GetClientMessageHistory(string userId);
 
@@ -48,5 +48,14 @@ namespace Exwhyzee.Messaging.Web.Data.IServices
         Task UpdateMessageStatus(Message item);
 
         Task<SendMessageResponseDto> ComposeSms(ComposeSmsDto model, string userId);
+
+        Task<GeneralResponse> SubmitSenderId(string senderId, string senderMessage);
+        Task<GeneralResponse> VerifySenderId(string senderId);
+
+        Task<string> AddSender(string userId, string senderId, string message);
+        Task<string> VerifySender(string senderId);
+        Task<List<XyzSenderID>> GetAllSenderId();
+        Task<List<XyzSenderID>> GetAllSenderIdById(string userId);
+
     }
 }

@@ -13,7 +13,13 @@
         <strong>Success!</strong> @TempData["Success"]
     </div>
 }
-
+@if (TempData["success"] != null)
+{
+    <div class="alert alert-success alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <strong>Success!</strong> @TempData["Success"]
+    </div>
+}
 @if (TempData["warning"] != null)
 {
     <div class="alert alert-warning alert-dismissible" role="alert">

@@ -1,0 +1,58 @@
+﻿@model Exwhyzee.Messaging.Web.Models.XyzSenderID
+
+@{
+    ViewBag.Title = "Details";
+}
+
+<h2>Details</h2>
+
+<div>
+    <h4>XyzSenderID</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.SenderId)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.SenderId)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.XYZ_status)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.XYZ_status)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.XYZ_error_code)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.XYZ_error_code)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.XYZ_msg)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.XYZ_msg)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Verify_msg)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Verify_msg)
+        </dd>
+
+    </dl>
+</div>
+<p>
+    @Html.ActionLink("Edit", "Edit", new { id = Model.Id }) |
+    @Html.ActionLink("Back to List", "Index")
+</p>

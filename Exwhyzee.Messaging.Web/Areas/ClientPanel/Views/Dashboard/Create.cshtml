@@ -1,0 +1,66 @@
+﻿@model Exwhyzee.Messaging.Web.Models.XyzSenderID
+
+@{
+    ViewBag.Title = "Create";
+}
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small>Manage Sender IDs</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Manage Sender IDs</a></li>
+        <li class="active">Add Sender ID</li>
+    </ol>
+</section>
+
+<section class="content">
+    @Html.Partial("_ResponseMessagePartial")
+
+    <div class="col-md-8 col-md-offset-2">
+        <div class="box box-danger">
+            <div class="box-header">
+                <h3 class="box-title">Add New Sender ID </h3>
+            </div>
+
+            <div class="box-body">
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="">
+
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                        <div class="form-group">
+                            @Html.Label("Sender Id (maximum of 11 characters)", htmlAttributes: new { @class = "control-label" })
+                            <div class="">
+                                @Html.Editor("SenderId", new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.SenderId, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label">
+                                Message (Type any text message of your choice to validate submission. Thanks)
+                            </label>
+                            <div class="">
+                                @Html.Editor("Message", new { htmlAttributes = new { @class = "form-control" } })
+                                @Html.ValidationMessageFor(model => model.XYZ_status, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-md-offset-2 col-md-10">
+                                <input type="submit" value="Submit" class="btn btn-primary" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

@@ -335,7 +335,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
             {
                 var response = await _clientService.SendSmsById(message.MessageId, totalUnitsNeeded);
                 var sentMessage = await _clientService.GetMessage(message.MessageId);
-                if (response.ToUpper().Contains("OK") || response.ToUpper().Contains("1701"))
+                if (response.status.ToLower().Contains("success"))
                 {
                     //Update Client
                     client.Units = client.Units - totalUnitsNeeded;
@@ -343,7 +343,16 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
                     sentMessage.UnitsUsed = totalUnitsNeeded;
                     sentMessage.Status = MessageStatus.Sent;
-                    sentMessage.Response = response;
+                    sentMessage.Response = response.msg;
+                    sentMessage.Response_status = response.status;
+                    sentMessage.Response_error_code = response.error_code;
+                    sentMessage.Response_cost = response.cost;
+                    sentMessage.Response_data = response.data;
+                    sentMessage.Response_msg = response.msg;
+                    sentMessage.Response_length = response.length;
+                    sentMessage.Response_page = response.page;
+                    sentMessage.Response_balance = response.balance;
+                    sentMessage.Response_BalanceResponse = response.BalanceResponse;
                     await _clientService.UpdateMessageStatus(sentMessage);
 
                     return Request.CreateResponse(HttpStatusCode.OK, "Message has been sent successfully. Total Units used is " + totalUnitsNeeded + ".");

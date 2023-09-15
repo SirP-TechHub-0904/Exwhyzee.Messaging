@@ -1,0 +1,73 @@
+﻿@model IEnumerable<Exwhyzee.Messaging.Web.Models.XyzSenderID>
+
+@{
+    ViewBag.Title = "SenderByUser";
+}
+
+
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small>Manage Sender IDs</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Manage Sender IDs</a></li>
+        <li class="active">Sender IDs List</li>
+    </ol>
+</section>
+
+<section class="content">
+    @Html.Partial("_ResponseMessagePartial")
+
+    <div class="box">
+        <div class="box-header">
+            <h3 class="box-title">My Sender IDs  <small class="label bg-green"> @Model.Count()</small></h3>
+            <span class="pull-right">
+                @Html.ActionLink("New Sender ID", "Create", null, new{@class= "btn btn-primary" })
+
+             </span>
+        </div>
+        <div class="box-body table-responsive">
+            <table id="example1" class="table table-bordered table-striped">
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.SenderId)
+                    </th>
+                   
+                    <th>
+                       Status
+                    </th>
+                    
+                </tr>
+
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.SenderId)
+                        </td>
+                         
+                        <td>
+                            @Html.DisplayFor(modelItem => item.XYZ_msg)
+                        </td>
+                        
+                    </tr>
+                }
+
+            </table>
+        </div>
+    </div>
+</section>
+
+@section scripts{
+
+    <script src="~/Content/Dashboard/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/Dashboard/plugins/datatables/dataTables.bootstrap.min.js"></script>
+
+    <script>
+        $(function () {
+            $("#example1").DataTable();
+
+        });
+    </script>
+}
