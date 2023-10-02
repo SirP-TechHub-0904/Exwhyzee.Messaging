@@ -95,6 +95,10 @@
                             </td>
                             <td>
                                 @Html.DisplayFor(modelItem => item.Status)
+                                @if (item.TransactionType == Exwhyzee.Messaging.Web.Models.TransactionType.OnlinePayment && item.Status == Exwhyzee.Messaging.Web.Models.TransactionStatus.Pending)
+                                {
+                                    @Html.ActionLink("Retry", "PayNow", new { id = item.TransactionId }, new {@class="btn btn-primary btn-xs"})
+                                }
                             </td>
 
                             @*<td>

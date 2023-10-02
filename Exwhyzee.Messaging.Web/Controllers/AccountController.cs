@@ -1,4 +1,6 @@
-﻿using Exwhyzee.Messaging.Web.Models;
+﻿using Exwhyzee.Messaging.Web.Data.IServices;
+using Exwhyzee.Messaging.Web.Data.Services;
+using Exwhyzee.Messaging.Web.Models;
 using Exwhyzee.Messaging.Web.Services;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
@@ -22,6 +24,8 @@ namespace Exwhyzee.Messaging.Web.Controllers
         private ApplicationSignInManager _signInManager;
         private ApplicationUserManager _userManager;
         private ApplicationRoleManager _roleManager;
+        private ISendEmail _email = new SendEmail();
+        private IDashboardService _dashboardService = new DashboardService();
 
         public AccountController()
         {
@@ -32,7 +36,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
             UserManager = userManager;
             SignInManager = signInManager;
             RoleManager = roleManager;
-        }
+         }
 
         public ApplicationSignInManager SignInManager
         {
@@ -250,6 +254,11 @@ namespace Exwhyzee.Messaging.Web.Controllers
             {
                 if (user.EmailConfirmed == false)
                 {
+                    string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
+                    var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                    string mailnote = "Confirm your account" + string.Format("<a href='{0}'>HERE</a>", callbackUrl);
+                    await _email.SendEmailAsync(mailnote, user.Email, "Account Comfirmation");
+
                     return RedirectToAction("GoToMail", new { id = user.Id });
                 }
 
@@ -491,18 +500,18 @@ namespace Exwhyzee.Messaging.Web.Controllers
         {
             if (ModelState.IsValid)
             {
-                RecaptchaVerificationHelper recaptchaHelper = this.GetRecaptchaVerificationHelper();
-                if (string.IsNullOrEmpty(recaptchaHelper.Response))
-                {
-                    ModelState.AddModelError("", "Captcha answer cannot be empty.");
-                    return View(model);
-                }
-                RecaptchaVerificationResult recaptchaResult = await recaptchaHelper.VerifyRecaptchaResponseTaskAsync();
-                if (recaptchaResult != RecaptchaVerificationResult.Success)
-                {
-                    ModelState.AddModelError("", "Incorrect captcha answer.");
-                    return View(model);
-                }
+                //RecaptchaVerificationHelper recaptchaHelper = this.GetRecaptchaVerificationHelper();
+                //if (string.IsNullOrEmpty(recaptchaHelper.Response))
+                //{
+                //    ModelState.AddModelError("", "Captcha answer cannot be empty.");
+                //    return View(model);
+                //}
+                //RecaptchaVerificationResult recaptchaResult = await recaptchaHelper.VerifyRecaptchaResponseTaskAsync();
+                //if (recaptchaResult != RecaptchaVerificationResult.Success)
+                //{
+                //    ModelState.AddModelError("", "Incorrect captcha answer.");
+                //    return View(model);
+                //}
                 var user = new ApplicationUser { UserName = model.Username, Email = model.Email };
 
                 //Add Other properties
@@ -520,7 +529,8 @@ namespace Exwhyzee.Messaging.Web.Controllers
                     // Send an email with this link
                     string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
                     var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
-                    await UserManager.SendEmailAsync(user.Id, "Confirm your account", string.Format("<a href='{0}'>HERE</a>", callbackUrl));
+                    string mailnote = "Confirm your account " + string.Format("<a href='{0}'>HERE</a>", callbackUrl) + "<br><br>or copy the link below to your browser<br><br>"+callbackUrl;
+                    await _email.SendEmailAsync(mailnote, user.Email, "Account Comfirmation");
                     return RedirectToAction("GoToMail", new { id = user.Id });
                 }
                 AddErrors(result);
@@ -533,9 +543,11 @@ namespace Exwhyzee.Messaging.Web.Controllers
         [AllowAnonymous]
         public async Task<ActionResult> ResendActivationCode(string id)
         {
-            string code = await UserManager.GenerateEmailConfirmationTokenAsync(id);
-            var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = id, code = code }, protocol: Request.Url.Scheme);
-            await UserManager.SendEmailAsync(id, "Confirm your account", string.Format("<a href='{0}'>HERE</a>", callbackUrl));
+            var user = await UserManager.FindByIdAsync(id);
+            string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
+            var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+            string mailnote = "Confirm your account " + string.Format("<a href='{0}'>HERE</a>", callbackUrl) + "<br><br>or copy the link below to your browser<br><br>" + callbackUrl;
+            await _email.SendEmailAsync(mailnote, user.Email, "Account Comfirmation");
             TempData["success"] = "Verification Mail Resent, check your inbox or spam folder";
             return RedirectToAction("GoToMail", new { id = id });
         }
@@ -555,6 +567,11 @@ namespace Exwhyzee.Messaging.Web.Controllers
             if (userId == null || code == null)
             {
                 return View("Error");
+            }
+            var check = await UserManager.FindByIdAsync(userId);
+            if(check.EmailConfirmed == true)
+            {
+                return RedirectToAction("Login");
             }
             var result = await UserManager.ConfirmEmailAsync(userId, code);
             return View(result.Succeeded ? "ConfirmEmail" : "Error");
@@ -587,9 +604,9 @@ namespace Exwhyzee.Messaging.Web.Controllers
                 // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
                 // Send an email with this link
                 string code = await UserManager.GeneratePasswordResetTokenAsync(user.Id);
-                var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
-                await UserManager.SendEmailAsync(user.Id, "Reset Password", "Please reset your password by clicking <a href=\"" + callbackUrl + "\">here</a>");
-
+                var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                string mailnote = "Confirm your account " + string.Format("<a href='{0}'>HERE</a>", callbackUrl) + "<br><br>or copy the link below to your browser<br><br>" + callbackUrl;
+                await _email.SendEmailAsync(mailnote, user.Email, "Account Comfirmation");
                 return RedirectToAction("ForgotPasswordConfirmation", "Account");
             }
 

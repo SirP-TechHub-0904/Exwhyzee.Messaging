@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\EntityFramework.6.4.4\build\EntityFramework.props" Condition="Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -51,10 +52,10 @@
       <HintPath>..\packages\AutoMapper.Attributes.6.0.1\lib\net45\AutoMapper.Attributes.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+      <HintPath>..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+      <HintPath>..\packages\EntityFramework.6.4.4\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="Hangfire.Core, Version=1.7.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Hangfire.Core.1.7.3\lib\net46\Hangfire.Core.dll</HintPath>
@@ -230,6 +231,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AppConfig.cs" />
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\IdentityConfig.cs" />
@@ -270,6 +272,7 @@
     <Compile Include="Data\IServices\IClientService.cs" />
     <Compile Include="Data\IServices\IDashboardService.cs" />
     <Compile Include="Data\IServices\IPriceSettingsService.cs" />
+    <Compile Include="Data\IServices\ISendEmail.cs" />
     <Compile Include="Data\IServices\ITransactionService.cs" />
     <Compile Include="Data\IServices\IVoucherService.cs" />
     <Compile Include="Data\Services\PaystackTransactionService.cs" />
@@ -280,6 +283,7 @@
     <Compile Include="Data\Services\ClientService.cs" />
     <Compile Include="Data\Services\DashboardService.cs" />
     <Compile Include="Data\Services\PriceSettingService.cs" />
+    <Compile Include="Data\Services\SendEmail.cs" />
     <Compile Include="Data\Services\TransactionService.cs" />
     <Compile Include="Data\Services\VoucherService.cs" />
     <Compile Include="Dtos\ApiBalanceFirstDto.cs" />
@@ -360,6 +364,47 @@
     <Compile Include="Online.aspx.designer.cs">
       <DependentUpon>Online.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Paystack\BaseConstants.cs" />
+    <Compile Include="Paystack\Charge\PaystackCharge.cs" />
+    <Compile Include="Paystack\Customers\PaystackCustomers.cs" />
+    <Compile Include="Paystack\Fees\ChargeHelper.cs" />
+    <Compile Include="Paystack\Fees\PaystackFee.cs" />
+    <Compile Include="Paystack\HttpConnection.cs" />
+    <Compile Include="Paystack\HttpExtension\UrlEncodedHelper.cs" />
+    <Compile Include="Paystack\Interfaces\ICharge.cs" />
+    <Compile Include="Paystack\Interfaces\IChargeHelper.cs" />
+    <Compile Include="Paystack\Interfaces\ICustomers.cs" />
+    <Compile Include="Paystack\Interfaces\IPlans.cs" />
+    <Compile Include="Paystack\Interfaces\ISubAccounts.cs" />
+    <Compile Include="Paystack\Interfaces\ISubscriptions.cs" />
+    <Compile Include="Paystack\Interfaces\ITransactions.cs" />
+    <Compile Include="Paystack\Interfaces\ITransfers.cs" />
+    <Compile Include="Paystack\Interfaces\IVerification.cs" />
+    <Compile Include="Paystack\Models\Authorizations\RequestAuthorizationModel.cs" />
+    <Compile Include="Paystack\Models\Charge\ChargeAuthorizationInputModel.cs" />
+    <Compile Include="Paystack\Models\Charge\ChargeCardInputModel.cs" />
+    <Compile Include="Paystack\Models\Charge\ChargeResponseModel.cs" />
+    <Compile Include="Paystack\Models\Customers\CustomerCreationResponse.cs" />
+    <Compile Include="Paystack\Models\Exports\ExportResponseModel.cs" />
+    <Compile Include="Paystack\Models\PaymentInitalizationResponseModel.cs" />
+    <Compile Include="Paystack\Models\Plans\PlansModel.cs" />
+    <Compile Include="Paystack\Models\Subaccounts\CreateSubAccount\SubAccountModel.cs" />
+    <Compile Include="Paystack\Models\Subscription\SubscriptionModel.cs" />
+    <Compile Include="Paystack\Models\TransactionInitializationRequestModel.cs" />
+    <Compile Include="Paystack\Models\TransactionListViewModel.cs" />
+    <Compile Include="Paystack\Models\TransactionResponseModel.cs" />
+    <Compile Include="Paystack\Models\Transfers\Initiation\TransferInitiationModel.cs" />
+    <Compile Include="Paystack\Models\Transfers\Recipient\TransferRecipientModel.cs" />
+    <Compile Include="Paystack\Models\Transfers\TransferDetails\TransferDetailsModel.cs" />
+    <Compile Include="Paystack\Models\TransTotal\TransactionTotal.cs" />
+    <Compile Include="Paystack\Models\Verification\BVNVerificationResponseModel.cs" />
+    <Compile Include="Paystack\PayStackApi.cs" />
+    <Compile Include="Paystack\Plans\PaystackPlans.cs" />
+    <Compile Include="Paystack\Subaccounts\PaystackSubaccounts.cs" />
+    <Compile Include="Paystack\Subscription\PaystackSubscription.cs" />
+    <Compile Include="Paystack\Transactions\PaystackTransaction.cs" />
+    <Compile Include="Paystack\Transfers\PaystackTransfers.cs" />
+    <Compile Include="Paystack\Verification\Verification.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Results\ChallengeResult.cs" />
     <Compile Include="Services\BlockBlackListedWordsAttribute.cs" />
@@ -2427,6 +2472,14 @@
       </FlavorProperties>
     </VisualStudio>
   </ProjectExtensions>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\EntityFramework.6.4.4\build\EntityFramework.props'))" />
+    <Error Condition="!Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\EntityFramework.6.4.4\build\EntityFramework.targets'))" />
+  </Target>
+  <Import Project="..\packages\EntityFramework.6.4.4\build\EntityFramework.targets" Condition="Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
