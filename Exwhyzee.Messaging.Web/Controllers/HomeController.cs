@@ -12,13 +12,14 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Helpers;
 using System.Web.Mvc;
+using static Exwhyzee.Messaging.Web.Services.GeneralServices;
 
 namespace Exwhyzee.Messaging.Web.Controllers
 {
     public class HomeController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
-
+        [HttpGet, Tls]
         public async Task<ActionResult> Index()
         {
             return View();

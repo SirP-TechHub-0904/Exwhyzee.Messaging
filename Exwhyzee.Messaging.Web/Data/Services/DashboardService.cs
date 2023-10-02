@@ -2,6 +2,7 @@
 using Exwhyzee.Messaging.Web.Dtos;
 using Exwhyzee.Messaging.Web.Models;
 using Exwhyzee.Messaging.Web.Services;
+using Swashbuckle.Swagger;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -35,34 +36,34 @@ namespace Exwhyzee.Messaging.Web.Data.Services
             return await message.ToListAsync();
         }
 
-        
+
         public async Task<List<Transaction>> ClientLastTransactions(int? clientId)
         {
 
             var transactions = db.Transactions.Where(x => x.ClientId == clientId).OrderByDescending(x => x.TransactionId).ToList();
-            if(transactions.Count() > 0)
+            if (transactions.Count() > 0)
             {
-               return transactions = transactions.Take(10).ToList();
+                return transactions = transactions.Take(10).ToList();
             }
             else
             {
                 return transactions = null;
             }
-           
+
         }
 
         public async Task<int> ClientPendingTransactions(int? clientId)
         {
             var transactions = db.Transactions.Where(x => x.Status == TransactionStatus.Pending && x.ClientId == clientId);
-            if(transactions != null)
+            if (transactions != null)
             {
-return await transactions.CountAsync();
+                return await transactions.CountAsync();
             }
             else
             {
                 return 0;
             }
-            
+
         }
 
         public async Task<List<Message>> ClientScheduledMessages(int? displayCount, string userId)
@@ -77,7 +78,7 @@ return await transactions.CountAsync();
 
         public async Task<List<Client>> GetLastUsers(int? displayCount)
         {
-            var users = db.Clients.OrderByDescending(x => x.ClientId).Include(m=>m.User).Take(displayCount.Value);
+            var users = db.Clients.OrderByDescending(x => x.ClientId).Include(m => m.User).Take(displayCount.Value);
             return await users.ToListAsync();
         }
 
@@ -87,7 +88,7 @@ return await transactions.CountAsync();
             {
                 displayCount = 0;
             }
-            var messages = db.Messages.Where(x=>x.Status == MessageStatus.Sent).OrderByDescending(x => x.MessageId).Take(displayCount.Value);
+            var messages = db.Messages.Where(x => x.Status == MessageStatus.Sent).OrderByDescending(x => x.MessageId).Take(displayCount.Value);
             return await messages.ToListAsync();
         }
 
@@ -104,7 +105,7 @@ return await transactions.CountAsync();
 
         public async Task<List<Transaction>> LastSuccessTransactions(int? displayCount)
         {
-            var transactions = db.Transactions.Where(x=>x.Status == TransactionStatus.Approved).OrderByDescending(x=>x.TransactionId).AsNoTracking().Take(displayCount.Value);
+            var transactions = db.Transactions.Where(x => x.Status == TransactionStatus.Approved).OrderByDescending(x => x.TransactionId).AsNoTracking().Take(displayCount.Value);
             return await transactions.ToListAsync();
         }
 
@@ -124,7 +125,7 @@ return await transactions.CountAsync();
             return await messages.ToListAsync();
         }
 
-       
+
         public async Task<int> TotalClients()
         {
             var users = db.Users.CountAsync();
@@ -178,28 +179,37 @@ return await transactions.CountAsync();
 
         public async Task<MessageDetailDto> MessageDetails(int Id)
         {
-            var message = await db.Messages.Include(x=>x.User).FirstOrDefaultAsync(x=>x.MessageId == Id);
+            var message = await db.Messages.Include(x => x.User).FirstOrDefaultAsync(x => x.MessageId == Id);
             string n = message.Recipients.Replace("\r\n", ",");
             IList<string> numbers = n.Split(new string[] { ",", " " }, StringSplitOptions.RemoveEmptyEntries);
             numbers = numbers.Distinct().ToList();
             if (message != null)
             {
-               
-                  var output = new MessageDetailDto
+
+                var output = new MessageDetailDto
                 {
-                   MessageId = message.MessageId,
-                   SenderId = message.SenderId,
-                   Recipients = message.Recipients,
-                   MessageContent = message.MessageContent,
-                   Response = message.Response,
-                   UnitsUsed = message.UnitsUsed,
-                   Scheduleddate = message.Scheduleddate,
-                   DeliveredDate = message.DeliveredDate,
-                   Status = message.Status,
-                   Username = message.User.UserName,
-                   RecipientsCount = numbers.Count()
+                    MessageId = message.MessageId,
+                    SenderId = message.SenderId,
+                    Recipients = message.Recipients,
+                    MessageContent = message.MessageContent,
+                    Response = message.Response,
+                    UnitsUsed = message.UnitsUsed,
+                    Scheduleddate = message.Scheduleddate,
+                    DeliveredDate = message.DeliveredDate,
+                    Status = message.Status,
+                    Username = message.User.UserName,
+                    RecipientsCount = numbers.Count(),
 
 
+                    Response_status = message.Response_status,
+                    Response_error_code = message.Response_error_code,
+                    Response_cost = message.Response_cost,
+                    Response_data = message.Response_data,
+                    Response_msg = message.Response_msg,
+                    Response_length = message.Response_length,
+                    Response_page = message.Response_page,
+                    Response_balance = message.Response_balance,
+                    Response_BalanceResponse = message.Response_BalanceResponse,
                 };
 
                 return output;
@@ -213,21 +223,21 @@ return await transactions.CountAsync();
 
             var mchunk = chunk.Select(c => new MessageChunkDto()
             {
-               MessageChunkId = c.MessageChunkId,
-               MessageId = c.MessageId,
-               Numbers = c.Numbers,
-               Response = c.Response,
-               NumbersCount = GeneralServices.NumberCount(c.Numbers)
+                MessageChunkId = c.MessageChunkId,
+                MessageId = c.MessageId,
+                Numbers = c.Numbers,
+                Response = c.Response,
+                NumbersCount = GeneralServices.NumberCount(c.Numbers)
             }).ToList();
 
-            
+
             return mchunk;
         }
 
         public async Task<ApiBalanceFirstDto> ApiBalanceFirstDto()
         {
-            var getApi = await db.ApiSettings.OrderByDescending(x=>x.ApiSettingId).FirstOrDefaultAsync();
-            
+            var getApi = await db.ApiSettings.OrderByDescending(x => x.ApiSettingId).FirstOrDefaultAsync();
+
             string apiSending = getApi.CheckBalance;
 
             HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(apiSending);
@@ -245,7 +255,7 @@ return await transactions.CountAsync();
             ///string inputStr =  "($23.01)";      
             response = Regex.Match(response, @"\d+.+\d").Value;
             response = response.Substring(0, response.IndexOf(','));
-          
+
             //response = response.Substring(0, response.Length - 2);
             var output = new ApiBalanceFirstDto()
             {

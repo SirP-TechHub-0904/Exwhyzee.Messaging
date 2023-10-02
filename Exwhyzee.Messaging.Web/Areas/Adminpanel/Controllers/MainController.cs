@@ -82,8 +82,8 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             || s.Resent.ToString().ToUpper().Contains(searchString.ToUpper())
             || s.UnitsUsed.ToString().ToUpper().Contains(searchString.ToUpper())).ToList();
             }
-            items = items.OrderByDescending(x => x.MessageId).ToList();
-            int pageSize = 100;
+            items = items.OrderByDescending(x => x.DeliveredDate).ToList();
+            int pageSize = 50;
             int pageNumber = (page ?? 1);
             return View(items.ToPagedList(pageNumber, pageSize));
 

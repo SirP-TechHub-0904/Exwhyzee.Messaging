@@ -17,6 +17,9 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using PagedList;
+using Exwhyzee.Messaging.Web.PayStack;
+using Exwhyzee.Messaging.Web.PayStack.Models;
+using static Exwhyzee.Messaging.Web.Services.GeneralServices;
 
 namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 {
@@ -26,6 +29,9 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         private ApplicationDbContext db = new ApplicationDbContext();
 
         private IClientService _clientService = new ClientService();
+        private ISendEmail _email = new SendEmail();
+
+        private IPayStackApi _paystack = new PayStackApi(AppConfig.PayStackSecretKey);
         private ITransactionService _transactions = new TransactionService();
         private IDashboardService _dashboardService = new DashboardService();
         private IPaystackTransactionService _paystackTransactionService = new PaystackTransactionService();
@@ -50,7 +56,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         {
             _dashboardService = dashboardService;
         }
-
+        [HttpGet, Tls]
         // GET: ClientPanel/Dashboard
         public async Task<ActionResult> Index()
         {
@@ -948,6 +954,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> BuyUnit(BuyUnitsViewModel model)
         {
+            model.PricePerUnit = db.AdminSettings.FirstOrDefault().PricePerUnit;
             if (ModelState.IsValid && model.Units > 0)
             {
                 try
@@ -1015,13 +1022,14 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             {
                 return HttpNotFound();
             }
-            //sk_test_0d3376a0ea624ce9a7b12980f73b1e6a4139ebc8
-            var secretKey = "sk_test_0d3376a0ea624ce9a7b12980f73b1e6a4139ebc8";
 
             int amountInKobo = (int)transaction.Amount * 100;
+            var callbackUrl = Url.Action("Complete", "Dashboard", new { transactionid = id, area = "ClientPanel" }, protocol: Request.Url.Scheme);
 
-            var response = await _paystackTransactionService.InitializeTransaction(secretKey, clientedit.User.Email, amountInKobo, transaction.TransactionId, clientedit.FirstName,
-                clientedit.Surname);
+            var response = await _paystack.Transactions.InitializeTransaction(clientedit.User.Email, amountInKobo,
+                clientedit.FirstName, clientedit.Surname, callbackUrl, transaction.TransactionId.ToString(), false
+                );
+           
 
             if (response.status == true)
             {
@@ -1042,26 +1050,25 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         public async Task<ActionResult> Complete()
         {
             //
-            //var secretKey = _config["SecretKey"];
-            var secretKey = "sk_test_0d3376a0ea624ce9a7b12980f73b1e6a4139ebc8";
-            if (HttpContext.Request["reference"].ToString() == null)
+              if (HttpContext.Request["reference"].ToString() == null)
             {
                 TempData["error"] = $"Transaction Invalid.";
 
                 return RedirectToAction("TransactionHistory");
             }
             var tranxRef = HttpContext.Request["reference"].ToString();
+            var transactionId = HttpContext.Request["transactionid"].ToString();
             if (tranxRef != null)
             {
-                var response = await _paystackTransactionService.VerifyTransaction(tranxRef, secretKey);
-
-                var id = int.Parse(response.data.metadata.CustomFields.FirstOrDefault(x => x.DisplayName == "Transaction Id").Value);
+                TransactionResponseModel response = await _paystack.Transactions.VerifyTransaction(tranxRef);
+                //var id = 0;
+                var id = int.Parse(transactionId);
                 var transaction = await _transactions.GetTransaction(id);
 
                 var userid = User.Identity.GetUserId();
                 var clientedit = await _clientService.GetClientDetailsByUserId(userid);
 
-                if (response.status)
+                if (response.status == true)
                 {
 
 
@@ -1098,7 +1105,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
                         string MessageBody = TempData["success"] + " Your xyzsms account has been credited. Balance is N" + clientedit.Units + ". Thanks for your patronage @ http://xyzsms.com.";
                         var emailMessage = string.Format("{0};??{1};??{2};??{3}", "Transaction Notification", "Transaction Notification", "Thanks " + clientedit.User.UserName, MessageBody);
 
-
+                        await _email.SendEmailAsync(emailMessage, clientedit.User.Email, "Transaction Notification");
                         await _clientService.SendSms("xyzsms", MessageBody, clientedit.User.PhoneNumber);
 
 
