@@ -16,6 +16,7 @@ using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 using System.Net.Http;
 using System.Configuration;
+using System.Runtime.InteropServices;
 
 namespace Exwhyzee.Messaging.Web.Data.Services
 {
@@ -416,7 +417,7 @@ namespace Exwhyzee.Messaging.Web.Data.Services
 
         public async Task<SmsResponse> SendSmsById(int messageHistoryId, decimal units)
         {
-            SmsResponse responsed = null;
+            SmsResponse responsed = new SmsResponse();
             
             string apiToken = ConfigurationManager.AppSettings["ApiToken"];
             var messageHistory = await db.Messages.FindAsync(messageHistoryId);
@@ -441,7 +442,7 @@ namespace Exwhyzee.Messaging.Web.Data.Services
             if (units > AdminBal)
             {
                 responsed.BalanceResponse = "message unit is greater than balance error 88009-8899-333";
-
+                responsed.status = "fail";
                 return responsed;
             }
             //get cost of message
@@ -472,7 +473,7 @@ namespace Exwhyzee.Messaging.Web.Data.Services
             }
             catch (Exception c)
             {
-
+                ExceptionUtility.LogException(c, "");
             }
             //response = "ok";
             responsed.msg = "Unable to send message";

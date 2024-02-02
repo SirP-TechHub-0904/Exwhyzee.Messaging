@@ -452,10 +452,32 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
                             return RedirectToAction("Compose");
                             
                         }
-                    }else
+                    }
+                    else if (response.status.ToLower().Contains("Blocked"))
+                    {
+                        if (response.error_code == "106")
+                        {
+                            sentMessage.Response = response.msg;
+                            sentMessage.Response_status = response.status;
+                            sentMessage.Response_error_code = response.error_code;
+                            sentMessage.Response_cost = response.cost;
+                            sentMessage.Response_data = response.data;
+                            sentMessage.Response_msg = response.msg;
+                            sentMessage.Response_length = response.length;
+                            sentMessage.Response_page = response.page;
+                            sentMessage.Response_balance = response.balance;
+                            sentMessage.Response_BalanceResponse = response.BalanceResponse;
+                            await _clientService.UpdateMessageStatus(sentMessage);
+                            TempData["error"] = response.msg;
+                            ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
+                            return RedirectToAction("Compose");
+
+                        }
+                    }
+                    else
                     {
                         ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
-                        TempData["error"] = "Sending Message Failed. Please try again or Contact the Administrator.";
+                        TempData["error"] = "Sending Message Failed. Please try again or Contact the Administrator...";
                         return View(model);
                     }
                 }
