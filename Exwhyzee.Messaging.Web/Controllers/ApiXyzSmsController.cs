@@ -348,9 +348,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
                         }
                         else
                         {
-                            //ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
-                            //TempData["error"] = response + ". Sending Message Failed. Please try again or Contact the Administrator.";
-                            //return View(model);
+                            return Ok("Invalid Sender ID");
                         }
                     }
                     else if (smssendoption == "SendLater")
