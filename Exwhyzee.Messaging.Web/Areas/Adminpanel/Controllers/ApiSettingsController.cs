@@ -1,4 +1,4 @@
-﻿using Exwhyzee.Messaging.Web.Data.IServices;
+using Exwhyzee.Messaging.Web.Data.IServices;
 using Exwhyzee.Messaging.Web.Data.Services;
 using Exwhyzee.Messaging.Web.Models;
 using Newtonsoft.Json;
@@ -64,7 +64,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create([Bind(Include = "ApiSettingId,Name,Sending,CheckBalance,IsDefault")] ApiSetting apiSetting)
+        public async Task<ActionResult> Create([Bind(Include = "ApiSettingId,Name,Token,Sending,CheckBalance,IsDefault")] ApiSetting apiSetting)
         {
             if (ModelState.IsValid)
             {
@@ -102,7 +102,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "ApiSettingId,Name,Sending,CheckBalance,IsDefault")] ApiSetting apiSetting)
+        public async Task<ActionResult> Edit([Bind(Include = "ApiSettingId,Name,Token,Sending,CheckBalance,IsDefault")] ApiSetting apiSetting)
         {
             if (ModelState.IsValid)
             {

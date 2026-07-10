@@ -326,6 +326,10 @@
     <Compile Include="Migrations\202309151605437_apiupdates.Designer.cs">
       <DependentUpon>202309151605437_apiupdates.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202607101634597_int-update-new.cs" />
+    <Compile Include="Migrations\202607101634597_int-update-new.Designer.cs">
+      <DependentUpon>202607101634597_int-update-new.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\AdminSetting.cs" />
@@ -2442,6 +2446,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202309151605437_apiupdates.resx">
       <DependentUpon>202309151605437_apiupdates.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202607101634597_int-update-new.resx">
+      <DependentUpon>202607101634597_int-update-new.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
