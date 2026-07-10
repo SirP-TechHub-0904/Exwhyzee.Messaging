@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Exwhyzee.Messaging.Web.Models.XyzSenderID>
+@model IEnumerable<Exwhyzee.Messaging.Web.Models.XyzSenderID>
 
 @{
     ViewBag.Title = "SenderByUser";
@@ -37,7 +37,9 @@
                     <th>
                        Status
                     </th>
-                    
+                    <th>
+                       Action
+                    </th>
                 </tr>
 
                 @foreach (var item in Model)
@@ -50,7 +52,14 @@
                         <td>
                             @Html.DisplayFor(modelItem => item.XYZ_msg)
                         </td>
-                        
+                        <td>
+                            @using (Html.BeginForm("VerifySenderId", "Dashboard", new { area = "ClientPanel" }, FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="senderId" value="@item.SenderId" />
+                                <button type="submit" class="btn btn-sm btn-info">Verify</button>
+                            }
+                        </td>
                     </tr>
                 }
 

@@ -1,4 +1,4 @@
-﻿using Exwhyzee.Messaging.Web.Data.IServices;
+using Exwhyzee.Messaging.Web.Data.IServices;
 using Exwhyzee.Messaging.Web.Dtos;
 using Exwhyzee.Messaging.Web.Models;
 using Exwhyzee.Messaging.Web.Services;
@@ -13,6 +13,8 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
+using System.Net.Http;
+using Newtonsoft.Json;
 
 namespace Exwhyzee.Messaging.Web.Data.Services
 {
@@ -236,60 +238,60 @@ namespace Exwhyzee.Messaging.Web.Data.Services
 
         public async Task<ApiBalanceFirstDto> ApiBalanceFirstDto()
         {
-            var getApi = await db.ApiSettings.OrderByDescending(x => x.ApiSettingId).FirstOrDefaultAsync();
+            var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
+            if (getApi == null) return new ApiBalanceFirstDto { Balance = "0", Name = "No Default API" };
 
-            string apiSending = getApi.CheckBalance;
-
-            HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(apiSending);
-            httpWebRequest.Method = "GET";
-            httpWebRequest.ContentType = "application/json";
-            httpWebRequest.Timeout = 25000;
-
-            //getting the respounce from the request
-            HttpWebResponse httpWebResponse = (HttpWebResponse)await httpWebRequest.GetResponseAsync();
-            Stream responseStream = httpWebResponse.GetResponseStream();
-            StreamReader streamReader = new StreamReader(responseStream);
-            string response = await streamReader.ReadToEndAsync();
-            ////response = response.Remove(0, 11);
-            //// response = response.Substring(0, 5);
-            ///string inputStr =  "($23.01)";      
-            response = Regex.Match(response, @"\d+.+\d").Value;
-            response = response.Substring(0, response.IndexOf(','));
-
-            //response = response.Substring(0, response.Length - 2);
-            var output = new ApiBalanceFirstDto()
+            try
             {
-                Balance = response,
-                Name = getApi.Name
-            };
-            return output;
+                var clientbal = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/balance");
+                var content = new MultipartFormDataContent();
+                content.Add(new StringContent(getApi.Token ?? ""), "token");
+                request.Content = content;
+                var balresponse = await clientbal.SendAsync(request);
+                balresponse.EnsureSuccessStatusCode();
+                var balanceresponse = await balresponse.Content.ReadAsStringAsync();
+                var balresponsed = JsonConvert.DeserializeObject<BalanceResponse>(balanceresponse);
+
+                return new ApiBalanceFirstDto()
+                {
+                    Balance = balresponsed.msg,
+                    Name = getApi.Name
+                };
+            }
+            catch
+            {
+                return new ApiBalanceFirstDto() { Balance = "Error", Name = getApi.Name };
+            }
         }
 
         public async Task<ApiBalanceSecondDto> ApiBalanceSecondDto()
         {
-            var getApi = await db.ApiSettings.OrderByDescending(x => x.ApiSettingId).Skip(1).FirstOrDefaultAsync();
+            var getApi = await db.ApiSettings.Where(x => x.IsDefault == false).OrderByDescending(x => x.ApiSettingId).FirstOrDefaultAsync();
+            if (getApi == null) return new ApiBalanceSecondDto { Balance = "0", Name = "N/A" };
 
-            string apiSending = getApi.CheckBalance;
-
-            HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(apiSending);
-            httpWebRequest.Method = "GET";
-            httpWebRequest.ContentType = "application/json";
-            httpWebRequest.Timeout = 25000;
-
-            //getting the respounce from the request
-            HttpWebResponse httpWebResponse = (HttpWebResponse)await httpWebRequest.GetResponseAsync();
-            Stream responseStream = httpWebResponse.GetResponseStream();
-            StreamReader streamReader = new StreamReader(responseStream);
-            string response = await streamReader.ReadToEndAsync();
-            response = Regex.Match(response, @"\d+.+\d").Value;
-            response = response.Substring(0, response.IndexOf(','));
-            //response = response.Substring(0, response.Length - 2);
-            var output = new ApiBalanceSecondDto()
+            try
             {
-                Balance = response,
-                Name = getApi.Name
-            };
-            return output;
+                var clientbal = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/balance");
+                var content = new MultipartFormDataContent();
+                content.Add(new StringContent(getApi.Token ?? ""), "token");
+                request.Content = content;
+                var balresponse = await clientbal.SendAsync(request);
+                balresponse.EnsureSuccessStatusCode();
+                var balanceresponse = await balresponse.Content.ReadAsStringAsync();
+                var balresponsed = JsonConvert.DeserializeObject<BalanceResponse>(balanceresponse);
+
+                return new ApiBalanceSecondDto()
+                {
+                    Balance = balresponsed.msg,
+                    Name = getApi.Name
+                };
+            }
+            catch
+            {
+                return new ApiBalanceSecondDto() { Balance = "0", Name = getApi.Name };
+            }
         }
     }
 }

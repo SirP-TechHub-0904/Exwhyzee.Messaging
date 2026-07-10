@@ -1,4 +1,4 @@
-﻿using Hangfire;
+using Hangfire;
 using Exwhyzee.Messaging.Web.Controllers;
 using Exwhyzee.Messaging.Web.Data.IServices;
 using Exwhyzee.Messaging.Web.Data.Services;
@@ -1187,6 +1187,21 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             return View(); 
         }
 
+
+        [HttpPost]
+        public async Task<ActionResult> VerifySenderId(string senderId)
+        {
+            try
+            {
+                var response = await _clientService.VerifySender(senderId);
+                TempData["success"] = response;
+            }
+            catch (Exception ex)
+            {
+                TempData["error"] = "Unable to verify Sender ID at this time.";
+            }
+            return RedirectToAction("SenderByUser");
+        }
 
         //user profile
         public async Task<ActionResult> Details()

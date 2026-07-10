@@ -9,7 +9,8 @@ namespace Exwhyzee.Messaging.Web.Migrations
     {
         public Configuration()
         {
-            AutomaticMigrationsEnabled = false;
+            AutomaticMigrationsEnabled = true;
+            AutomaticMigrationDataLossAllowed = true;
         }
 
         protected override void Seed(Exwhyzee.Messaging.Web.Models.ApplicationDbContext context)

@@ -1,4 +1,4 @@
-﻿using Hangfire;
+using Hangfire;
 using Exwhyzee.Messaging.Web.Data.IServices;
 using Exwhyzee.Messaging.Web.Dtos;
 using Exwhyzee.Messaging.Web.Models;
@@ -127,25 +127,14 @@ namespace Exwhyzee.Messaging.Web.Data.Services
 
         public async Task<SmsResponse> SendSms(string senderId, string message, string recipients)
         {
-            //get API to use
-            //var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
-            //string apiSending = getApi.Sending.Replace("@@sender@@", HttpUtility.UrlEncode(senderId)).Replace("@@recipient@@", HttpUtility.UrlEncode(recipients)).Replace("@@message@@", HttpUtility.UrlEncode(message));
+            var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
+            if (getApi == null) return new SmsResponse { status = "error", msg = "No default API found" };
 
-            //HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(apiSending);
-            //httpWebRequest.Method = "GET";
-            //httpWebRequest.ContentType = "application/json";
-            //httpWebRequest.Timeout = 25000;
-
-            ////getting the respounce from the request
-            //HttpWebResponse httpWebResponse = (HttpWebResponse)await httpWebRequest.GetResponseAsync();
-            //Stream responseStream = httpWebResponse.GetResponseStream();
-            //StreamReader streamReader = new StreamReader(responseStream);
-            //string response = await streamReader.ReadToEndAsync();
             var client = new HttpClient();
             var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/sms");
             var content = new MultipartFormDataContent();
-            content.Add(new StringContent("Sv9QJKbEuysLndpqT5r0tXIM2hFZxoVOjcPgfiD1H7UY64waeGCARBkWz83mlN"), "token");
-            content.Add(new StringContent("senderId"), "senderID");
+            content.Add(new StringContent(getApi.Token ?? ""), "token");
+            content.Add(new StringContent(senderId), "senderID");
             content.Add(new StringContent(recipients), "recipients");
             content.Add(new StringContent(message), "message");
             content.Add(new StringContent("1"), "gateway");
@@ -419,15 +408,16 @@ namespace Exwhyzee.Messaging.Web.Data.Services
         {
             SmsResponse responsed = new SmsResponse();
             
-            string apiToken = ConfigurationManager.AppSettings["ApiToken"];
             var messageHistory = await db.Messages.FindAsync(messageHistoryId);
             var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
-            //check our balance and theirs
-            var getApiBal = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
-            string apiSendingbal = getApiBal.CheckBalance;
-
-
-
+            if (getApi == null)
+            {
+                responsed.msg = "No Default API configured";
+                responsed.status = "fail";
+                return responsed;
+            }
+            string apiToken = getApi.Token ?? "";
+            
             var clientbal = new HttpClient();
             var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/balance");
             var content = new MultipartFormDataContent();
@@ -518,7 +508,8 @@ namespace Exwhyzee.Messaging.Web.Data.Services
         public async Task<GeneralResponse> SubmitSenderId(string senderId, string senderMessage)
         {
             var clients = new HttpClient();
-            string apiToken = ConfigurationManager.AppSettings["ApiToken"];
+            var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
+            string apiToken = getApi != null ? (getApi.Token ?? "") : "";
             var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/senderID");
             var content = new MultipartFormDataContent();
             content.Add(new StringContent(apiToken), "token");
@@ -535,7 +526,8 @@ namespace Exwhyzee.Messaging.Web.Data.Services
         public async Task<GeneralResponse> VerifySenderId(string senderId)
         {
             var clients = new HttpClient();
-            string apiToken = ConfigurationManager.AppSettings["ApiToken"];
+            var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
+            string apiToken = getApi != null ? (getApi.Token ?? "") : "";
             var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/check_senderID");
             var content = new MultipartFormDataContent();
             content.Add(new StringContent(apiToken), "token");
@@ -578,7 +570,22 @@ namespace Exwhyzee.Messaging.Web.Data.Services
             }
             else
             {
-                return "Sender ID already registered";
+                try
+                {
+                    var response = await SubmitSenderId(senderId, message);
+                    check.XYZ_error_code = response.error_code;
+                    check.XYZ_msg = response.msg;
+                    check.XYZ_status = response.status;
+                }
+                catch (Exception c)
+                {
+                    check.XYZ_msg = c.ToString();
+                    check.XYZ_status = "Not Verified and Submitted";
+                }
+
+                db.Entry(check).State = EntityState.Modified;
+                await db.SaveChangesAsync();
+                return "Sender ID resubmitted. Result: " + check.XYZ_msg;
             }
         }
 
@@ -603,13 +610,17 @@ namespace Exwhyzee.Messaging.Web.Data.Services
             {
                 var response = await VerifySenderId(xsenderid.SenderId);
                 xsenderid.Verify_msg = response.msg;
-
+                xsenderid.XYZ_msg = response.msg;
+                xsenderid.XYZ_status = response.status;
+                db.Entry(xsenderid).State = EntityState.Modified;
+                await db.SaveChangesAsync();
+                return response.msg;
             }
             catch (Exception c)
             {
                 xsenderid.Verify_msg = c.ToString();
+                return "Error checking status";
             }
-            return "success";
         }
     }
 
