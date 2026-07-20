@@ -1,22 +1,26 @@
-﻿using System;
+using Microsoft.Extensions.DependencyInjection;
+using System.Security.Claims;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Net;
-using System.Web;
-using System.Web.Mvc;
-using Exwhyzee.Messaging.Web.Models;
-using Exwhyzee.Messaging.Web.Data.IServices;
-using Exwhyzee.Messaging.Web.Data.Services;
-using Microsoft.AspNet.Identity;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Exwhyzee.Messaging.Core.Models;
+using Exwhyzee.Messaging.Core.Data.IServices;
+using Exwhyzee.Messaging.Core.Data.Services;
+using Microsoft.AspNetCore.Identity;
 
 namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 {
+    [Area("Adminpanel")]
     public class XyzSenderIDsController : Controller
     {
-        private ApplicationDbContext db = new ApplicationDbContext();
+        private ApplicationDbContext db => HttpContext.RequestServices.GetService<ApplicationDbContext>();
         private IClientService _clientService = new ClientService();
 
         public XyzSenderIDsController(IClientService clientService)
@@ -53,7 +57,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (ModelState.IsValid)
             {
-                string userId = User.Identity.GetUserId();
+                string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 var response = await _clientService.AddSender(userId, SenderId, Message);
                 TempData["success"] = response;
                 return RedirectToAction("Index");
@@ -73,3 +77,6 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         }
     }
 }
+
+
+

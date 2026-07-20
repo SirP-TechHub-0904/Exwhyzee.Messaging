@@ -1,27 +1,29 @@
-﻿using Exwhyzee.Messaging.Web.Areas.Content.Models;
-using Exwhyzee.Messaging.Web.Models;
-using Exwhyzee.Messaging.Web.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Exwhyzee.Messaging.Core.Models;
+// removed using
+using Exwhyzee.Messaging.Core.Services;
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Helpers;
-using System.Web.Mvc;
-using static Exwhyzee.Messaging.Web.Services.GeneralServices;
+
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using static Exwhyzee.Messaging.Core.Services.GeneralServices;
 
 namespace Exwhyzee.Messaging.Web.Controllers
 {
     public class HomeController : Controller
     {
-        private ApplicationDbContext db = new ApplicationDbContext();
-        [HttpGet, Tls]
-        public async Task<ActionResult> Index()
-        {
+        private ApplicationDbContext db => HttpContext.RequestServices.GetService<ApplicationDbContext>();
+        [HttpGet]
+        public async Task<ActionResult> Index() {
+            ViewBag.slides = System.IO.Directory.EnumerateFiles(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "SliderImage")).Select(fn => "~/SliderImage/" + System.IO.Path.GetFileName(fn));
             return View();
         }
         public async Task<ActionResult> SmsFeatures()
@@ -32,7 +34,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
         public ActionResult _slider()
         {
-            ViewBag.slides = Directory.EnumerateFiles(Server.MapPath("~/SliderImage"))
+            ViewBag.slides = Directory.EnumerateFiles(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "SliderImage"))
                                      .Select(fn => "~/SliderImage/" + Path.GetFileName(fn));
             return PartialView();
         }
@@ -46,7 +48,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
         }
 
         //adding new slide
-        [HttpPost, ValidateInput(false)]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult AddSlider(Slider slider)
         {
@@ -55,14 +57,13 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
             if (ModelState.IsValid)
             {
-                if (Request.Files.Count > 0)
+                if (Request.Form.Files.Count > 0)
                 {
-                    HttpPostedFileBase file = Request.Files[0];
-                    if (file.ContentLength > 0 && file.ContentType.ToUpper().Contains("JPEG") || file.ContentType.ToUpper().Contains("PNG") || file.ContentType.ToUpper().Contains("JPG"))
+                    IFormFile file = Request.Form.Files[0];
+                    if (file.Length > 0 && file.ContentType.ToUpper().Contains("JPEG") || file.ContentType.ToUpper().Contains("PNG") || file.ContentType.ToUpper().Contains("JPG"))
                     {
-                        WebImage img = new WebImage(file.InputStream);
-                        string fileName = Path.Combine(Server.MapPath("~/SliderImage/"), Path.GetFileName(genNumber + file.FileName));
-                        img.Save(fileName);
+                        string fileName = Path.Combine(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "SliderImage"), Path.GetFileName(genNumber + file.FileName));
+                        using (var stream = new System.IO.FileStream(fileName, System.IO.FileMode.Create)) { file.CopyTo(stream); }
                         slider.ImageUrl = Path.GetFileName(genNumber + file.FileName);
                     }
                 }
@@ -81,12 +82,12 @@ namespace Exwhyzee.Messaging.Web.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Slider slider = await db.Sliders.FindAsync(id);
             if (slider == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(slider);
         }
@@ -99,7 +100,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
             Slider slide = await db.Sliders.FindAsync(id);
             var slidename = slide.ImageUrl;
 
-            var delName = Server.MapPath("~/SliderImage/" + slidename);
+            var delName = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "SliderImage", slidename);
             if ((System.IO.File.Exists(delName)))
             {
                 System.IO.File.Delete(delName);
@@ -139,3 +140,8 @@ namespace Exwhyzee.Messaging.Web.Controllers
         }
     }
 }
+
+
+
+
+

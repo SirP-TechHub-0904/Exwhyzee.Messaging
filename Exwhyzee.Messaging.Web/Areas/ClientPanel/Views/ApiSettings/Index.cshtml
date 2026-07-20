@@ -1,0 +1,121 @@
+@model Exwhyzee.Messaging.Core.Models.Client
+@{
+    ViewBag.Title = "API Settings";
+}
+
+<section class="content-header">
+    <h1>
+        Dashboard
+        <small>API Settings</small>
+    </h1>
+    <ol class="breadcrumb">
+        <li><a href="#"><i class="fa fa-dashboard"></i> Dashboard</a></li>
+        <li class="active">API Settings</li>
+    </ol>
+</section>
+
+<section class="content">
+    <div class="box">
+        <div class="box-header">
+            <h3 class="box-title">API Settings</h3>
+            <p class="text-muted" style="margin-top: 5px;">
+                Manage your API Key for accessing the Developer API.
+            </p>
+        </div>
+        <div class="box-body">
+
+            @if (TempData["Message"] != null)
+            {
+                <div class="alert alert-success">
+                    @TempData["Message"]
+                </div>
+            }
+
+            <div class="form-group">
+                <label>Current API Key</label>
+                <div class="input-group">
+                    <input type="@(string.IsNullOrEmpty(Model.ApiKey) ? "text" : "password")" id="apiKeyInput" class="form-control" value="@(string.IsNullOrEmpty(Model.ApiKey) ? "No API Key Generated" : Model.ApiKey)" readonly />
+                    <span class="input-group-btn">
+                        <button class="btn btn-default" type="button" id="toggleApiKeyBtn" title="Show/Hide API Key">
+                            <i class="fa fa-eye"></i>
+                        </button>
+                        <button class="btn btn-default" type="button" id="copyApiKeyBtn" title="Copy API Key">
+                            <i class="fa fa-copy"></i>
+                        </button>
+                    </span>
+                </div>
+            </div>
+
+            <div class="m-t-30" style="margin-top: 30px;">
+                @using (Html.BeginForm("RegenerateKey", "ApiSettings", FormMethod.Post, new { @class = "d-inline-block m-r-10", style="display:inline-block; margin-right: 10px;" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to regenerate your API Key? The old key will stop working immediately.');">
+                        @(string.IsNullOrEmpty(Model.ApiKey) ? "Generate API Key" : "Regenerate API Key")
+                    </button>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.ApiKey))
+                {
+                    using (Html.BeginForm("DeleteKey", "ApiSettings", FormMethod.Post, new { @class = "d-inline-block", style="display:inline-block;" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete your API Key? You will lose access to the API.');">
+                            Delete API Key
+                        </button>
+                    }
+                }
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                <h4>Developer Documentation</h4>
+                <p class="text-muted">Explore the API endpoints, view request examples, and test the API using our interactive documentation powered by Scalar.</p>
+                <a href="@Url.Action("Documentation", "ApiSettings")" target="_blank" class="btn btn-success">
+                    <i class="fa fa-book"></i> View API Documentation
+                </a>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+@section scripts {
+    <script>
+        $(document).ready(function () {
+            $('#toggleApiKeyBtn').click(function () {
+                var input = $('#apiKeyInput');
+                var icon = $(this).find('i');
+                if (input.attr('type') === 'password') {
+                    input.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    input.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+
+            $('#copyApiKeyBtn').click(function () {
+                var input = document.getElementById("apiKeyInput");
+                var originalType = input.type;
+                if (originalType === 'password') {
+                    input.type = 'text';
+                }
+                
+                input.select();
+                input.setSelectionRange(0, 99999);
+
+                document.execCommand("copy");
+                
+                if (originalType === 'password') {
+                    input.type = 'password';
+                }
+
+                var icon = $(this).find('i');
+                icon.removeClass('fa-copy').addClass('fa-check text-success');
+                setTimeout(function () {
+                    icon.removeClass('fa-check text-success').addClass('fa-copy');
+                }, 2000);
+            });
+        });
+    </script>
+}

@@ -1,4 +1,4 @@
-ï»¿@*@model IEnumerable<Exwhyzee.Messaging.Web.Areas.Content.Models.Post>*@
+@*@model IEnumerable<Exwhyzee.Messaging.Core.Models.Post>*@
 
 @{
     ViewBag.Title = "XYZ SMS";
@@ -23,7 +23,7 @@
 
 <div class="container-fluid" style="margin-top:0px;">
     @section Slider{
-        @Html.Action("_slider", "Home")
+        @await Html.PartialAsync("_slider")
 
     }
 </div>
@@ -71,7 +71,7 @@
         <ul style="list-style-type: circle;" class="text-justify comment more">
 
             <li>
-                Log on to your account on <b style="color: #ff6a00;">www.xyzsms.com</b> if you have registered. If not, click <b style="color: #ff6a00;">â€œRegisterâ€</b> and put in your details to get registered. You will get an activation link on your mail that you have registered. Click on it to get you registered.
+                Log on to your account on <b style="color: #ff6a00;">www.xyzsms.com</b> if you have registered. If not, click <b style="color: #ff6a00;">“Register”</b> and put in your details to get registered. You will get an activation link on your mail that you have registered. Click on it to get you registered.
             @Html.ActionLink(" Read More", "SmsFeatures", "Home")
             </li>
           
@@ -94,7 +94,7 @@
     <ul class="text-justify comment more" style="list-style-type:circle;">
         <li> Log on to your account <b style="color: #ff6a00;">www.xyzsms.com</b></li>
         <li>
-            Click on <b style="color: #ff6a00;">â€œCompose SMSâ€</b> on the left hand side.
+            Click on <b style="color: #ff6a00;">“Compose SMS”</b> on the left hand side.
         </li>
         <li>
             When the Compose page opens up, type your Sender ID. This is the name that you</li>
@@ -155,3 +155,5 @@
 @section Scripts {
     
 }
+
+

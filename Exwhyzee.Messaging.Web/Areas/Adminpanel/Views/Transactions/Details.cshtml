@@ -1,5 +1,5 @@
-﻿@model Exwhyzee.Messaging.Web.Models.Transaction
-@using Exwhyzee.Messaging.Web.Services
+@model Exwhyzee.Messaging.Core.Models.Transaction
+@using Exwhyzee.Messaging.Core.Services
 
 @{
     ViewBag.Title = "Transaction Details";
@@ -95,7 +95,7 @@
             </div>
             <div class="col-md-4">
                 <div class="" style="margin-bottom:10px;">
-                    @if (Model.Status == Exwhyzee.Messaging.Web.Models.TransactionStatus.Approved)
+                    @if (Model.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Approved)
                     {
                         <button type="button" class="btn btn-block btn-lg btn-success">APPROVED</button>
                     }
@@ -118,7 +118,7 @@
                 </div>
 
                 @*<div class="" style="margin-bottom:10px;">
-                                        @if (Model.Status == Exwhyzee.Messaging.Web.Models.TransactionStatus.Approved)
+                                        @if (Model.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Approved)
                                         {
                                             <button type="button" class="btn btn-block btn-lg btn-warning">NOT APPROVED</button>
                                         }

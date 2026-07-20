@@ -1,29 +1,30 @@
-﻿using Microsoft.AspNet.Identity.Owin;
+using Exwhyzee.Messaging.Core.Models;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
-using System.Web.Http;
-using System.Web.Mvc;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Exwhyzee.Messaging.Web.Controllers
 {
     public class BaseController : Controller
     {
-        private ApplicationUserManager _userManager;
+        private Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
 
-        public BaseController()
-        {
-        }
+        
 
-        public BaseController(ApplicationUserManager userManager)
+        public BaseController() { }
+        public BaseController(Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager)
         {
             _userManager = userManager;
         }
 
-        public ApplicationUserManager UserManager
+        public Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
         {
-            get => _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+            get => _userManager ?? HttpContext?.RequestServices?.GetService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
             private set
             {
                 _userManager = value;
@@ -42,3 +43,5 @@ namespace Exwhyzee.Messaging.Web.Controllers
         }
     }
 }
+
+

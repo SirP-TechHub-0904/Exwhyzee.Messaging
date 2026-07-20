@@ -1,4 +1,4 @@
-﻿@using Exwhyzee.Messaging.Web.Models
+@using Exwhyzee.Messaging.Core.Models
 @model LoginViewModel
 
 @{
@@ -31,9 +31,14 @@
                 @Html.ValidationMessageFor(m => m.UserName)
             </div>
             <div class="form-group has-feedback">
-                <input type="password" class="form-control" name="Password" placeholder="Password" />
+                <input type="password" id="passwordInput" class="form-control" name="Password" placeholder="Password" />
                 <span class="fa fa-lock form-control-feedback"></span>
                 @Html.ValidationMessageFor(m => m.Password)
+            </div>
+            <div class="form-group" style="text-align: right;">
+                <label style="font-weight: normal; cursor: pointer;">
+                    <input type="checkbox" onclick="togglePassword()"> Show Password
+                </label>
             </div>
             <div class="row">
                 <div class="col-xs-8">
@@ -64,4 +69,17 @@
 
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        function togglePassword() {
+            var x = document.getElementById("passwordInput");
+            if (x.type === "password") {
+                x.type = "text";
+            } else {
+                x.type = "password";
+            }
+        }
+    </script>
 }
+
+
+

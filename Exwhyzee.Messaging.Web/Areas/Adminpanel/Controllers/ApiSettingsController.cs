@@ -1,29 +1,29 @@
-using Exwhyzee.Messaging.Web.Data.IServices;
-using Exwhyzee.Messaging.Web.Data.Services;
-using Exwhyzee.Messaging.Web.Models;
+using Exwhyzee.Messaging.Core.Data.IServices;
+using Exwhyzee.Messaging.Core.Data.Services;
+using Exwhyzee.Messaging.Core.Models;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Mvc;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 {
     [Authorize(Roles = "SuperAdmin")]
+    [Area("Adminpanel")]
     public class ApiSettingsController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
         private IApiSettings _apiSettings = new ApiSettings();
 
-        public ApiSettingsController()
-        {
-        }
+        
 
         public ApiSettingsController(ApiSettings apiSettings)
         {
@@ -41,12 +41,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             ApiSetting apiSetting = await _apiSettings.GetApi(id);
             if (apiSetting == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(apiSetting);
         }
@@ -64,7 +64,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create([Bind(Include = "ApiSettingId,Name,Token,Sending,CheckBalance,IsDefault")] ApiSetting apiSetting)
+        public async Task<ActionResult> Create(ApiSetting apiSetting)
         {
             if (ModelState.IsValid)
             {
@@ -87,12 +87,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             ApiSetting apiSetting = await _apiSettings.GetApi(id);
             if (apiSetting == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(apiSetting);
         }
@@ -102,7 +102,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "ApiSettingId,Name,Token,Sending,CheckBalance,IsDefault")] ApiSetting apiSetting)
+        public async Task<ActionResult> Edit(ApiSetting apiSetting)
         {
             if (ModelState.IsValid)
             {
@@ -137,12 +137,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             ApiSetting apiSetting = await _apiSettings.GetApi(id);
             if (apiSetting == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(apiSetting);
         }

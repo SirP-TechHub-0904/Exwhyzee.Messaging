@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="eng">
 <head>
@@ -6,9 +6,17 @@
     <title>@ViewBag.Title - XYZSMS</title>
     @RenderSection("meta", required: false)
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="~/Content/image/xyzico.png" rel="shortcut icon" type="image/x-icon" />
+    <link href="/Content/image/xyzico.png" rel="shortcut icon" type="image/x-icon" />
 
-    @Styles.Render("~/Admin/css")
+    <link rel="stylesheet" href="/Content/Dashboard/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/font-awesome/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/ionicons/css/ionicons.min.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/dist/css/AdminLTE.min.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/dist/css/site.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/dist/css/skins/_all-skins.min.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/plugins/iCheck/flat/blue.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/plugins/datepicker/datepicker3.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css" />
     @RenderSection("styles", required: false)
 </head>
 
@@ -18,7 +26,11 @@
     @*<div class="container"</div>*@
 
  
-    @Scripts.Render("~/bundles/adminjs")
+    <script src="/Content/Dashboard/plugins/jQuery/jquery-2.2.3.min.js"></script>
+    <script src="/Content/Dashboard/plugins/jQuery/jquery-ui-1.12.0.min.js"></script>
+    <script src="/Content/Dashboard/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/Content/Dashboard/plugins/datepicker/bootstrap-datepicker.js"></script>
+    <script src="/Content/Dashboard/dist/js/app.min.js"></script>
     
     @*<script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>*@
     <script>
@@ -29,3 +41,4 @@
     @RenderSection("Scripts", required: false)
 </body>
 </html>
+

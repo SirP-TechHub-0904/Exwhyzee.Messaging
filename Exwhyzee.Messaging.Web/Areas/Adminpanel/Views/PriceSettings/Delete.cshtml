@@ -1,4 +1,4 @@
-﻿@model Exwhyzee.Messaging.Web.Models.PriceSetting
+@model Exwhyzee.Messaging.Core.Models.PriceSetting
 
 @{
     ViewBag.Title = "Delete";
@@ -54,11 +54,11 @@
                     </dd>
 
                     <dt>
-                        @Html.DisplayNameFor(model => model.PricePerUnit)
+                        @Html.DisplayNameFor(model => model.UnitsPerSms)
                     </dt>
 
                     <dd>
-                        @Html.DisplayFor(model => model.PricePerUnit)
+                        @Html.DisplayFor(model => model.UnitsPerSms)
                     </dd>
                 </dl>
 
@@ -74,3 +74,4 @@
         </div>
     </div>
 </section>
+
