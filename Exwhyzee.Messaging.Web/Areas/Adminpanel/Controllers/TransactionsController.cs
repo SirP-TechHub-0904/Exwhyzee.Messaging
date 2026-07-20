@@ -1,33 +1,34 @@
-﻿using Exwhyzee.Messaging.Web.Data.IServices;
-using Exwhyzee.Messaging.Web.Data.Services;
-using Exwhyzee.Messaging.Web.Models;
-using Microsoft.AspNet.Identity.Owin;
-using PagedList;
+using Exwhyzee.Messaging.Core.Data.IServices;
+using Exwhyzee.Messaging.Core.Data.Services;
+using Exwhyzee.Messaging.Core.Models;
+
+using X.PagedList;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Mvc;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using X.PagedList.Extensions;
 
 namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 {
     [Authorize(Roles = "SuperAdmin,Admin")]
+    [Area("Adminpanel")]
     public class TransactionsController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
         private ITransactionService _transactionService = new TransactionService();
         private IDashboardService _dashboardService = new DashboardService();
-        private ApplicationUserManager _userManager;
+        private Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
 
-        public TransactionsController()
-        {
-        }
+        
 
-        public TransactionsController(TransactionService transactionService, ApplicationUserManager userManager
+        public TransactionsController(TransactionService transactionService, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager
             , DashboardService dashboardService)
         {
             _transactionService = transactionService;
@@ -35,11 +36,11 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             _dashboardService = dashboardService;
         }
 
-        public ApplicationUserManager UserManager
+        public Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
         {
             get
             {
-                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+                return _userManager;
             }
             private set
             {
@@ -89,12 +90,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Transaction transaction = await _transactionService.GetTransaction(id);
             if (transaction == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(transaction);
         }
@@ -104,12 +105,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Transaction transaction = await _transactionService.GetTransaction(id);
             if (transaction == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
 
             try

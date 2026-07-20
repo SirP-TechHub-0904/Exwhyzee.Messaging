@@ -1,8 +1,8 @@
-﻿
-@model Exwhyzee.Messaging.Web.Models.Transaction
+
+@model Exwhyzee.Messaging.Core.Models.Transaction
 @{
     ViewBag.Title = "Pay Now";
-    string description = Model.Units.ToString() + " Units at " + ViewBag.PricePerUnit + " per unit.";
+    string description = Model.Units.ToString() + " Units at " + ViewBag.UnitsPerSms + " per unit.";
 }
 
 <section class="content-header">
@@ -57,3 +57,4 @@
         </div>
     </div>
 </section>
+

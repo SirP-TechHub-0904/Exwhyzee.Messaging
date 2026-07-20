@@ -6,7 +6,7 @@ namespace Exwhyzee.Messaging.Web
     {
         public static string PayStackSecretKey
         {
-            get { return ConfigurationManager.AppSettings["PayStackSecretKey"]; }
+            get { return System.Configuration.ConfigurationManager.AppSettings["PayStackSecretKey"]; }
         }
     }
 }

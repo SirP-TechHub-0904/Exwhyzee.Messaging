@@ -1,42 +1,42 @@
-﻿using Exwhyzee.Messaging.Web.Data.IServices;
-using Exwhyzee.Messaging.Web.Data.Services;
-using Exwhyzee.Messaging.Web.Models;
-using Exwhyzee.Messaging.Web.ViewModels;
-using Microsoft.AspNet.Identity.Owin;
+using Exwhyzee.Messaging.Core.Data.IServices;
+using Exwhyzee.Messaging.Core.Data.Services;
+using Exwhyzee.Messaging.Core.Models;
+using Exwhyzee.Messaging.Core.ViewModels;
+
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Mvc;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 {
     [Authorize(Roles = "SuperAdmin,Admin")]
+    [Area("Adminpanel")]
     public class VouchersController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
         private IVoucherService _voucherService = new VoucherService();
-        private ApplicationUserManager _userManager;
+        private Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
 
-        public VouchersController()
-        {
-        }
+        
 
-        public VouchersController(VoucherService voucherService, ApplicationUserManager userManager)
+        public VouchersController(VoucherService voucherService, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager)
         {
             _voucherService = voucherService;
             _userManager = userManager;
         }
 
-        public ApplicationUserManager UserManager
+        public Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
         {
             get
             {
-                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+                return _userManager;
             }
             private set
             {
@@ -74,12 +74,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             var voucher = await _voucherService.GetVoucher(id);
             if (voucher == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(voucher);
         }

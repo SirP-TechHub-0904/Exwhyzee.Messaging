@@ -1,48 +1,46 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web.Http;
-using System.Web.Http.Description;
-using Exwhyzee.Messaging.Web.Data.IServices;
-using Exwhyzee.Messaging.Web.Data.Services;
-using Exwhyzee.Messaging.Web.Dtos;
-using Exwhyzee.Messaging.Web.Models;
-using Exwhyzee.Messaging.Web.Models.Dto;
-using Microsoft.AspNet.Identity.Owin;
+using Microsoft.AspNetCore.Mvc;
+
+using Exwhyzee.Messaging.Core.Data.IServices;
+using Exwhyzee.Messaging.Core.Data.Services;
+using Exwhyzee.Messaging.Core.Dtos;
+using Exwhyzee.Messaging.Core.Models;
+using Exwhyzee.Messaging.Core.Models.Dto;
+
 
 namespace Exwhyzee.Messaging.Web.Controllers
 {
-    public class GroupsController : ApiController
+    public class GroupsController : ControllerBase
     {
 
             private ApplicationDbContext db = new ApplicationDbContext();
-        private ApplicationUserManager _userManager;
+        private Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
         private IAddressBookService _addressBookService = new AddressBookService();
            
 
-            public GroupsController()
-            {
-            }
+            
 
-            public GroupsController(AddressBookService addressBookService, ApplicationUserManager userManager)
+            public GroupsController(AddressBookService addressBookService, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager)
             {
                 _addressBookService = addressBookService;
                 _userManager = userManager;
             }
 
       
-        public ApplicationUserManager UserManager
+        public Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
         {
             get
             {
-                return _userManager ?? Request.GetOwinContext().GetUserManager<ApplicationUserManager>();
+                return _userManager;
             }
             private set
             {
@@ -52,8 +50,9 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
 
         // GET: ClientPanel/AddressBook
+        [HttpGet]
         [Route("AllGroups")]
-        public async Task<HttpResponseMessage> AllGroups(string username)
+        public async Task<IActionResult> AllGroups(string username)
             {
                 var user = await UserManager.FindByNameAsync(username);
             var data = db.Groups.Include(x=>x.Contacts).OrderBy(o => o.Name).Where(x => x.UserId == user.Id);
@@ -71,32 +70,34 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
             });
 
-            return Request.CreateResponse(HttpStatusCode.OK, await output.ToListAsync());
+            return Ok(await output.ToListAsync());
             }
 
+        [HttpGet]
         [Route("AllContactByGroupId")]
-        public async Task<HttpResponseMessage> AllContactByGroupId(int id)
+        public async Task<IActionResult> AllContactByGroupId(int id)
         {
             var data = db.Contacts.OrderBy(o => o.Surname).Where(x => x.GroupId == id);
             if (data == null)
             {
-                return Request.CreateResponse(HttpStatusCode.OK, "not found");
+                return Ok("not found");
             }
             
-            return Request.CreateResponse(HttpStatusCode.OK, await data.ToListAsync());
+            return Ok(await data.ToListAsync());
         }
         // GET: ClientPanel/AddressBook/Details/5
+        [HttpGet]
         [Route("GroupById")]
-        public async Task<HttpResponseMessage> GroupById(int? id)
+        public async Task<IActionResult> GroupById(int? id)
             {
                 if (id == null)
                 {
-                return Request.CreateResponse(HttpStatusCode.OK, "Bad Request");
+                return Ok("Bad Request");
                 }
                 Group x = await _addressBookService.GetGroup(id);
                 if (x == null)
                 {
-                return Request.CreateResponse(HttpStatusCode.OK, "HttpNotFound");
+                return Ok("HttpNotFound");
                 }
 
             var output = new GroupDto
@@ -111,7 +112,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
 
             };
-            return Request.CreateResponse(HttpStatusCode.OK, output);
+            return Ok(output);
         }
 
            
@@ -120,7 +121,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
             // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
             [HttpPost]
         [Route("PostGroup")]
-        public async Task<HttpResponseMessage> PostGroup(NewGroupModelDto group)
+        public async Task<IActionResult> PostGroup(NewGroupModelDto group)
             {
                 if (ModelState.IsValid)
                 {
@@ -135,10 +136,10 @@ namespace Exwhyzee.Messaging.Web.Controllers
                 data.Name = group.Name;
 
                     await _addressBookService.CreateGroup(data);
-                return Request.CreateResponse(HttpStatusCode.OK, "success");
+                return Ok("success");
             }
 
-            return Request.CreateResponse(HttpStatusCode.OK, "failed");
+            return Ok("failed");
         }
 
             // GET: ClientPanel/AddressBook/AddContact
@@ -149,13 +150,13 @@ namespace Exwhyzee.Messaging.Web.Controllers
             // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
             [HttpPost]
         [Route("AddContact")]
-        public async Task<HttpResponseMessage> AddContact(NewContactDto data)
+        public async Task<IActionResult> AddContact(NewContactDto data)
             {
                 
             Group x = await _addressBookService.GetGroup(data.GroupId);
             if (x == null)
             {
-                return Request.CreateResponse(HttpStatusCode.OK, "Group not found");
+                return Ok("Group not found");
             }
            
             if (ModelState.IsValid)
@@ -170,10 +171,10 @@ namespace Exwhyzee.Messaging.Web.Controllers
                 ncontact.PhoneNumber = data.PhoneNumber;
                 
                     await _addressBookService.NewContact(ncontact);
-                return Request.CreateResponse(HttpStatusCode.OK, "success");
+                return Ok("success");
             }
 
-            return Request.CreateResponse(HttpStatusCode.OK, "failed");
+            return Ok("failed");
         }
 
 
@@ -183,7 +184,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
             // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
             [HttpPost]
         [Route("AddManyContact")]
-        public async Task<HttpResponseMessage> AddManyContact(NewContactDto data)
+        public async Task<IActionResult> AddManyContact(NewContactDto data)
             {
                 data.PhoneNumber = data.PhoneNumber.Replace("\r\n", ",");
                 IList<string> numbers = data.PhoneNumber.Split(new string[] { ",", " " }, StringSplitOptions.RemoveEmptyEntries);
@@ -193,7 +194,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
             Group x = await _addressBookService.GetGroup(data.GroupId);
             if (x == null)
             {
-                return Request.CreateResponse(HttpStatusCode.OK, "Group not found");
+                return Ok("Group not found");
             }
             if (ModelState.IsValid)
                 {
@@ -209,10 +210,10 @@ namespace Exwhyzee.Messaging.Web.Controllers
                     i.DateAddded = data.DateAddded;
                         await _addressBookService.NewContact(i);
                     }
-                return Request.CreateResponse(HttpStatusCode.OK, "success");
+                return Ok("success");
             }
 
-            return Request.CreateResponse(HttpStatusCode.OK, "failed");
+            return Ok("failed");
         }
 
 
@@ -221,28 +222,28 @@ namespace Exwhyzee.Messaging.Web.Controllers
             // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
             [HttpPost]
         [Route("UpdateGroup")]
-        public async Task<HttpResponseMessage> UpdateGroup(Group group)
+        public async Task<IActionResult> UpdateGroup(Group group)
             {
                 if (ModelState.IsValid)
                 {
                     await _addressBookService.UpdateGroup(group);
-                return Request.CreateResponse(HttpStatusCode.OK, "success");
+                return Ok("success");
             }
-            return Request.CreateResponse(HttpStatusCode.OK, "failed");
+            return Ok("failed");
         }
 
           [HttpPost]
         [Route("EditContact")]
-        public async Task<HttpResponseMessage> EditContact(Contact contact)
+        public async Task<IActionResult> EditContact(Contact contact)
             {
                 
                 if (ModelState.IsValid)
                 {
                     var groupId = contact.GroupId;
                     await _addressBookService.UpdateContact(contact);
-                return Request.CreateResponse(HttpStatusCode.OK, "success");
+                return Ok("success");
             }
-            return Request.CreateResponse(HttpStatusCode.OK, "failed");
+            return Ok("failed");
         }
 
             // GET: ClientPanel/AddressBook/Delete/5
@@ -251,12 +252,12 @@ namespace Exwhyzee.Messaging.Web.Controllers
             // POST: ClientPanel/AddressBook/Delete/5
             [HttpPost]
         [Route("DeleteGroup")]
-        public async Task<HttpResponseMessage> DeleteGroup(int id)
+        public async Task<IActionResult> DeleteGroup(int id)
             {
                 Group group = await _addressBookService.GetGroup(id);
 
                 await _addressBookService.DeleteGroup(group);
-            return Request.CreateResponse(HttpStatusCode.OK, "success");
+            return Ok("success");
         }
 
             // GET: ClientPanel/AddressBook/Delete/5
@@ -264,12 +265,12 @@ namespace Exwhyzee.Messaging.Web.Controllers
             // POST: ClientPanel/AddressBook/Delete/5
             [HttpPost]
         [Route("DeleteContact")]
-        public async Task<HttpResponseMessage> DeleteContact(int id)
+        public async Task<IActionResult> DeleteContact(int id)
             {
                 Contact contact = await _addressBookService.GetContact(id);
                 int? groupId = contact.GroupId;
                 await _addressBookService.DeleteContact(contact);
-            return Request.CreateResponse(HttpStatusCode.OK, "success");
+            return Ok("success");
         }
             //delete all contact
 
@@ -277,7 +278,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
             // POST: ClientPanel/AddressBook/Delete/5
             [HttpPost]
         [Route("DeleteAllContacts")]
-        public async Task<HttpResponseMessage> DeleteAllContacts(int id)
+        public async Task<IActionResult> DeleteAllContacts(int id)
             {
                 var group = await _addressBookService.GetGroup(id);
                 int? groupId = group.GroupId;
@@ -293,19 +294,10 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
                     }
                 }
-            return Request.CreateResponse(HttpStatusCode.OK, "success");
+            return Ok("success");
         }
 
-            protected override void Dispose(bool disposing)
-            {
-                if (disposing && _userManager != null)
-                {
-                    _userManager.Dispose();
-                    _userManager = null;
-                }
-
-                base.Dispose(disposing);
-            }
+            
 
 
         }

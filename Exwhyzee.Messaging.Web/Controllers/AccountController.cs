@@ -1,73 +1,62 @@
-﻿using Exwhyzee.Messaging.Web.Data.IServices;
-using Exwhyzee.Messaging.Web.Data.Services;
-using Exwhyzee.Messaging.Web.Models;
-using Exwhyzee.Messaging.Web.Services;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.Owin;
-using Microsoft.Owin.Security;
-using Recaptcha.Web;
-using Recaptcha.Web.Mvc;
+using Exwhyzee.Messaging.Core.Data.IServices;
+using Exwhyzee.Messaging.Core.Data.Services;
+using Exwhyzee.Messaging.Core.Models;
+using Exwhyzee.Messaging.Core.Services;
+using Microsoft.AspNetCore.Identity;
+
+
+
+
 using System;
 using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Mvc;
-using System.Web.UI;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace Exwhyzee.Messaging.Web.Controllers
 {
     [Authorize]
     public class AccountController : Controller
     {
-        private ApplicationSignInManager _signInManager;
-        private ApplicationUserManager _userManager;
-        private ApplicationRoleManager _roleManager;
+        private Microsoft.AspNetCore.Identity.SignInManager<ApplicationUser> _signInManager;
+        private Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
+        private Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole> _roleManager;
         private ISendEmail _email = new SendEmail();
         private IDashboardService _dashboardService = new DashboardService();
 
-        public AccountController()
-        {
-        }
 
-        public AccountController(ApplicationUserManager userManager, ApplicationSignInManager signInManager, ApplicationRoleManager roleManager)
+        public AccountController(Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, Microsoft.AspNetCore.Identity.SignInManager<ApplicationUser> signInManager, Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole> roleManager)
         {
             UserManager = userManager;
             SignInManager = signInManager;
             RoleManager = roleManager;
          }
 
-        public ApplicationSignInManager SignInManager
+        public Microsoft.AspNetCore.Identity.SignInManager<ApplicationUser> SignInManager
         {
-            get
-            {
-                return _signInManager ?? HttpContext.GetOwinContext().Get<ApplicationSignInManager>();
-            }
+            get { return _signInManager; }
             private set
             {
                 _signInManager = value;
             }
         }
 
-        public ApplicationRoleManager RoleManager
+        public Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole> RoleManager
         {
-            get
-            {
-                return _roleManager ?? HttpContext.GetOwinContext().Get<ApplicationRoleManager>();
-            }
+            get { return _roleManager; }
             private set
             {
                 _roleManager = value;
             }
         }
 
-        public ApplicationUserManager UserManager
+        public Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
         {
-            get
-            {
-                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
-            }
+            get { return _userManager; }
             private set
             {
                 _userManager = value;
@@ -78,7 +67,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
         //
         // GET: /Account/Login
         [AllowAnonymous]
-        [OutputCache(NoStore = true, Location = OutputCacheLocation.None)]
+        
         public ActionResult LoginAfter(string returnUrl)
         {
             ViewBag.ReturnUrl = returnUrl;
@@ -127,59 +116,9 @@ namespace Exwhyzee.Messaging.Web.Controllers
                     if (checkMig == true)
                     {
                         // return RedirectToAction("GoToMail");
-                        var result = await SignInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, shouldLockout: false);
-                        switch (result)
-                        {
-                            case SignInStatus.Success:
-                                if (returnUrl != null)
-                                {
-                                    return RedirectToLocal(returnUrl);
-                                }
-                                else
-                                {
-                                    if (User.IsInRole("Admin"))
-                                    {
-                                        return RedirectToAction("Index", "Main", new { @area = "AdminPanel" });
-                                    }
-                                    else
-                                    {
-                                        return RedirectToAction("Index", "Dashboard", new { @area = "ClientPanel" });
-                                    }
-                                }
-
-                            case SignInStatus.LockedOut:
-                                return View("Lockout");
-
-                            case SignInStatus.RequiresVerification:
-                                return RedirectToAction("SendCode", new { ReturnUrl = returnUrl, RememberMe = model.RememberMe });
-
-                            case SignInStatus.Failure:
-                            default:
-                                ModelState.AddModelError("", "Invalid login attempt.");
-                                string messages = string.Join("; ", ModelState.Values
-                                                .SelectMany(x => x.Errors)
-                                                .Select(x => x.ErrorMessage));
-                                return View(model);
-                        }
-
-                    }
-                    else
+                    var signInResult = await SignInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, lockoutOnFailure: false);
+                    if (signInResult.Succeeded)
                     {
-                        ModelState.AddModelError("", "Invalid account migration and login attempt.");
-                    }
-                }
-                //}
-            }
-            else
-            {
-
-
-                // This doesn't count login failures towards account lockout
-                // To enable password failures to trigger account lockout, change to shouldLockout: true
-                var result = await SignInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, shouldLockout: false);
-                switch (result)
-                {
-                    case SignInStatus.Success:
                         if (returnUrl != null)
                         {
                             return RedirectToLocal(returnUrl);
@@ -195,21 +134,64 @@ namespace Exwhyzee.Messaging.Web.Controllers
                                 return RedirectToAction("Index", "Dashboard", new { @area = "ClientPanel" });
                             }
                         }
-
-                    case SignInStatus.LockedOut:
+                    }
+                    if (signInResult.IsLockedOut)
+                    {
                         return View("Lockout");
-
-                    case SignInStatus.RequiresVerification:
+                    }
+                    if (signInResult.RequiresTwoFactor)
+                    {
                         return RedirectToAction("SendCode", new { ReturnUrl = returnUrl, RememberMe = model.RememberMe });
+                    }
+                    ModelState.AddModelError("", "Invalid login attempt.");
+                    string messages = string.Join("; ", ModelState.Values
+                                    .SelectMany(x => x.Errors)
+                                    .Select(x => x.ErrorMessage));
+                    return View(model);
 
-                    case SignInStatus.Failure:
-                    default:
-                        ModelState.AddModelError("", "Invalid login attempt.");
-                        string messages = string.Join("; ", ModelState.Values
-                                        .SelectMany(x => x.Errors)
-                                        .Select(x => x.ErrorMessage));
-                        return View(model);
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "Invalid account migration and login attempt.");
+                    }
                 }
+                //}
+            }
+            else
+            {
+
+
+                // This doesn't count login failures towards account lockout
+                // To enable password failures to trigger account lockout, change lockoutOnFailure: true
+                var signInResult = await SignInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, lockoutOnFailure: false);
+                if (signInResult.Succeeded)
+                {
+                    if (returnUrl != null)
+                    {
+                        return RedirectToLocal(returnUrl);
+                    }
+                    else
+                    {
+                        if (User.IsInRole("Admin"))
+                        {
+                            return RedirectToAction("Index", "Main", new { @area = "AdminPanel" });
+                        }
+                        else
+                        {
+                            return RedirectToAction("Index", "Dashboard", new { @area = "ClientPanel" });
+                        }
+                    }
+                }
+                if (signInResult.IsLockedOut)
+                    return View("Lockout");
+                if (signInResult.RequiresTwoFactor)
+                    return RedirectToAction("SendCode", new { ReturnUrl = returnUrl, RememberMe = model.RememberMe });
+
+                ModelState.AddModelError("", "Invalid login attempt.");
+                string messages = string.Join("; ", ModelState.Values
+                                .SelectMany(x => x.Errors)
+                                .Select(x => x.ErrorMessage));
+                return View(model);
 
             }
             TempData["error"] = "incorrect username or password";
@@ -223,7 +205,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
         //
         // GET: /Account/Login
         [AllowAnonymous]
-        [OutputCache(NoStore = true, Location = OutputCacheLocation.None)]
+        
         public ActionResult Login(string returnUrl)
         {
             ViewBag.ReturnUrl = returnUrl;
@@ -254,8 +236,8 @@ namespace Exwhyzee.Messaging.Web.Controllers
             {
                 if (user.EmailConfirmed == false)
                 {
-                    string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
-                    var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                    string code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+                    var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Scheme);
                     string mailnote = "Confirm your account" + string.Format("<a href='{0}'>HERE</a>", callbackUrl);
                     await _email.SendEmailAsync(mailnote, user.Email, "Account Comfirmation");
 
@@ -263,42 +245,36 @@ namespace Exwhyzee.Messaging.Web.Controllers
                 }
 
                 // This doesn't count login failures towards account lockout
-                // To enable password failures to trigger account lockout, change to shouldLockout: true
-                var result = await SignInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, shouldLockout: false);
-                switch (result)
+                // To enable password failures to trigger account lockout, change lockoutOnFailure: true
+                var signInResult = await SignInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, lockoutOnFailure: false);
+                if (signInResult.Succeeded)
                 {
-                    case SignInStatus.Success:
-                        
-                        if (returnUrl != null)
+                    if (returnUrl != null)
+                    {
+                        return RedirectToLocal(returnUrl);
+                    }
+                    else
+                    {
+                        if (User.IsInRole("Admin"))
                         {
-                            return RedirectToLocal(returnUrl);
+                            return RedirectToAction("Index", "Main", new { @area = "AdminPanel" });
                         }
                         else
                         {
-                            if (User.IsInRole("Admin"))
-                            {
-                                return RedirectToAction("Index", "Main", new { @area = "AdminPanel" });
-                            }
-                            else
-                            {
-                                return RedirectToAction("Index", "Dashboard", new { @area = "ClientPanel" });
-                            }
+                            return RedirectToAction("Index", "Dashboard", new { @area = "ClientPanel" });
                         }
-
-                    case SignInStatus.LockedOut:
-                        return View("Lockout");
-
-                    case SignInStatus.RequiresVerification:
-                        return RedirectToAction("SendCode", new { ReturnUrl = returnUrl, RememberMe = model.RememberMe });
-
-                    case SignInStatus.Failure:
-                    default:
-                        ModelState.AddModelError("", "Invalid login attempt.");
-                        string messages = string.Join("; ", ModelState.Values
-                                        .SelectMany(x => x.Errors)
-                                        .Select(x => x.ErrorMessage));
-                        return View(model);
+                    }
                 }
+                if (signInResult.IsLockedOut)
+                    return View("Lockout");
+                if (signInResult.RequiresTwoFactor)
+                    return RedirectToAction("SendCode", new { ReturnUrl = returnUrl, RememberMe = model.RememberMe });
+
+                ModelState.AddModelError("", "Invalid login attempt.");
+                string messages = string.Join("; ", ModelState.Values
+                                .SelectMany(x => x.Errors)
+                                .Select(x => x.ErrorMessage));
+                return View(model);
 
             }
             TempData["error"] = "incorrect username or password";
@@ -310,7 +286,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
         public ActionResult ChangePassword()
         {
-            var id = User.Identity.GetUserId();
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
             ViewBag.userid = id;
             return View();
         }
@@ -324,16 +300,16 @@ namespace Exwhyzee.Messaging.Web.Controllers
         public async Task<ActionResult> ChangePassword(string userid, string oldPassword, string newPassword)
         {
             var user = await UserManager.FindByIdAsync(userid);
-            var id = User.Identity.GetUserId();
+            var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (user != null)
             {
                 var checkpassvalidate = await UserManager.CheckPasswordAsync(user, oldPassword);
                 if (checkpassvalidate == true)
                 {
-                   var removepass = await UserManager.RemovePasswordAsync(user.Id);
+                   var removepass = await UserManager.RemovePasswordAsync(user);
                     if (removepass.Succeeded)
                     {
-                        var changepass = await UserManager.AddPasswordAsync(user.Id, newPassword);
+                        var changepass = await UserManager.AddPasswordAsync(user, newPassword);
                         if (changepass.Succeeded)
                         {
                             TempData["success"] = "password change successful";
@@ -392,7 +368,8 @@ namespace Exwhyzee.Messaging.Web.Controllers
         public async Task<ActionResult> VerifyCode(string provider, string returnUrl, bool rememberMe)
         {
             // Require that the user has already logged in via username/password or external login
-            if (!await SignInManager.HasBeenVerifiedAsync())
+            var user = await SignInManager.GetTwoFactorAuthenticationUserAsync();
+            if (user == null)
             {
                 return View("Error");
             }
@@ -430,13 +407,13 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
                 if (result.Succeeded)
                 {
-                    await UserManager.AddToRoleAsync(user.Id, "Client");
+                    await UserManager.AddToRoleAsync(user, "Client");
                     //await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
 
                     // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
                     // Send an email with this link
-                    //string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
-                    //var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                    //string code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+                    //var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Scheme);
                     //await UserManager.SendEmailAsync(user.Id, "Confirm your account", string.Format("<a href='{0}'>HERE</a>", callbackUrl));
 
                     return true;
@@ -467,19 +444,19 @@ namespace Exwhyzee.Messaging.Web.Controllers
             // If a user enters incorrect codes for a specified amount of time then the user account
             // will be locked out for a specified amount of time.
             // You can configure the account lockout settings in IdentityConfig
-            var result = await SignInManager.TwoFactorSignInAsync(model.Provider, model.Code, isPersistent: model.RememberMe, rememberBrowser: model.RememberBrowser);
-            switch (result)
+            var result = await SignInManager.TwoFactorAuthenticatorSignInAsync(model.Code, model.RememberMe, model.RememberBrowser);
+            if (result.Succeeded)
             {
-                case SignInStatus.Success:
-                    return RedirectToLocal(model.ReturnUrl);
-
-                case SignInStatus.LockedOut:
-                    return View("Lockout");
-
-                case SignInStatus.Failure:
-                default:
-                    ModelState.AddModelError("", "Invalid code.");
-                    return View(model);
+                return RedirectToLocal(model.ReturnUrl);
+            }
+            if (result.IsLockedOut)
+            {
+                return View("Lockout");
+            }
+            else
+            {
+                ModelState.AddModelError("", "Invalid code.");
+                return View(model);
             }
         }
 
@@ -522,13 +499,13 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
                 if (result.Succeeded)
                 {
-                    await UserManager.AddToRoleAsync(user.Id, "Client");
+                    await UserManager.AddToRoleAsync(user, "Client");
                     //await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
 
                     // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
                     // Send an email with this link
-                    string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
-                    var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                    string code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+                    var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Scheme);
                     string mailnote = "Confirm your account " + string.Format("<a href='{0}'>HERE</a>", callbackUrl) + "<br><br>or copy the link below to your browser<br><br>"+callbackUrl;
                     await _email.SendEmailAsync(mailnote, user.Email, "Account Comfirmation");
                     return RedirectToAction("GoToMail", new { id = user.Id });
@@ -544,8 +521,8 @@ namespace Exwhyzee.Messaging.Web.Controllers
         public async Task<ActionResult> ResendActivationCode(string id)
         {
             var user = await UserManager.FindByIdAsync(id);
-            string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
-            var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+            string code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+            var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Scheme);
             string mailnote = "Confirm your account " + string.Format("<a href='{0}'>HERE</a>", callbackUrl) + "<br><br>or copy the link below to your browser<br><br>" + callbackUrl;
             await _email.SendEmailAsync(mailnote, user.Email, "Account Comfirmation");
             TempData["success"] = "Verification Mail Resent, check your inbox or spam folder";
@@ -569,11 +546,11 @@ namespace Exwhyzee.Messaging.Web.Controllers
                 return View("Error");
             }
             var check = await UserManager.FindByIdAsync(userId);
-            if(check.EmailConfirmed == true)
+            if (check.EmailConfirmed == true)
             {
                 return RedirectToAction("Login");
             }
-            var result = await UserManager.ConfirmEmailAsync(userId, code);
+            var result = await UserManager.ConfirmEmailAsync(check, code);
             return View(result.Succeeded ? "ConfirmEmail" : "Error");
         }
 
@@ -595,7 +572,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
             if (ModelState.IsValid)
             {
                 var user = await UserManager.FindByNameAsync(model.Email);
-                if (user == null || !(await UserManager.IsEmailConfirmedAsync(user.Id)))
+                if (user == null || !(await UserManager.IsEmailConfirmedAsync(user)))
                 {
                     // Don't reveal that the user does not exist or is not confirmed
                     return View("ForgotPasswordConfirmation");
@@ -603,8 +580,8 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
                 // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
                 // Send an email with this link
-                string code = await UserManager.GeneratePasswordResetTokenAsync(user.Id);
-                var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                string code = await UserManager.GeneratePasswordResetTokenAsync(user);
+                var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Scheme);
                 string mailnote = "Confirm your account " + string.Format("<a href='{0}'>HERE</a>", callbackUrl) + "<br><br>or copy the link below to your browser<br><br>" + callbackUrl;
                 await _email.SendEmailAsync(mailnote, user.Email, "Account Comfirmation");
                 return RedirectToAction("ForgotPasswordConfirmation", "Account");
@@ -647,7 +624,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
                 // Don't reveal that the user does not exist
                 return RedirectToAction("ResetPasswordConfirmation", "Account");
             }
-            var result = await UserManager.ResetPasswordAsync(user.Id, model.Code, model.Password);
+            var result = await UserManager.ResetPasswordAsync(user, model.Code, model.Password);
             if (result.Succeeded)
             {
                 return RedirectToAction("ResetPasswordConfirmation", "Account");
@@ -672,7 +649,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
         public ActionResult ExternalLogin(string provider, string returnUrl)
         {
             // Request a redirect to the external login provider
-            return new ChallengeResult(provider, Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }));
+            return Challenge(new Microsoft.AspNetCore.Authentication.AuthenticationProperties { RedirectUri = Url.Action("ExternalLoginCallback", "Account", new { ReturnUrl = returnUrl }) }, provider);
         }
 
         //
@@ -680,12 +657,12 @@ namespace Exwhyzee.Messaging.Web.Controllers
         [AllowAnonymous]
         public async Task<ActionResult> SendCode(string returnUrl, bool rememberMe)
         {
-            var userId = await SignInManager.GetVerifiedUserIdAsync();
-            if (userId == null)
+            var user = await SignInManager.GetTwoFactorAuthenticationUserAsync();
+            if (user == null)
             {
                 return View("Error");
             }
-            var userFactors = await UserManager.GetValidTwoFactorProvidersAsync(userId);
+            var userFactors = await UserManager.GetValidTwoFactorProvidersAsync(user);
             var factorOptions = userFactors.Select(purpose => new SelectListItem { Text = purpose, Value = purpose }).ToList();
             return View(new SendCodeViewModel { Providers = factorOptions, ReturnUrl = returnUrl, RememberMe = rememberMe });
         }
@@ -703,10 +680,14 @@ namespace Exwhyzee.Messaging.Web.Controllers
             }
 
             // Generate the token and send it
-            if (!await SignInManager.SendTwoFactorCodeAsync(model.SelectedProvider))
+            var user = await SignInManager.GetTwoFactorAuthenticationUserAsync();
+            if (user == null)
             {
                 return View("Error");
             }
+            // generate token (sending SMS/email not implemented here)
+            var token = await UserManager.GenerateTwoFactorTokenAsync(user, model.SelectedProvider);
+            // TODO: send token via appropriate provider
             return RedirectToAction("VerifyCode", new { Provider = model.SelectedProvider, ReturnUrl = model.ReturnUrl, RememberMe = model.RememberMe });
         }
 
@@ -715,32 +696,31 @@ namespace Exwhyzee.Messaging.Web.Controllers
         [AllowAnonymous]
         public async Task<ActionResult> ExternalLoginCallback(string returnUrl)
         {
-            var loginInfo = await AuthenticationManager.GetExternalLoginInfoAsync();
+            var loginInfo = await SignInManager.GetExternalLoginInfoAsync();
             if (loginInfo == null)
             {
                 return RedirectToAction("Login");
             }
 
             // Sign in the user with this external login provider if the user already has a login
-            var result = await SignInManager.ExternalSignInAsync(loginInfo, isPersistent: false);
-            switch (result)
+            var result = await SignInManager.ExternalLoginSignInAsync(loginInfo.LoginProvider, loginInfo.ProviderKey, isPersistent: false, bypassTwoFactor: false);
+            if (result.Succeeded)
             {
-                case SignInStatus.Success:
-                    return RedirectToLocal(returnUrl);
-
-                case SignInStatus.LockedOut:
-                    return View("Lockout");
-
-                case SignInStatus.RequiresVerification:
-                    return RedirectToAction("SendCode", new { ReturnUrl = returnUrl, RememberMe = false });
-
-                case SignInStatus.Failure:
-                default:
-                    // If the user does not have an account, then prompt the user to create an account
-                    ViewBag.ReturnUrl = returnUrl;
-                    ViewBag.LoginProvider = loginInfo.Login.LoginProvider;
-                    return View("ExternalLoginConfirmation", new ExternalLoginConfirmationViewModel { Email = loginInfo.Email });
+                return RedirectToLocal(returnUrl);
             }
+            if (result.IsLockedOut)
+            {
+                return View("Lockout");
+            }
+            if (result.RequiresTwoFactor)
+            {
+                return RedirectToAction("SendCode", new { ReturnUrl = returnUrl, RememberMe = false });
+            }
+
+            // If the user does not have an account, then prompt the user to create an account
+            ViewBag.ReturnUrl = returnUrl;
+            ViewBag.LoginProvider = loginInfo.LoginProvider;
+            return View("ExternalLoginConfirmation", new ExternalLoginConfirmationViewModel { Email = loginInfo.Principal?.FindFirstValue(ClaimTypes.Email) });
         }
 
         //
@@ -755,27 +735,28 @@ namespace Exwhyzee.Messaging.Web.Controllers
                 return RedirectToAction("Index", "Manage");
             }
 
-            if (ModelState.IsValid)
-            {
-                // Get the information about the user from the external login provider
-                var info = await AuthenticationManager.GetExternalLoginInfoAsync();
-                if (info == null)
+                if (ModelState.IsValid)
                 {
-                    return View("ExternalLoginFailure");
-                }
-                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
-                var result = await UserManager.CreateAsync(user);
-                if (result.Succeeded)
-                {
-                    result = await UserManager.AddLoginAsync(user.Id, info.Login);
+                    // Get the information about the user from the external login provider
+                    var info = await SignInManager.GetExternalLoginInfoAsync();
+                    if (info == null)
+                    {
+                        return View("ExternalLoginFailure");
+                    }
+                    var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+                    var result = await UserManager.CreateAsync(user);
                     if (result.Succeeded)
                     {
-                        await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
-                        return RedirectToLocal(returnUrl);
+                        var login = new UserLoginInfo(info.LoginProvider, info.ProviderKey, info.ProviderDisplayName);
+                        result = await UserManager.AddLoginAsync(user, login);
+                        if (result.Succeeded)
+                        {
+                            await SignInManager.SignInAsync(user, isPersistent: false);
+                            return RedirectToLocal(returnUrl);
+                        }
                     }
+                    AddErrors(result);
                 }
-                AddErrors(result);
-            }
 
             ViewBag.ReturnUrl = returnUrl;
             return View(model);
@@ -785,9 +766,9 @@ namespace Exwhyzee.Messaging.Web.Controllers
         // POST: /Account/LogOff
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult LogOff()
+        public async Task<ActionResult> LogOff()
         {
-            AuthenticationManager.SignOut(DefaultAuthenticationTypes.ApplicationCookie);
+            await SignInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
         }
 
@@ -803,17 +784,8 @@ namespace Exwhyzee.Messaging.Web.Controllers
         {
             if (disposing)
             {
-                if (_userManager != null)
-                {
-                    _userManager.Dispose();
-                    _userManager = null;
-                }
-
-                if (_signInManager != null)
-                {
-                    _signInManager.Dispose();
-                    _signInManager = null;
-                }
+                _userManager = null;
+                _signInManager = null;
             }
 
             base.Dispose(disposing);
@@ -824,19 +796,16 @@ namespace Exwhyzee.Messaging.Web.Controllers
         // Used for XSRF protection when adding external logins
         private const string XsrfKey = "XsrfId";
 
-        private IAuthenticationManager AuthenticationManager
+        private object AuthenticationManager
         {
-            get
-            {
-                return HttpContext.GetOwinContext().Authentication;
-            }
+            get { return null; }
         }
 
         private void AddErrors(IdentityResult result)
         {
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError("", error);
+                ModelState.AddModelError("", error.Description ?? error.Code);
             }
         }
 
@@ -849,35 +818,21 @@ namespace Exwhyzee.Messaging.Web.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        internal class ChallengeResult : HttpUnauthorizedResult
-        {
-            public ChallengeResult(string provider, string redirectUri)
-                : this(provider, redirectUri, null)
-            {
-            }
+        
 
-            public ChallengeResult(string provider, string redirectUri, string userId)
-            {
-                LoginProvider = provider;
-                RedirectUri = redirectUri;
-                UserId = userId;
-            }
 
-            public string LoginProvider { get; set; }
-            public string RedirectUri { get; set; }
-            public string UserId { get; set; }
-
-            public override void ExecuteResult(ControllerContext context)
-            {
-                var properties = new AuthenticationProperties { RedirectUri = RedirectUri };
-                if (UserId != null)
-                {
-                    properties.Dictionary[XsrfKey] = UserId;
-                }
-                context.HttpContext.GetOwinContext().Authentication.Challenge(properties, LoginProvider);
-            }
-        }
 
         #endregion Helpers
     }
 }
+
+
+
+
+
+
+
+
+
+
+

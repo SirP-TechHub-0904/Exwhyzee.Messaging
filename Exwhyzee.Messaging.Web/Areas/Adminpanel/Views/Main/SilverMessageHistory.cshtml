@@ -1,7 +1,7 @@
-﻿
 
-@model PagedList.IPagedList<Exwhyzee.Messaging.Web.Models.Message>
-@using PagedList.Mvc;
+
+@model X.PagedList.IPagedList<Exwhyzee.Messaging.Core.Models.Message>
+@using X.PagedList.Mvc.Core;
 <link href="~/Content/PagedList.css" rel="stylesheet" />
 
 @{
@@ -88,7 +88,6 @@
                             @Html.DisplayFor(modelItem => item.DeliveredDate)
                         </td>
                         <td>
-                            @Html.DisplayFor(modelItem => item.Plan)
                         </td>
                         <td>
                             @Html.DisplayFor(modelItem => item.Status)
@@ -113,3 +112,4 @@
 
 
 }
+

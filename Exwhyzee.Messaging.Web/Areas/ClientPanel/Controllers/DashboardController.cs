@@ -1,29 +1,33 @@
+using Microsoft.AspNetCore.Http;
 using Hangfire;
 using Exwhyzee.Messaging.Web.Controllers;
-using Exwhyzee.Messaging.Web.Data.IServices;
-using Exwhyzee.Messaging.Web.Data.Services;
-using Exwhyzee.Messaging.Web.Models;
-using Exwhyzee.Messaging.Web.Services;
-using Exwhyzee.Messaging.Web.ViewModels;
-using Microsoft.AspNet.Identity;
+using Exwhyzee.Messaging.Core.Data.IServices;
+using Exwhyzee.Messaging.Core.Data.Services;
+using Exwhyzee.Messaging.Core.Models;
+using Exwhyzee.Messaging.Core.Services;
+using Exwhyzee.Messaging.Core.ViewModels;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Mvc;
-using PagedList;
-using Exwhyzee.Messaging.Web.PayStack;
-using Exwhyzee.Messaging.Web.PayStack.Models;
-using static Exwhyzee.Messaging.Web.Services.GeneralServices;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using X.PagedList;
+using Exwhyzee.Messaging.Core.Paystack;
+using Exwhyzee.Messaging.Core.Paystack.Models;
+using static Exwhyzee.Messaging.Core.Services.GeneralServices;
+using X.PagedList.Extensions;
 
 namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 {
     [Authorize(Roles = "Client")]
+    [Area("ClientPanel")]
     public class DashboardController : BaseController
     {
         private ApplicationDbContext db = new ApplicationDbContext();
@@ -37,26 +41,12 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         private IPaystackTransactionService _paystackTransactionService = new PaystackTransactionService();
         private System.Random randomInteger = new System.Random();
 
+        
+
         public DashboardController()
         {
         }
-
-        public DashboardController(ClientService clientService)
-        {
-            _clientService = clientService;
-        }
-
-        public DashboardController(PaystackTransactionService paystackTransactionService)
-        {
-            _paystackTransactionService = paystackTransactionService;
-        }
-
-        //dashboard controller
-        public DashboardController(DashboardService dashboardService)
-        {
-            _dashboardService = dashboardService;
-        }
-        [HttpGet, Tls]
+        [HttpGet]
         // GET: ClientPanel/Dashboard
         public async Task<ActionResult> Index()
         {
@@ -275,7 +265,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Compose(ComposeViewModel model, int[] GroupId, HttpPostedFileBase file)
+        public async Task<ActionResult> Compose(ComposeViewModel model, int[] GroupId, IFormFile file)
         {
             var client = await _clientService.GetClientDetailsByUserId(User.Identity.GetUserId());
             string userId = User.Identity.GetUserId();
@@ -288,16 +278,16 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             ///MM/dd/yyyy
             ///Reading Contacts from .txt file
             ///
-            if (file != null && file.ContentLength > 0)
+            if (file != null && file.Length > 0)
             {
-                string directory = Server.MapPath("~/Uploads/Contacts/");
+                string directory = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "Uploads/Contacts/");
                 int genNumber = randomInteger.Next(1000000000);
                 string line;
                 string numbers = "";
                 if (file.FileName.ToLower().Contains("txt"))
                 {
                     var fileName = Path.GetFileName(file.FileName);
-                    file.SaveAs(Path.Combine(directory + genNumber + fileName));
+                    using (var stream = new System.IO.FileStream(Path.Combine(directory, genNumber + fileName), System.IO.FileMode.Create)) { file.CopyTo(stream); }
                     line = System.IO.File.ReadAllText(directory + genNumber + fileName);
                     numbers = line.Replace("\r\n", ",").Replace(" ", ",");
                     // System.IO.File.Delete(directory + genNumber + fileName);
@@ -322,16 +312,17 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
                     combined = combined + contacts + ",";
 
                 }
-                if (combined.Substring(combined.Length - 1) == ",")
+                if (!string.IsNullOrEmpty(combined) && combined.EndsWith(","))
                 {
                     combined = combined.Remove(combined.Length - 1);
                 }
 
                 model.Recipients = model.Recipients + "," + combined;
             }
-            if (model.Recipients != null)
+            
+            if (!string.IsNullOrEmpty(model.Recipients))
             {
-                if (model.Recipients.Substring(model.Recipients.Length - 1) == ",")
+                if (model.Recipients.EndsWith(","))
                 {
                     model.Recipients = model.Recipients.Remove(model.Recipients.Length - 1);
                 }
@@ -628,7 +619,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> SendDraft(ComposeViewModel model, int[] GroupId, HttpPostedFileBase file, int? id)
+        public async Task<ActionResult> SendDraft(ComposeViewModel model, int[] GroupId, IFormFile file, int? id)
         {
             var client = await _clientService.GetClientDetailsByUserId(User.Identity.GetUserId());
             string userId = User.Identity.GetUserId();
@@ -641,15 +632,15 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             ///MM/dd/yyyy
             ///Reading Contacts from .txt file
             ///
-            if (file != null && file.ContentLength > 0)
+            if (file != null && file.Length > 0)
             {
-                string directory = Server.MapPath("~/Uploads/Contacts/");
+                string directory = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "Uploads/Contacts/");
                 int genNumber = randomInteger.Next(1000000000);
                 string line;
                 if (file.FileName.ToLower().Contains("txt"))
                 {
                     var fileName = Path.GetFileName(file.FileName);
-                    file.SaveAs(Path.Combine(directory, genNumber + fileName));
+                    using (var stream = new System.IO.FileStream(Path.Combine(directory, genNumber + fileName), System.IO.FileMode.Create)) { file.CopyTo(stream); }
                     line = System.IO.File.ReadAllText(directory + genNumber + fileName);
                     model.Recipients = line.Replace("\r\n", ",").Replace(" ", ",");
                     System.IO.File.Delete(directory + genNumber + fileName);
@@ -829,7 +820,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 
             if (message == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
 
             return View(message);
@@ -947,7 +938,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             var clientedit = await _clientService.GetClientDetailsByUserId(id);
             if (clientedit == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
 
             return View(clientedit);
@@ -1028,7 +1019,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             var transaction = await _transactions.GetTransaction(id);
             if (transaction == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
 
             return View(transaction);
@@ -1042,11 +1033,11 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             var transaction = await _transactions.GetTransaction(id);
             if (transaction == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
 
             int amountInKobo = (int)transaction.Amount * 100;
-            var callbackUrl = Url.Action("Complete", "Dashboard", new { transactionid = id, area = "ClientPanel" }, protocol: Request.Url.Scheme);
+            var callbackUrl = Url.Action("Complete", "Dashboard", new { transactionid = id, area = "ClientPanel" }, protocol: Request.Scheme);
 
             var response = await _paystack.Transactions.InitializeTransaction(clientedit.User.Email, amountInKobo,
                 clientedit.FirstName, clientedit.Surname, callbackUrl, transaction.TransactionId.ToString(), false
@@ -1072,14 +1063,14 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         public async Task<ActionResult> Complete()
         {
             //
-              if (HttpContext.Request["reference"].ToString() == null)
+              if (HttpContext.Request.Query["reference"].ToString() == null)
             {
                 TempData["error"] = $"Transaction Invalid.";
 
                 return RedirectToAction("TransactionHistory");
             }
-            var tranxRef = HttpContext.Request["reference"].ToString();
-            var transactionId = HttpContext.Request["transactionid"].ToString();
+            var tranxRef = HttpContext.Request.Query["reference"].ToString();
+            var transactionId = HttpContext.Request.Query["transactionid"].ToString();
             if (tranxRef != null)
             {
                 TransactionResponseModel response = await _paystack.Transactions.VerifyTransaction(tranxRef);

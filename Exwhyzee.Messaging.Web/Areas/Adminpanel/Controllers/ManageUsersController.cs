@@ -1,61 +1,33 @@
-﻿using Exwhyzee.Messaging.Web.Data.IServices;
-using Exwhyzee.Messaging.Web.Data.Services;
-using Exwhyzee.Messaging.Web.Models;
-using Exwhyzee.Messaging.Web.ViewModels;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.Owin;
-using System;
+using Exwhyzee.Messaging.Core.Data.IServices;
+using Exwhyzee.Messaging.Core.Data.Services;
+using Exwhyzee.Messaging.Core.ViewModels;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Exwhyzee.Messaging.Core.Models;
 using System.Collections.Generic;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Mvc;
 
 namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 {
     [Authorize]
+    [Area("Adminpanel")]
     public class ManageUsersController : Controller
     {
-        private ApplicationDbContext db = new ApplicationDbContext();
-        private ApplicationUserManager _userManager;
-        private ApplicationRoleManager _roleManager;
-        private IClientService _clientService = new ClientService();
+        private ApplicationDbContext db;
+        private UserManager<Exwhyzee.Messaging.Core.Models.ApplicationUser> UserManager;
+        private RoleManager<IdentityRole> RoleManager;
+        private IClientService _clientService;
 
-        public ManageUsersController()
+        public ManageUsersController(ApplicationDbContext _db, UserManager<Exwhyzee.Messaging.Core.Models.ApplicationUser> _userManager, RoleManager<IdentityRole> _roleManager, IClientService clientService)
         {
-        }
-
-        public ManageUsersController(ApplicationUserManager userManager, ApplicationRoleManager roleManager, ClientService clientService)
-        {
-            UserManager = userManager;
-            RoleManager = roleManager;
+            db = _db;
+            UserManager = _userManager;
+            RoleManager = _roleManager;
             _clientService = clientService;
-        }
-
-        public ApplicationUserManager UserManager
-        {
-            get
-            {
-                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
-            }
-            private set
-            {
-                _userManager = value;
-            }
-        }
-
-        public ApplicationRoleManager RoleManager
-        {
-            get
-            {
-                return _roleManager ?? HttpContext.GetOwinContext().Get<ApplicationRoleManager>();
-            }
-            private set
-            {
-                _roleManager = value;
-            }
         }
 
         // GET: Adminpanel/ManageUsers
@@ -87,7 +59,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         }
         [HttpPost]
         public async Task<ActionResult> EditUser(string id, string Email, bool EmailConfirmed,
-            string PhoneNumber, bool PhoneNumberConfirmed, bool LockoutEnabled, DateTime? LockoutEndDateUtc, DateTime DateOfBirth)
+            string PhoneNumber, bool PhoneNumberConfirmed, bool LockoutEnabled, DateTime? LockoutEnd, DateTime DateOfBirth)
         {
             try
             {
@@ -99,9 +71,9 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
                 user.PhoneNumber = PhoneNumber;
                 user.PhoneNumberConfirmed = PhoneNumberConfirmed;
                 user.LockoutEnabled = LockoutEnabled;
-                if (!string.IsNullOrEmpty(LockoutEndDateUtc.ToString()))
+                if (!string.IsNullOrEmpty(LockoutEnd.ToString()))
                 {
-                    user.LockoutEndDateUtc = LockoutEndDateUtc;
+                    user.LockoutEnd = LockoutEnd;
                 }
 
                 user.DateOfBirth = DateOfBirth;
@@ -114,9 +86,9 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
                 u.PhoneNumber = PhoneNumber;
                 u.PhoneNumberConfirmed = PhoneNumberConfirmed;
                 u.LockoutEnabled = LockoutEnabled;
-                if (!string.IsNullOrEmpty(LockoutEndDateUtc.ToString()))
+                if (!string.IsNullOrEmpty(LockoutEnd.ToString()))
                 {
-                    u.LockoutEndDateUtc = LockoutEndDateUtc;
+                    u.LockoutEnd = LockoutEnd;
                 }
 
                 u.DateOfBirth = DateOfBirth;
@@ -131,15 +103,16 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             return View();
         }
         [HttpPost]
-        public ActionResult UserToRole(string rolename, string userId, bool? ischecked)
+        public async Task<ActionResult> UserToRole(string rolename, string userId, bool? ischecked)
         {
+            var user = await UserManager.FindByIdAsync(userId);
             if (ischecked.HasValue && ischecked.Value)
             {
-                UserManager.AddToRole(userId, rolename);
+                await UserManager.AddToRoleAsync(user, rolename);
             }
             else
             {
-                UserManager.RemoveFromRole(userId, rolename);
+                await UserManager.RemoveFromRoleAsync(user, rolename);
             }
 
             return RedirectToAction("Index");
@@ -203,7 +176,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
             if (client == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             ViewBag.Client = client;
             return View();
@@ -258,12 +231,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             var user = await UserManager.FindByIdAsync(id);
             if (user == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(user);
         }
@@ -363,12 +336,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             try
             {
                 List<string> roles = new List<string>();
-                var role = await UserManager.GetRolesAsync(id);
+                var role = await UserManager.GetRolesAsync(user);
                 roles = role.ToList();
 
                 foreach (var r in roles)
                 {
-                    await UserManager.RemoveFromRoleAsync(id, r);
+                    await UserManager.RemoveFromRoleAsync(user, r);
                 }
             }
             catch (Exception d)
@@ -394,14 +367,18 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing && _userManager != null)
+            if (disposing)
             {
-                _userManager.Dispose();
+                UserManager?.Dispose();
                 db.Dispose();
-                _userManager = null;
             }
 
             base.Dispose(disposing);
         }
     }
+
+
+
+
+
 }

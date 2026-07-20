@@ -1,4 +1,4 @@
-﻿@model Exwhyzee.Messaging.Web.Models.DialCode
+@model Exwhyzee.Messaging.Core.Models.DialCode
 
 @{
     ViewBag.Title = "EditDialCode";
@@ -18,10 +18,10 @@
         @Html.HiddenFor(model => model.DialCodeId)
 
         <div class="form-group">
-            @Html.LabelFor(model => model.Code, htmlAttributes: new { @class = "control-label col-md-2" })
+            @Html.LabelFor(model => model.NumberPrefix, htmlAttributes: new { @class = "control-label col-md-2" })
             <div class="col-md-10">
-                @Html.EditorFor(model => model.Code, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.Code, "", new { @class = "text-danger" })
+                @Html.EditorFor(model => model.NumberPrefix, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.NumberPrefix, "", new { @class = "text-danger" })
             </div>
         </div>
 
@@ -48,3 +48,6 @@
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
 }
+
+
+

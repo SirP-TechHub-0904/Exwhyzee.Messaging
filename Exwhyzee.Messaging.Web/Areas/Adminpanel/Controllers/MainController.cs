@@ -1,21 +1,25 @@
-﻿using Exwhyzee.Messaging.Web.Data.IServices;
-using Exwhyzee.Messaging.Web.Data.Services;
-using Exwhyzee.Messaging.Web.Models;
-using PagedList;
+using X.PagedList.Extensions;
+using Microsoft.Extensions.DependencyInjection;
+using Exwhyzee.Messaging.Core.Data.IServices;
+using Exwhyzee.Messaging.Core.Data.Services;
+using Exwhyzee.Messaging.Core.Models;
+using X.PagedList;
 using System;
 using System.Linq;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
-using System.Web.Mvc;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 {
     [Authorize(Roles = "SuperAdmin,Admin")]
+    [Area("Adminpanel")]
     public class MainController : Controller
     {
 
 
-        private ApplicationDbContext db = new ApplicationDbContext();
+        private ApplicationDbContext db => HttpContext.RequestServices.GetService<ApplicationDbContext>();
 
         private IClientService _clientService = new ClientService();
         private ITransactionService _transactions = new TransactionService();
@@ -99,3 +103,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         }
     }
 }
+
+
+
+

@@ -1,12 +1,20 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="~/Content/image/xyzico.png" rel="shortcut icon" type="image/x-icon" />
+    <link href="/Content/image/xyzico.png" rel="shortcut icon" type="image/x-icon" />
     <title>@ViewBag.Title - XYZSMS | Bulk Sms</title>
-    @Styles.Render("~/Admin/css")
-    @Scripts.Render("~/bundles/modernizr")
+    <link rel="stylesheet" href="/Content/Dashboard/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/font-awesome/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/ionicons/css/ionicons.min.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/dist/css/AdminLTE.min.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/dist/css/site.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/dist/css/skins/_all-skins.min.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/plugins/iCheck/flat/blue.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/plugins/datepicker/datepicker3.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css" />
+    <script src="/Scripts/modernizr-2.6.2.js"></script>
 </head>
 <body class="hold-transition skin-blue sidebar-mini">
     <div class="wrapper">
@@ -47,7 +55,7 @@
                 <!-- Sidebar user panel -->
                 <div class="user-panel">
                     <div class="pull-left image">
-                        <img src="~/Uploads/user.png" class="img-circle" alt="User Image">
+                        <img src="/Uploads/user.png" class="img-circle" alt="User Image">
 
                     </div>
                     <div class="pull-left info">
@@ -172,8 +180,13 @@
         </footer>
     </div>
 
-    @Scripts.Render("~/bundles/adminjs")
+    <script src="/Content/Dashboard/plugins/jQuery/jquery-2.2.3.min.js"></script>
+    <script src="/Content/Dashboard/plugins/jQuery/jquery-ui-1.12.0.min.js"></script>
+    <script src="/Content/Dashboard/bootstrap/js/bootstrap.min.js"></script>
+    <script src="/Content/Dashboard/plugins/datepicker/bootstrap-datepicker.js"></script>
+    <script src="/Content/Dashboard/dist/js/app.min.js"></script>
 
     @RenderSection("scripts", required: false)
 </body>
 </html>
+

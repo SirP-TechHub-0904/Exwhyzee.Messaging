@@ -1,42 +1,42 @@
-﻿using Exwhyzee.Messaging.Web.Data.IServices;
-using Exwhyzee.Messaging.Web.Data.Services;
-using Exwhyzee.Messaging.Web.Models;
-using Microsoft.AspNet.Identity.Owin;
+using Exwhyzee.Messaging.Core.Data.IServices;
+using Exwhyzee.Messaging.Core.Data.Services;
+using Exwhyzee.Messaging.Core.Models;
+
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Mvc;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 {
     [Authorize(Roles = "Client")]
+    [Area("ClientPanel")]
     public class AddressBookController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
 
         private IAddressBookService _addressBookService = new AddressBookService();
-        private ApplicationUserManager _userManager;
+        private Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
 
-        public AddressBookController()
-        {
-        }
+        
 
-        public AddressBookController(AddressBookService addressBookService, ApplicationUserManager userManager)
+        public AddressBookController(AddressBookService addressBookService, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager)
         {
             _addressBookService = addressBookService;
             _userManager = userManager;
         }
 
-        public ApplicationUserManager UserManager
+        public Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
         {
             get
             {
-                return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+                return _userManager;
             }
             private set
             {
@@ -56,12 +56,12 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Group group = await _addressBookService.GetGroup(id);
             if (group == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(group);
         }
@@ -77,7 +77,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create([Bind(Include = "GroupId,Name,Description")] Group group)
+        public async Task<ActionResult> Create(Group group)
         {
             if (ModelState.IsValid)
             {
@@ -96,7 +96,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             Group group = await _addressBookService.GetGroup(id);
             if (group == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View();
         }
@@ -137,7 +137,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             Group group = await _addressBookService.GetGroup(id);
             if (group == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View();
         }
@@ -176,12 +176,12 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Group group = await _addressBookService.GetGroup(id);
             if (group == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(group);
         }
@@ -206,12 +206,12 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Contact contact = await _addressBookService.GetContact(id);
             if (contact == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             var groups = db.Groups.OrderBy(x => x.Name).Where(x => x.UserId == contact.Group.UserId);
             ViewBag.GroupId = new SelectList(groups, "GroupId", "Name", contact.GroupId);
@@ -243,12 +243,12 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Group group = await _addressBookService.GetGroup(id);
             if (group == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(group);
         }
@@ -269,12 +269,12 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Contact contact = await _addressBookService.GetContact(id);
             if (contact == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(contact);
         }
@@ -296,12 +296,12 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             Group group = await _addressBookService.GetGroup(id);
             if (group == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(group);
         }

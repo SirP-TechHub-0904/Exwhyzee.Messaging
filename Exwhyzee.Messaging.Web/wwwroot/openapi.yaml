@@ -1,0 +1,149 @@
+openapi: 3.0.0
+info:
+  title: Exwhyzee Messaging API
+  description: |
+    Welcome to the Exwhyzee Messaging API Documentation.
+    Here you will find everything you need to know about integrating with our messaging platform.
+    
+    ## Authentication
+    All API endpoints require authentication using your **API Key**. 
+    You must include this key in the headers of every request.
+    
+    ```http
+    ApiKey: xyz_key_XXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ```
+    
+    If the API Key is missing or invalid, you will receive a `401 Unauthorized` response.
+  version: "1.0.0"
+servers:
+  - url: /
+    description: Current Environment
+security:
+  - ApiKeyAuth: []
+paths:
+  /api/sms/send:
+    post:
+      summary: Send an SMS Message
+      description: Sends an SMS message to one or more recipients.
+      tags:
+        - SMS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComposeSmsRequest'
+      responses:
+        '200':
+          description: Message was successfully queued/sent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendMessageResponse'
+        '400':
+          description: Bad Request (Invalid parameters or insufficient balance)
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Insufficient Units to send message."
+        '401':
+          description: Unauthorized (Invalid or missing ApiKey)
+  /api/sms/balance:
+    get:
+      summary: Check Account Balance
+      description: Retrieves the current available SMS units for your account.
+      tags:
+        - Account
+      responses:
+        '200':
+          description: Successfully retrieved balance.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: number
+                    example: 1542.50
+        '401':
+          description: Unauthorized (Invalid or missing ApiKey)
+  /api/sms/history:
+    get:
+      summary: View Transaction History
+      description: Retrieves a list of your most recent transactions (up to 50 records).
+      tags:
+        - Account
+      responses:
+        '200':
+          description: Successfully retrieved history.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionRecord'
+        '401':
+          description: Unauthorized (Invalid or missing ApiKey)
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: ApiKey
+      description: Enter your API Key
+  schemas:
+    ComposeSmsRequest:
+      type: object
+      required:
+        - recipients
+        - senderId
+        - content
+      properties:
+        recipients:
+          type: string
+          description: Comma-separated list of recipient phone numbers.
+          example: "08012345678,08123456789"
+        senderId:
+          type: string
+          description: The sender ID or brand name (e.g., MyBrand). Maximum 11 characters.
+          example: "MyBrand"
+        content:
+          type: string
+          description: The actual text content of the SMS message.
+          example: "Hello! This is a test message from my API."
+    SendMessageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Message has been sent successfully."
+        description:
+          type: string
+          example: "Total Units used is 2."
+        responseCode:
+          type: string
+          example: ""
+    TransactionRecord:
+      type: object
+      properties:
+        dateCreated:
+          type: string
+          format: date-time
+          example: "2023-10-25T14:30:00Z"
+        amount:
+          type: number
+          example: 5.5
+        status:
+          type: integer
+          description: The status of the transaction
+          example: 1
+        transactionType:
+          type: integer
+          example: 2
+        note:
+          type: string
+          example: "Sent SMS to 08012345678"

@@ -1,4 +1,4 @@
-﻿@model Exwhyzee.Messaging.Web.Models.Client
+@model Exwhyzee.Messaging.Core.Models.Client
 
 @{
     ViewBag.Title = "Edit User Record";
@@ -38,7 +38,6 @@
                     @Html.HiddenFor(model => model.UserId)
                     @Html.HiddenFor(model => model.Units)
                     @Html.HiddenFor(model => model.Discount)
-                    @Html.HiddenFor(model => model.Plan)
                   
 
                     <div class="form-group">
@@ -104,3 +103,5 @@
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
 }
+
+

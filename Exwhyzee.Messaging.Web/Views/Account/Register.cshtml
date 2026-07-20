@@ -1,5 +1,5 @@
-﻿@model Exwhyzee.Messaging.Web.Models.RegisterViewModel
-@using Recaptcha.Web.Mvc
+@model Exwhyzee.Messaging.Core.Models.RegisterViewModel
+
 @{
     Layout = "~/Views/Shared/_LoginLayout.cshtml";
     ViewBag.Title = "Register";
@@ -64,7 +64,7 @@
                     <span class="glyphicon glyphicon-log-in form-control-feedback"></span>
                 </div>
                 @*<div class="form-group has-feedback">
-                    @Html.Recaptcha(theme: Recaptcha.Web.RecaptchaTheme.Clean)
+                    
                 </div>*@
 
                 <div class="row">
@@ -113,3 +113,9 @@
         });
     </script>
 }
+
+
+
+
+
+

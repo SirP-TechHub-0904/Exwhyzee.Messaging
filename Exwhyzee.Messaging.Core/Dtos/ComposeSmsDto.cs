@@ -1,0 +1,27 @@
+using Exwhyzee.Messaging.Core.Services;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+
+
+namespace Exwhyzee.Messaging.Core.Dtos
+{
+    public class ComposeSmsDto
+    {
+        [Required]
+        [MaxLength(11, ErrorMessage = "Sender Id can not be more than 11 characters.")]
+        //[RegularExpression("^[a-zA-Z ]*$", ErrorMessage = "You can use only Alphabets. Numbers and Non-alphanumeric characters are not allowed.")]
+        public string SenderId { get; set; }
+
+        [DataType(DataType.MultilineText)]
+        public string Recipients { get; set; }
+
+        [Required]
+        [BlockBlackListedWords]
+        [DataType(DataType.MultilineText)]
+        public string Content { get; set; }
+
+    }
+}
+

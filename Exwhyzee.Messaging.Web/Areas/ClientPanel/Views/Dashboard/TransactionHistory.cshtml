@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Exwhyzee.Messaging.Web.Models.Transaction>
+@model IEnumerable<Exwhyzee.Messaging.Core.Models.Transaction>
 @{
     ViewBag.Title = "Transaction History";
 }
@@ -95,7 +95,7 @@
                             </td>
                             <td>
                                 @Html.DisplayFor(modelItem => item.Status)
-                                @if (item.TransactionType == Exwhyzee.Messaging.Web.Models.TransactionType.OnlinePayment && item.Status == Exwhyzee.Messaging.Web.Models.TransactionStatus.Pending)
+                                @if (item.TransactionType == Exwhyzee.Messaging.Core.Models.TransactionType.OnlinePayment && item.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Pending)
                                 {
                                     @Html.ActionLink("Retry", "PayNow", new { id = item.TransactionId }, new {@class="btn btn-primary btn-xs"})
                                 }

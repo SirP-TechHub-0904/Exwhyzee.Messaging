@@ -1,5 +1,6 @@
-﻿@model Exwhyzee.Messaging.Web.Models.ManageLoginsViewModel
-@using Microsoft.Owin.Security
+@inject Microsoft.AspNetCore.Identity.SignInManager<Exwhyzee.Messaging.Core.Models.ApplicationUser> SignInManager
+@model Exwhyzee.Messaging.Core.Models.ManageLoginsViewModel
+@using Microsoft.AspNetCore.Identity
 @{
     ViewBag.Title = "Manage your external logins";
 }
@@ -8,7 +9,7 @@
 
 <p class="text-success">@ViewBag.StatusMessage</p>
 @{
-    var loginProviders = Context.GetOwinContext().Authentication.GetExternalAuthenticationTypes();
+    var loginProviders = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
     if (loginProviders.Count() == 0) {
         <div>
             <p>
@@ -58,9 +59,9 @@
                 @Html.AntiForgeryToken()
                 <div id="socialLoginList">
                 <p>
-                    @foreach (AuthenticationDescription p in Model.OtherLogins)
+                    @foreach (var p in Model.OtherLogins)
                     {
-                        <button type="submit" class="btn btn-default" id="@p.AuthenticationType" name="provider" value="@p.AuthenticationType" title="Log in using your @p.Caption account">@p.AuthenticationType</button>
+                        <button type="submit" class="btn btn-default" id="@p.Name" name="provider" value="@p.Name" title="Log in using your @p.DisplayName account">@p.DisplayName</button>
                     }
                 </p>
                 </div>
@@ -68,3 +69,6 @@
         }
     }
 }
+
+
+

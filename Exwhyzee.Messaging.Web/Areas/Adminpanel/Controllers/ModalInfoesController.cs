@@ -1,19 +1,22 @@
-﻿using System;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Net;
-using System.Web;
-using System.Web.Mvc;
-using Exwhyzee.Messaging.Web.Models;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Exwhyzee.Messaging.Core.Models;
 
 namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 {
+    [Area("Adminpanel")]
     public class ModalInfoesController : Controller
     {
-        private ApplicationDbContext db = new ApplicationDbContext();
+        private ApplicationDbContext db => HttpContext.RequestServices.GetService<ApplicationDbContext>();
 
         // GET: Adminpanel/ModalInfoes
         public async Task<ActionResult> Index()
@@ -26,12 +29,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             ModalInfo modalInfo = await db.ModalInfos.FindAsync(id);
             if (modalInfo == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(modalInfo);
         }
@@ -47,7 +50,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create([Bind(Include = "Id,Modal")] ModalInfo modalInfo)
+        public async Task<ActionResult> Create(ModalInfo modalInfo)
         {
             if (ModelState.IsValid)
             {
@@ -64,12 +67,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             ModalInfo modalInfo = await db.ModalInfos.FindAsync(id);
             if (modalInfo == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(modalInfo);
         }
@@ -79,7 +82,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "Id,Modal")] ModalInfo modalInfo)
+        public async Task<ActionResult> Edit(ModalInfo modalInfo)
         {
             if (ModelState.IsValid)
             {
@@ -95,12 +98,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             ModalInfo modalInfo = await db.ModalInfos.FindAsync(id);
             if (modalInfo == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(modalInfo);
         }
@@ -126,3 +129,5 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         }
     }
 }
+
+

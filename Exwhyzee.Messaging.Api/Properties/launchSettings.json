@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "Exwhyzee.Messaging.Api": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:59929;http://localhost:59930"
+    }
+  }
+}

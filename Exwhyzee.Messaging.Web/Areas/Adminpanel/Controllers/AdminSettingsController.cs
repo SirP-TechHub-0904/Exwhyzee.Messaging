@@ -1,30 +1,30 @@
-﻿using Hangfire;
-using Exwhyzee.Messaging.Web.Data.IServices;
-using Exwhyzee.Messaging.Web.Data.Services;
-using Exwhyzee.Messaging.Web.Models;
-using Exwhyzee.Messaging.Web.Services;
+using Hangfire;
+using Exwhyzee.Messaging.Core.Data.IServices;
+using Exwhyzee.Messaging.Core.Data.Services;
+using Exwhyzee.Messaging.Core.Models;
+using Exwhyzee.Messaging.Core.Services;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Mvc;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 {
     [Authorize(Roles = "SuperAdmin,Admin")]
+    [Area("Adminpanel")]
     public class AdminSettingsController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
         private IAdminSettings _adminSettings = new AdminSettings();
         private IClientService _clientService = new ClientService();
 
-        public AdminSettingsController()
-        {
-        }
+        
 
         public AdminSettingsController(AdminSettings adminSettings)
         {
@@ -37,7 +37,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             AdminSetting adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
             if (adminSetting == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(adminSetting);
         }
@@ -47,7 +47,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> EditSettings([Bind(Include = "AdminSettingId,BlackListedWords,UnitPerNewMember,FlatUnitsPerSms,DefaultUserUnitReorderLevel,PricePerUnit,SendOrderApprovedNotification,SendLowOnUnitsNotification,SendRecievedRequestNotification,SendReminderToDebtor,SendAccountCreditedNotification,SendUserBirthdayWishes,PreventApiModification")] AdminSetting adminSetting)
+        public async Task<ActionResult> EditSettings(AdminSetting adminSetting)
         {
             if (ModelState.IsValid)
             {

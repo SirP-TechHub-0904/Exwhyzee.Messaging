@@ -1,4 +1,4 @@
-﻿@model Exwhyzee.Messaging.Web.Models.Client
+@model Exwhyzee.Messaging.Core.Models.Client
 
 @{
     ViewBag.Title = "ChangePlan";
@@ -54,9 +54,7 @@
                     <div class="form-group">
                         @Html.Label("Choose a Plan", htmlAttributes: new { @class = "control-label col-md-3" })
                         <div class="col-md-9">
-                            @Html.EnumDropDownListFor(model => model.Plan,"Choose a Plan", htmlAttributes: new { @class = "form-control" })
 
-                            @Html.ValidationMessageFor(model => model.Plan, "", new { @class = "text-danger" })
                         </div>
                     </div>
                     
@@ -80,3 +78,5 @@
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
 }
+
+

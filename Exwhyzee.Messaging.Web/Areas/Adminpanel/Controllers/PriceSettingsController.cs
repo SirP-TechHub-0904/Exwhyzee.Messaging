@@ -1,27 +1,27 @@
-﻿using Exwhyzee.Messaging.Web.Data.IServices;
-using Exwhyzee.Messaging.Web.Data.Services;
-using Exwhyzee.Messaging.Web.Models;
+using Exwhyzee.Messaging.Core.Data.IServices;
+using Exwhyzee.Messaging.Core.Data.Services;
+using Exwhyzee.Messaging.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Mvc;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 {
     [Authorize(Roles = "SuperAdmin,Admin")]
+    [Area("Adminpanel")]
     public class PriceSettingsController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
         private IPriceSettingsService _priceService = new PriceSettingService();
 
-        public PriceSettingsController()
-        {
-        }
+        
 
         public PriceSettingsController(PriceSettingService priceSettingService)
         {
@@ -45,12 +45,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             var priceSetting = await _priceService.GetPriceSetting(id);
             if (priceSetting == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(priceSetting);
         }
@@ -60,12 +60,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         //{
         //    if (id == null)
         //    {
-        //        return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+        //        return BadRequest();
         //    }
         //    var priceSetting = await _priceService.GetPriceSetting(id);
         //    if (priceSetting == null)
         //    {
-        //        return HttpNotFound();
+        //        return NotFound();
         //    }
         //    return View(priceSetting);
         //}
@@ -80,7 +80,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> CreatePriceSetting([Bind(Include = "PriceSettingId,Country,UnitsPerSms,NetworkProvider,DigitCount,InternationalDialCode")] PriceSetting priceSetting)
+        public async Task<ActionResult> CreatePriceSetting(PriceSetting priceSetting)
         {
             if (ModelState.IsValid)
             {
@@ -97,7 +97,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
             if (priceSettings == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             ViewBag.Id = id;
             return View();
@@ -108,7 +108,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> CreateDial([Bind(Include = "DialCodeId,NumberPrefix")] DialCode dialCode, int? id)
+        public async Task<ActionResult> CreateDial(DialCode dialCode, int? id)
         {
             if (ModelState.IsValid)
             {
@@ -125,12 +125,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             var priceSetting = await _priceService.GetPriceSetting(id);
             if (priceSetting == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(priceSetting);
         }
@@ -140,7 +140,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "PriceSettingId,Country,NetworkProvider,DigitCount,UnitsPerSms,InternationalDialCode")] PriceSetting priceSetting)
+        public async Task<ActionResult> Edit(PriceSetting priceSetting)
         {
             if (ModelState.IsValid)
             {
@@ -155,12 +155,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             var dialCode = await _priceService.GetDialCode(id);
             if (dialCode == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(dialCode);
         }
@@ -170,7 +170,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> EditDialCode([Bind(Include = "DialCodId,NumberPrefix,PriceSettingId")] DialCode dialCode)
+        public async Task<ActionResult> EditDialCode(DialCode dialCode)
         {
             if (ModelState.IsValid)
             {
@@ -185,12 +185,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             PriceSetting priceSetting = await _priceService.GetPriceSetting(id);
             if (priceSetting == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(priceSetting);
         }
@@ -211,12 +211,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         {
             if (id == null)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                return BadRequest();
             }
             DialCode dialCode = await _priceService.GetDialCode(id);
             if (dialCode == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
             return View(dialCode);
         }

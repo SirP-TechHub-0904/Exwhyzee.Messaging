@@ -1,4 +1,4 @@
-﻿@model Exwhyzee.Messaging.Web.Models.DialCode
+@model Exwhyzee.Messaging.Core.Models.DialCode
 
 @{
     ViewBag.Title = "DeleteDialCode";
@@ -45,11 +45,11 @@
                     </dd>
 
                     <dt>
-                        @Html.DisplayNameFor(model => model.Code)
+                        @Html.DisplayNameFor(model => model.NumberPrefix)
                     </dt>
 
                     <dd>
-                        @Html.DisplayFor(model => model.Code)
+                        @Html.DisplayFor(model => model.NumberPrefix)
                     </dd>
                 </dl>
 
@@ -65,3 +65,4 @@
         </div>
     </div>
 </section>
+
