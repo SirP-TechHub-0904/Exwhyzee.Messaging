@@ -21,6 +21,7 @@ namespace Exwhyzee.Messaging.Core.Models
         public DateTime DateAddded { get; set; }
         public DateTime? DateOfBirth { get; set; }
         public string Note { get; set; }
+        public bool IsActive { get; set; } = true;
 
         public Group Group { get; set; }
     }

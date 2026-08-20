@@ -12,6 +12,12 @@ namespace Exwhyzee.Messaging.Core.Models
         public DateTime DateOfBirth { get; set; }
         public DateTime DateRegitered { get; set; }
         public string Code { get; set; }
+
+        // Multi-Option 2FA Properties
+        public TwoFactorMethod PreferredTwoFactorMethod { get; set; }
+        public string TwoFactorSecretKey { get; set; }
+        public string LastOtpCode { get; set; }
+        public DateTime? LastOtpExpiry { get; set; }
     }
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
@@ -28,8 +34,43 @@ namespace Exwhyzee.Messaging.Core.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
-                // Fallback connection string for legacy new ApplicationDbContext() usages scattered throughout the app
-                optionsBuilder.UseSqlServer("Data Source=147.93.128.160,1433;Initial Catalog=DB_9AFABF_xyzsmsdb;User Id=user_db;Password=Exwhyzee@123;TrustServerCertificate=True;");
+                string connStr = Environment.GetEnvironmentVariable("ConnectionStrings__ZyxsmsDbConnection");
+                if (string.IsNullOrWhiteSpace(connStr))
+                {
+                    try
+                    {
+                        var possibleEnvPaths = new[]
+                        {
+                            Path.Combine(AppContext.BaseDirectory, ".env"),
+                            Path.Combine(Directory.GetCurrentDirectory(), ".env"),
+                            Path.Combine(Directory.GetCurrentDirectory(), "..", "Exwhyzee.Messaging.Web", ".env"),
+                            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "Exwhyzee.Messaging.Web", ".env")
+                        };
+
+                        foreach (var envPath in possibleEnvPaths)
+                        {
+                            if (File.Exists(envPath))
+                            {
+                                foreach (var rawLine in File.ReadAllLines(envPath))
+                                {
+                                    var line = rawLine.Trim();
+                                    if (line.StartsWith("ConnectionStrings__ZyxsmsDbConnection="))
+                                    {
+                                        connStr = line.Substring("ConnectionStrings__ZyxsmsDbConnection=".Length).Trim();
+                                        break;
+                                    }
+                                }
+                                if (!string.IsNullOrEmpty(connStr)) break;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
+                if (!string.IsNullOrWhiteSpace(connStr))
+                {
+                    optionsBuilder.UseSqlServer(connStr);
+                }
             }
         }
 
@@ -49,6 +90,10 @@ namespace Exwhyzee.Messaging.Core.Models
         public DbSet<MessageChunk> MessageChunks { get; set; }
         public DbSet<ModalInfo> ModalInfos { get; set; }
         public DbSet<XyzSenderID> XyzSenderIDs { get; set; }
+        public DbSet<AppNotification> AppNotifications { get; set; }
+        public DbSet<SupportTicket> SupportTickets { get; set; }
+        public DbSet<TicketResponse> TicketResponses { get; set; }
+        public DbSet<EmailLog> EmailLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -56,6 +101,13 @@ namespace Exwhyzee.Messaging.Core.Models
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 entityType.SetTableName(entityType.DisplayName());
+            }
+
+            foreach (var property in modelBuilder.Model.GetEntityTypes()
+                .SelectMany(t => t.GetProperties())
+                .Where(p => p.ClrType == typeof(decimal) || p.ClrType == typeof(decimal?)))
+            {
+                property.SetColumnType("decimal(18,2)");
             }
 
             // Call base AFTER custom conventions so Identity tables (AspNetUsers, etc.) are correctly mapped and not overwritten

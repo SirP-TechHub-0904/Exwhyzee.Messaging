@@ -1,44 +1,199 @@
 <!DOCTYPE html>
-
-<html lang="eng">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>@ViewBag.Title - XYZSMS</title>
-    @RenderSection("meta", required: false)
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="/Content/image/xyzico.png" rel="shortcut icon" type="image/x-icon" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title - Exwhyzee Messaging</title>
+    <link href="~/Content/image/xyzico.png" rel="shortcut icon" type="image/x-icon" />
 
-    <link rel="stylesheet" href="/Content/Dashboard/bootstrap/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/font-awesome/css/font-awesome.min.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/ionicons/css/ionicons.min.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/dist/css/AdminLTE.min.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/dist/css/site.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/dist/css/skins/_all-skins.min.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/plugins/iCheck/flat/blue.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/plugins/datepicker/datepicker3.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css" />
+    <!-- Google Fonts & Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Modern Design System Stylesheet -->
+    <link href="~/Content/css/modern-theme.css" rel="stylesheet" />
+
+    <style>
+        .xyz-auth-container {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            background: #FFFFFF;
+        }
+
+        .xyz-auth-side {
+            background: linear-gradient(145deg, rgba(11, 15, 25, 0.86) 0%, rgba(26, 5, 7, 0.90) 100%),
+                        url('/Content/image/auth-bg.jpg') center/cover no-repeat;
+            color: white;
+            padding: 60px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .xyz-auth-side::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(229, 9, 20, 0.25) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .xyz-auth-form-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background: var(--xyz-gray-50);
+        }
+
+        .xyz-auth-card {
+            width: 100%;
+            max-width: 440px;
+            background: #FFFFFF;
+            padding: 40px;
+            border-radius: var(--xyz-radius-xl);
+            border: 1px solid var(--xyz-gray-200);
+            box-shadow: var(--xyz-shadow-lg);
+        }
+
+        .xyz-input-icon-wrapper {
+            position: relative;
+            margin-bottom: 18px;
+            width: 100%;
+        }
+
+        .xyz-input-icon-wrapper > i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--xyz-gray-400);
+            font-size: 1rem;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .xyz-input-icon-wrapper input,
+        .xyz-input-icon-wrapper select {
+            width: 100%;
+            box-sizing: border-box;
+            padding-left: 44px !important;
+            padding-right: 48px !important;
+            height: 48px;
+            border-radius: var(--xyz-radius-md);
+            border: 1px solid var(--xyz-gray-300);
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: var(--xyz-transition);
+            background: #FFFFFF;
+        }
+
+        .xyz-input-icon-wrapper input:focus,
+        .xyz-input-icon-wrapper select:focus {
+            border-color: var(--xyz-primary);
+            box-shadow: 0 0 0 3px var(--xyz-primary-light);
+            outline: none;
+        }
+
+        .xyz-pwd-eye {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            color: var(--xyz-gray-400);
+            font-size: 1.05rem;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+            z-index: 10;
+        }
+
+        .xyz-pwd-eye i {
+            position: static !important;
+            transform: none !important;
+            color: inherit !important;
+            font-size: 1.05rem !important;
+            pointer-events: auto !important;
+        }
+
+        .xyz-pwd-eye:hover {
+            color: var(--xyz-dark-900);
+        }
+
+        @@media (max-width: 900px) {
+            .xyz-auth-container {
+                grid-template-columns: 1fr;
+            }
+            .xyz-auth-side {
+                display: none;
+            }
+        }
+    </style>
     @RenderSection("styles", required: false)
 </head>
-
-<body class="login-page">
-
+<body>
     @RenderBody()
-    @*<div class="container"</div>*@
 
- 
-    <script src="/Content/Dashboard/plugins/jQuery/jquery-2.2.3.min.js"></script>
-    <script src="/Content/Dashboard/plugins/jQuery/jquery-ui-1.12.0.min.js"></script>
-    <script src="/Content/Dashboard/bootstrap/js/bootstrap.min.js"></script>
-    <script src="/Content/Dashboard/plugins/datepicker/bootstrap-datepicker.js"></script>
-    <script src="/Content/Dashboard/dist/js/app.min.js"></script>
-    
-    @*<script src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.1.0/raphael-min.js"></script>*@
-    <script>
-        $.widget.bridge('uibutton', $.ui.button);
-    </script>
-   
+    <!-- Modern App & Toast Script -->
+    <script src="~/Scripts/modern-app.js"></script>
+
+    @if (TempData["Success"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.xyzToast) {
+                    window.xyzToast.success("@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["Success"].ToString()))", "Success");
+                }
+            });
+        </script>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.xyzToast) {
+                    window.xyzToast.error("@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["Error"].ToString()))", "Error");
+                }
+            });
+        </script>
+    }
+    @if (TempData["error"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.xyzToast) {
+                    window.xyzToast.error("@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["error"].ToString()))", "Error");
+                }
+            });
+        </script>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.xyzToast) {
+                    window.xyzToast.info("@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["Info"].ToString()))", "Information");
+                }
+            });
+        </script>
+    }
 
     @RenderSection("Scripts", required: false)
 </body>
 </html>
-

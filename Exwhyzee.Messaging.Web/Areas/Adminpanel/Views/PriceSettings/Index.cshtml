@@ -1,79 +1,155 @@
 @model IEnumerable<Exwhyzee.Messaging.Core.Models.PriceSetting>
 
 @{
-    ViewBag.Title = "Price Settings";
+    ViewBag.Title = "Network Price & Tariff Settings";
+    decimal flatUnits = ViewBag.FlatUnits ?? 4.0m;
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>Price Settings</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Price Settings</a></li>
-        <li class="active">All Price Settings</li>
-    </ol>
-</section>
-<section class="content">
+<style>
+    .xyz-price-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    .xyz-network-badge {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 800;
+        font-size: 0.82rem;
+        padding: 4px 10px;
+        border-radius: 6px;
+        background: #EEF2FF;
+        color: #4F46E5;
+        border: 1px solid #C7D2FE;
+        display: inline-block;
+    }
+    .xyz-unit-val {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 800;
+        color: #059669;
+        font-size: 0.95rem;
+    }
+</style>
 
-    <div class="box">
-        <div class="box-header">
-            <h3 class="box-title">Price Settings </h3>
+@Html.Partial("_ResponseMessagePartial")
 
-            <span class="pull-right">
-                <a href="@Url.Content(" ../../adminpanel/pricesettings/CreatePriceSetting")" class="btn btn-app"><i class="fa fa-plus-circle"></i>Add Price Setting</a>
-            </span>
+<!-- Hero Header Card -->
+<div class="xyz-price-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h2 style="margin:0 0 4px; font-weight:800; font-size:1.4rem; color:#0F172A;">
+                <i class="fa fa-tags" style="color:#0284C7;"></i> Network Price &amp; Tariff Settings
+            </h2>
+            <p style="margin:0; color:#64748B; font-size:0.9rem;">Configure SMS unit billing rates per telecom network operator across countries.</p>
         </div>
-        <div class="box-body">
-            <table class="table table-bordered table-striped">
-                <tr>
-                    <th>
-                        @Html.DisplayNameFor(model => model.Country)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.NetworkProvider)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.DigitCount)
-                    </th>
-                    <th>
-                        @Html.DisplayNameFor(model => model.UnitsPerSms)
-                    </th>
-                    <th></th>
-                </tr>
+        <div>
+            <a href="@Url.Action("CreatePriceSetting", "PriceSettings", new { area = "Adminpanel" })" class="btn btn-primary" style="background:#0284C7; border:none; font-weight:800; font-size:0.95rem; padding:10px 20px; border-radius:10px; box-shadow:0 4px 14px rgba(2,132,199,0.3);">
+                <i class="fa fa-plus"></i> Add Price Setting
+            </a>
+        </div>
+    </div>
+</div>
 
-                @foreach (var item in Model)
+<!-- Global Default Fallback Flat Rate Card -->
+<div class="xyz-price-card" style="background:linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%); border:1px solid #C7D2FE;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h4 style="margin:0 0 4px; font-weight:800; font-size:1.1rem; color:#1E1B4B;">
+                <i class="fa fa-shield-halved" style="color:#4F46E5; margin-right:6px;"></i> Default Fallback Flat Rate
+            </h4>
+            <p style="margin:0; color:#475569; font-size:0.88rem;">
+                Charged when a recipient number's prefix is <strong>not assigned</strong> to any network operator below (e.g. unrecognized or international numbers).
+            </p>
+        </div>
+        <div>
+            @using (Html.BeginForm("UpdateFlatRate", "PriceSettings", new { area = "Adminpanel" }, FormMethod.Post, new { @class = "form-inline", style = "margin:0;" }))
+            {
+                @Html.AntiForgeryToken()
+                <div class="input-group" style="display:flex; width:260px;">
+                    <input type="number" step="0.01" min="0.1" name="flatUnits" value="@flatUnits.ToString("0.00")" class="form-control" placeholder="Rate (e.g. 5.00)" required style="border-top-left-radius:8px; border-bottom-left-radius:8px; border-top-right-radius:0; border-bottom-right-radius:0; height:42px; font-weight:800; font-size:1.1rem; color:#059669;" />
+                    <span class="input-group-btn">
+                        <button type="submit" class="btn btn-primary" style="border-top-right-radius:8px; border-bottom-right-radius:8px; border-top-left-radius:0; border-bottom-left-radius:0; height:42px; font-weight:800; background:#4F46E5; border:none; padding:0 18px;">
+                            <i class="fa fa-save"></i> Save Rate
+                        </button>
+                    </span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Main Table Box -->
+<div class="box" style="border-radius:12px; border:1px solid #E2E8F0; box-shadow:0 4px 20px rgba(0,0,0,0.04); background:#ffffff;">
+    <div class="box-header" style="padding:16px 20px; border-bottom:1px solid #E2E8F0; background:#FAFAFA; border-top-left-radius:12px; border-top-right-radius:12px; display:flex; justify-content:space-between; align-items:center;">
+        <h3 class="box-title" style="font-weight:800; font-size:1.1rem; color:#0F172A; margin:0;">
+            <i class="fa fa-list" style="color:#10B981;"></i> Configured Network Tariffs
+            <span class="label label-primary" style="background:#0284C7; font-size:0.8rem; padding:4px 10px; border-radius:6px; margin-left:8px;">@Model.Count() Networks</span>
+        </h3>
+    </div>
+
+    <div class="box-body table-responsive" style="padding:20px;">
+        <table id="priceSettingTable" class="table table-hover" style="vertical-align:middle; font-size:0.88rem;">
+            <thead style="background:#F8FAFC; font-weight:800; font-size:0.75rem; color:#475569; text-transform:uppercase;">
+                <tr>
+                    <th style="padding:12px 16px;">Country</th>
+                    <th>Dial Code</th>
+                    <th>Network Provider</th>
+                    <th>Number Digits</th>
+                    <th>SMS Rate (Units/SMS)</th>
+                    <th style="text-align:right; padding-right:16px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model == null || !Model.Any())
                 {
                     <tr>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.Country)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.NetworkProvider)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.DigitCount)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.UnitsPerSms)
-                        </td>
-                        <td>
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-info btn-sm">Action</button>
-                                <button type="button" class="btn btn-info dropdown-toggle btn-sm" data-toggle="dropdown">
-                                    <span class="caret"></span>
-                                    <span class="sr-only">Toggle Dropdown</span>
-                                </button>
-                                <ul class="dropdown-menu" role="menu">
-                                    <li>@Html.ActionLink("Edit", "Edit", new { id = item.PriceSettingId })</li>
-                                    <li>@Html.ActionLink("Details", "PriceSettingDetails", new { id = item.PriceSettingId })</li>
-                                    <li>@Html.ActionLink("Delete", "Delete", new { id = item.PriceSettingId })</li>
-                                </ul>
-                            </div>
+                        <td colspan="6" style="text-align:center; padding:40px; color:#94A3B8;">
+                            <i class="fa fa-tags" style="font-size:2.5rem; display:block; margin-bottom:10px; color:#CBD5E1;"></i>
+                            No price settings configured yet.
                         </td>
                     </tr>
                 }
-            </table>
-        </div>
+                else
+                {
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td style="padding:14px 16px;">
+                                <strong style="color:#0F172A;">@item.Country</strong>
+                            </td>
+                            <td>
+                                <code style="color:#0284C7; font-weight:700;">+@(item.InternationalDialCode ?? "234")</code>
+                            </td>
+                            <td>
+                                <span class="xyz-network-badge">
+                                    <i class="fa fa-signal" style="font-size:0.7rem; margin-right:4px;"></i> @item.NetworkProvider
+                                </span>
+                            </td>
+                            <td>
+                                <span style="font-weight:700; color:#334155;">@item.DigitCount Digits</span>
+                            </td>
+                            <td>
+                                <span class="xyz-unit-val">@item.UnitsPerSms.ToString("N2") Units</span>
+                            </td>
+                            <td style="text-align:right; padding-right:16px;">
+                                <div style="display:inline-flex; align-items:center; gap:6px;">
+                                    <a href="@Url.Action("Edit", "PriceSettings", new { area = "Adminpanel", id = item.PriceSettingId })" class="btn btn-xs btn-default" style="font-weight:700; border-radius:6px;" title="Edit Pricing">
+                                        <i class="fa fa-pen-to-square"></i> Edit
+                                    </a>
+                                    <a href="@Url.Action("PriceSettingDetails", "PriceSettings", new { area = "Adminpanel", id = item.PriceSettingId })" class="btn btn-xs btn-info" style="font-weight:700; border-radius:6px; background:#0284C7; border:none;" title="View Details">
+                                        <i class="fa fa-eye"></i> Details
+                                    </a>
+                                    <a href="@Url.Action("Delete", "PriceSettings", new { area = "Adminpanel", id = item.PriceSettingId })" class="btn btn-xs btn-default" style="color:#EF4444; font-weight:700; border-radius:6px;" title="Delete Rule">
+                                        <i class="fa fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
     </div>
-</section>
+</div>

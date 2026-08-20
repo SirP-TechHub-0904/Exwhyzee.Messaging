@@ -1,120 +1,516 @@
 @model Exwhyzee.Messaging.Core.Models.Group
 
 @{
-    ViewBag.Title = "Group Details";
+    ViewBag.Title = Model.Name + " - Group Details";
+    int totalCount = Model.Contacts != null ? Model.Contacts.Count : 0;
+    int activeCount = Model.Contacts != null ? Model.Contacts.Count(c => c.IsActive) : 0;
+    int disabledCount = totalCount - activeCount;
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard(Client)
-        <small>Address Book</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Address Book</a></li>
-        <li class="active">Group Details</li>
-    </ol>
-</section>
+<style>
+    .xyz-details-hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 28px;
+    }
 
-<section class="content">
-    @Html.Partial("_ResponseMessagePartial")
-    <div class="box box-info">
-        <div class="box-header">
-            <h3 class="box-title">Group Details</h3>
+    .xyz-details-hero h1 {
+        font-size: 2.35rem;
+        font-weight: 800;
+        margin: 0 0 6px;
+        color: var(--xyz-dash-text);
+        letter-spacing: -0.5px;
+    }
 
-            <span class="pull-right">
-                <a href="@Url.Content(" ../../AddressBook")" class="btn btn-lg btn-primary"><i class="fa fa-backward"></i><br />Back</a>
-                <a href="@Url.Content(" ../../AddressBook/addcontact/"+Model.GroupId)" class="btn btn-lg btn-primary"><i class="fa fa-user-plus"></i><br />Add Single Contact</a>
-                <a href="@Url.Content(" ../../AddressBook/AddManyContact/"+Model.GroupId)" class="btn btn-lg btn-primary"><i class="fa fa-user-plus"></i><br />Add Many Contact</a>
-                <a href="@Url.Content(" ../../AddressBook/DeleteAll/"+Model.GroupId)" class="btn btn-lg btn-danger"><i class="fa fa-user-plus"></i><br />Add Many Contact</a>
+    .xyz-details-hero p {
+        font-size: 1.2rem;
+        color: var(--xyz-dash-muted);
+        margin: 0;
+    }
 
-            </span>
+    /* Panel Card */
+    .xyz-panel-card {
+        background: #FFFFFF;
+        border-radius: 18px;
+        border: 1px solid var(--xyz-dash-border);
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.03);
+        margin-bottom: 30px;
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-panel-card {
+        background: #131B2E;
+    }
+
+    .xyz-panel-header {
+        padding: 22px 28px;
+        border-bottom: 1px solid var(--xyz-dash-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .xyz-panel-title {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--xyz-dash-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    /* Toggle Switch */
+    .xyz-switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+    }
+
+    .xyz-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .xyz-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #CBD5E1;
+        transition: .3s;
+        border-radius: 24px;
+    }
+
+    .xyz-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+
+    input:checked + .xyz-slider {
+        background-color: #10B981;
+    }
+
+    input:checked + .xyz-slider:before {
+        transform: translateX(20px);
+    }
+</style>
+
+<!-- Hero Section -->
+<div class="xyz-details-hero">
+    <div>
+        <h1>
+            <i class="fa fa-folder-open" style="color:#6366F1; margin-right:8px;"></i> @Model.Name
+        </h1>
+        <p>@(string.IsNullOrWhiteSpace(Model.Description) ? "Address Book Contact Group" : Model.Description)</p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="@Url.Action("Compose", "Dashboard", new { area = "ClientPanel" })" class="btn btn-primary" style="background:#E50914; border:none; font-weight:800; font-size:1.05rem; padding:12px 24px; border-radius:12px; box-shadow:0 6px 18px rgba(229,9,20,0.3);">
+            <i class="fa fa-paper-plane"></i> Send SMS to Active Numbers
+        </a>
+        <a href="@Url.Action("Index", "AddressBook", new { area = "ClientPanel" })" class="btn btn-default" style="font-weight:800; font-size:1.05rem; padding:12px 20px; border-radius:12px;">
+            &larr; Back to Groups
+        </a>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible" style="border-radius:12px; font-weight:700; font-size:1.1rem; margin-bottom:24px;">
+        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+        <i class="fa fa-check-circle"></i> @TempData["Success"]
+    </div>
+}
+
+<!-- Group Overview Banner -->
+<div class="xyz-panel-card" style="padding:22px 28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px; background:rgba(99, 102, 241, 0.04); border-color:rgba(99, 102, 241, 0.15);">
+    <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:center;">
+        <div>
+            <span style="font-size:0.95rem; font-weight:700; color:var(--xyz-dash-muted); display:block;">Total Numbers</span>
+            <span style="font-size:1.8rem; font-weight:900; color:var(--xyz-dash-text);">@totalCount</span>
         </div>
-        <div class="box-body">
-            <div class="col-md-4 col-xs-12">
-                <strong><i class="fa fa-book margin-r-5"></i>  @Html.DisplayNameFor(model => model.Name)</strong>
-                <p class="text-muted">
-                    @Html.DisplayFor(model => model.Name)
-                </p>
-                <hr>
-            </div>
-            <div class="col-md-4 col-xs-12">
-                <strong><i class="fa fa-book margin-r-5"></i>  @Html.DisplayNameFor(model => model.Description)</strong>
-                <p class="text-muted">
-                    @Html.DisplayFor(model => model.Description)
-                </p>
-                <hr>
-            </div>
-            <div class="col-md-4 col-xs-12">
-                <strong><i class="fa fa-book margin-r-5"></i>  @Html.DisplayNameFor(model => model.DateCreated)</strong>
-                <p class="text-muted">
-                    @Html.DisplayFor(model => model.DateCreated)
-                </p>
-                <hr>
-            </div>
+        <div style="height:36px; width:1px; background:var(--xyz-dash-border);"></div>
+        <div>
+            <span style="font-size:0.95rem; font-weight:700; color:#10B981; display:block;">Active for Broadcasts</span>
+            <span style="font-size:1.8rem; font-weight:900; color:#10B981;" id="activeCountHeader">@activeCount</span>
+        </div>
+        <div style="height:36px; width:1px; background:var(--xyz-dash-border);"></div>
+        <div>
+            <span style="font-size:0.95rem; font-weight:700; color:#94A3B8; display:block;">Disabled (Excluded)</span>
+            <span style="font-size:1.8rem; font-weight:900; color:#94A3B8;" id="disabledCountHeader">@disabledCount</span>
         </div>
     </div>
 
-    <div class="box box-info">
-        <div class="box-header">
-            <h3 class="box-title">Contacts</h3>
-        </div>
-        <div class="box-body table-responsive">
-            <table class="table table-striped" id="example1">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>Surname</th>
-                        <th>Other Names</th>
-                        <th>Phone Number</th>
-                        <th>Date of Birth</th>
+    <!-- Batch Controls -->
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-sm btn-default" data-toggle="modal" data-target="#formatGuideModal" style="font-weight:800; border-radius:8px; padding:8px 16px;">
+            <i class="fa fa-book-open" style="color:#6366F1;"></i> Format Guide
+        </button>
+        <button type="button" class="btn btn-sm btn-default" onclick="batchToggleGroup(true)" style="font-weight:800; border-radius:8px; padding:8px 16px;">
+            <i class="fa fa-check-double" style="color:#10B981;"></i> Enable All
+        </button>
+        <button type="button" class="btn btn-sm btn-default" onclick="batchToggleGroup(false)" style="font-weight:800; border-radius:8px; padding:8px 16px;">
+            <i class="fa fa-ban" style="color:#94A3B8;"></i> Disable All
+        </button>
+        <a href="@Url.Action("AddManyContact", "AddressBook", new { area = "ClientPanel", id = Model.GroupId })" class="btn btn-sm btn-default" style="font-weight:800; border-radius:8px; padding:8px 16px;">
+            <i class="fa fa-plus"></i> Add Contacts
+        </a>
+    </div>
+</div>
 
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.Contacts)
+<!-- Contacts Table Card -->
+<div class="xyz-panel-card">
+    <div class="xyz-panel-header">
+        <h3 class="xyz-panel-title">
+            <i class="fa fa-users" style="color:#10B981;"></i> Group Contacts List
+        </h3>
+        <input type="text" id="contactSearchInput" class="form-control" placeholder="Search by name or number..." style="max-width:300px; height:44px; border-radius:10px; font-size:1.05rem;" />
+    </div>
+
+    <div class="table-responsive" style="margin-bottom:0;">
+        <table class="table table-hover" id="contactsTable" style="margin-bottom:0;">
+            <thead>
+                <tr style="background:rgba(0,0,0,0.02); font-size:1.05rem; color:var(--xyz-dash-muted);">
+                    <th style="padding:18px 26px; width:100px;">Broadcast</th>
+                    <th>Contact Name</th>
+                    <th>Phone Number</th>
+                    <th>Note / Label</th>
+                    <th>Date Added</th>
+                    <th style="text-align:right; padding-right:26px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Contacts != null && Model.Contacts.Any())
+                {
+                    foreach (var item in Model.Contacts.OrderByDescending(x => x.DateAddded))
                     {
-                        <tr>
-                            <td>
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-info btn-sm">Action</button>
-                                    <button type="button" class="btn btn-info dropdown-toggle btn-sm" data-toggle="dropdown">
-                                        <span class="caret"></span>
-                                        <span class="sr-only">Toggle Dropdown</span>
-                                    </button>
-                                    <ul class="dropdown-menu" role="menu">
-                                        <li><a href="@Url.Content("../../addressbook/editcontact/"+item.ContactId)">Edit</a></li>
-                                        <li><a href="@Url.Content("../../addressbook/DeleteContact/"+item.ContactId)">Delete</a></li>
-                                    </ul>
-                                </div>
+                        <tr id="contact-row-@item.ContactId">
+                            <td style="padding:18px 26px;">
+                                <label class="xyz-switch" title="Toggle active status for broadcast">
+                                    <input type="checkbox" @(item.IsActive ? "checked" : "") onchange="toggleContactActive(@item.ContactId, this)" />
+                                    <span class="xyz-slider"></span>
+                                </label>
                             </td>
-                            <td>@Html.DisplayFor(modelItem => item.Surname) </td>
-                            <td>@Html.DisplayFor(modelItem => item.Othernames) </td>
-                            <td>@Html.DisplayFor(modelItem => item.PhoneNumber) </td>
-                            <td>
-                                @if (item.DateOfBirth.HasValue)
-                                {
-                                    @item.DateOfBirth.Value.ToLongDateString();
-                                }
-
+                            <td style="padding:18px 12px; font-weight:800; font-size:1.15rem; color:var(--xyz-dash-text);">
+                                @(string.IsNullOrWhiteSpace(item.Surname) ? "Contact" : item.Surname) @item.Othernames
                             </td>
-
+                            <td style="padding:18px 12px; font-weight:800; font-size:1.2rem; color:#6366F1; font-family:'JetBrains Mono', monospace;">
+                                @item.PhoneNumber
+                            </td>
+                            <td style="padding:18px 12px; font-size:1.05rem; color:var(--xyz-dash-muted);">
+                                @(string.IsNullOrWhiteSpace(item.Note) ? "-" : item.Note)
+                            </td>
+                            <td style="padding:18px 12px; font-size:1.05rem; color:var(--xyz-dash-muted);">
+                                @item.DateAddded.ToString("MMM dd, yyyy")
+                            </td>
+                            <td style="text-align:right; padding-right:26px; padding-top:18px;">
+                                <button type="button" class="btn btn-sm btn-default" onclick="deleteContact(@item.ContactId)" style="color:#EF4444; padding:7px 12px; border-radius:8px;" title="Delete Contact">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
                         </tr>
                     }
-                </tbody>
-            </table>
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:60px 24px; color:var(--xyz-dash-muted); font-size:1.2rem;">
+                            <i class="fa fa-users" style="font-size:3rem; display:block; margin-bottom:16px; opacity:0.35;"></i>
+                            No contacts in this group yet. Click <strong>"Add Contacts"</strong> or use the <strong>AI Contact Extractor</strong>!
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL: File Format Guidelines & Sample Templates -->
+<div class="modal fade" id="formatGuideModal" tabindex="-1" role="dialog" aria-labelledby="formatGuideModalLabel">
+    <div class="modal-dialog modal-lg" role="document" style="max-width:820px;">
+        <div class="modal-content" style="border-radius:20px; border:none; box-shadow:0 16px 50px rgba(0,0,0,0.25); overflow:hidden;">
+            <div class="modal-header" style="background:#0B0F19; color:#FFFFFF; padding:22px 28px;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#FFFFFF; opacity:0.8; font-size:1.5rem;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="formatGuideModalLabel" style="font-weight:800; font-size:1.4rem; display:flex; align-items:center; gap:10px;">
+                    <i class="fa fa-book-open" style="color:#6366F1;"></i> File Format Guidelines & Sample Templates
+                </h4>
+            </div>
+
+            <div class="modal-body" style="padding:28px;">
+                <p style="font-size:1.1rem; color:var(--xyz-dash-muted); margin-bottom:20px;">
+                    Follow these guidelines when preparing your contact files for 100% accurate parsing and maximum SMS deliverability.
+                </p>
+
+                <!-- Navigation Tabs -->
+                <ul class="nav nav-pills" id="guideTabs" style="margin-bottom:24px; gap:8px;">
+                    <li class="active">
+                        <a href="#guide-excel" data-toggle="pill" style="font-weight:800; border-radius:10px; padding:10px 18px;">
+                            <i class="fa fa-file-excel" style="color:#10B981;"></i> Excel (.xlsx / .csv)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#guide-word" data-toggle="pill" style="font-weight:800; border-radius:10px; padding:10px 18px;">
+                            <i class="fa fa-file-word" style="color:#2563EB;"></i> Word (.docx)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#guide-txt" data-toggle="pill" style="font-weight:800; border-radius:10px; padding:10px 18px;">
+                            <i class="fa fa-file-lines" style="color:#6366F1;"></i> Plain Text (.txt)
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#guide-screenshot" data-toggle="pill" style="font-weight:800; border-radius:10px; padding:10px 18px;">
+                            <i class="fa fa-camera" style="color:#E50914;"></i> Screenshot OCR Tips
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content" style="margin-bottom:24px;">
+                    <!-- TAB 1: EXCEL / CSV -->
+                    <div class="tab-pane active" id="guide-excel">
+                        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:14px; padding:20px; margin-bottom:18px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                                <h5 style="font-weight:800; font-size:1.15rem; margin:0; color:#1E293B;">
+                                    <i class="fa fa-table"></i> Spreadsheet Layout (Columns)
+                                </h5>
+                                <button type="button" class="btn btn-sm btn-success" onclick="downloadSampleCsv()" style="font-weight:800; border-radius:8px; padding:6px 16px;">
+                                    <i class="fa fa-download"></i> Download Sample CSV
+                                </button>
+                            </div>
+
+                            <table class="table table-bordered" style="background:#fff; margin-bottom:12px; font-family:'JetBrains Mono', monospace; font-size:0.92rem;">
+                                <thead>
+                                    <tr style="background:#E2E8F0; font-weight:800;">
+                                        <th style="width:35%;">Column A (Phone Number)</th>
+                                        <th style="width:35%;">Column B (Contact Name)</th>
+                                        <th style="width:30%;">Column C (Note / Label)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="color:#6366F1; font-weight:700;">08031234567</td>
+                                        <td>John Doe</td>
+                                        <td>VIP Client</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color:#6366F1; font-weight:700;">2348029876543</td>
+                                        <td>Mary Smith</td>
+                                        <td>Lagos Branch</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color:#6366F1; font-weight:700;">+2349011223344</td>
+                                        <td>Emeka Okafor</td>
+                                        <td>Distributor</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <ul style="color:#475569; font-size:0.95rem; line-height:1.7; padding-left:20px; margin:0;">
+                                <li>Phone numbers can be formatted as <code>080...</code>, <code>23480...</code>, or <code>+234...</code>.</li>
+                                <li>Ensure phone numbers are not truncated or formatted as scientific notation (e.g. <code>8.03E+09</code> in Excel). Format the column as <strong>Text</strong>.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: WORD (.DOCX) -->
+                    <div class="tab-pane" id="guide-word">
+                        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:14px; padding:20px;">
+                            <h5 style="font-weight:800; font-size:1.15rem; margin:0 0 12px; color:#1E293B;">
+                                <i class="fa fa-file-word" style="color:#2563EB;"></i> Microsoft Word Document Structure
+                            </h5>
+                            <p style="color:#475569; font-size:0.98rem; margin-bottom:14px;">
+                                You can save contacts in a Word document in either of two standard styles:
+                            </p>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div style="background:#fff; border:1px solid #CBD5E1; border-radius:8px; padding:14px; font-family:'JetBrains Mono', monospace; font-size:0.88rem;">
+                                        <strong>Style 1: 2-Column Table</strong><br /><br />
+                                        John Doe - 08031234567<br />
+                                        Mary Smith - 08029876543<br />
+                                        Emeka Obi - 09011223344
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div style="background:#fff; border:1px solid #CBD5E1; border-radius:8px; padding:14px; font-family:'JetBrains Mono', monospace; font-size:0.88rem;">
+                                        <strong>Style 2: Line-by-Line List</strong><br /><br />
+                                        08031234567<br />
+                                        08029876543<br />
+                                        09011223344
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: PLAIN TEXT (.TXT) -->
+                    <div class="tab-pane" id="guide-txt">
+                        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:14px; padding:20px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                                <h5 style="font-weight:800; font-size:1.15rem; margin:0; color:#1E293B;">
+                                    <i class="fa fa-file-lines" style="color:#6366F1;"></i> Notepad / Plain Text (.txt)
+                                </h5>
+                                <button type="button" class="btn btn-sm btn-default" onclick="copySampleTxt()" style="font-weight:800; border-radius:8px; padding:6px 14px;">
+                                    <i class="fa fa-copy"></i> Copy Sample
+                                </button>
+                            </div>
+
+                            <textarea id="sampleTxtContent" class="form-control" rows="4" readonly style="font-family:'JetBrains Mono', monospace; font-size:0.95rem; border-radius:10px; background:#fff; margin-bottom:12px;">08031234567, 08029876543, 09011223344, 2348055667788, 07065432109</textarea>
+
+                            <p style="color:#475569; font-size:0.95rem; margin:0;">
+                                You can separate numbers with <strong>commas</strong>, <strong>spaces</strong>, <strong>semicolons</strong>, or <strong>new lines</strong>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- TAB 4: SCREENSHOT OCR -->
+                    <div class="tab-pane" id="guide-screenshot">
+                        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:14px; padding:20px;">
+                            <h5 style="font-weight:800; font-size:1.15rem; margin:0 0 12px; color:#1E293B;">
+                                <i class="fa fa-wand-magic-sparkles" style="color:#6366F1;"></i> Maximizing AI OCR Accuracy
+                            </h5>
+                            <div class="row" style="font-size:0.95rem; color:#475569;">
+                                <div class="col-md-6" style="margin-bottom:12px;">
+                                    <div style="background:#fff; border:1px solid #CBD5E1; border-radius:10px; padding:14px;">
+                                        <strong style="color:#10B981;"><i class="fa fa-check-circle"></i> Best Practices:</strong>
+                                        <ul style="margin:8px 0 0; padding-left:18px;">
+                                            <li>Clear screenshot of WhatsApp group info, members list, or chats.</li>
+                                            <li>Phone contacts app screenshots.</li>
+                                            <li>High resolution flyers or printed posters.</li>
+                                            <li>Clean handwriting on plain white paper.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div style="background:#fff; border:1px solid #CBD5E1; border-radius:10px; padding:14px;">
+                                        <strong style="color:#EF4444;"><i class="fa fa-circle-xmark"></i> What to Avoid:</strong>
+                                        <ul style="margin:8px 0 0; padding-left:18px;">
+                                            <li>Extremely blurry, low-resolution, or rotated photos.</li>
+                                            <li>Screenshots where numbers are partially obscured or cut off.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align:right;">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" style="font-weight:800; font-size:1.05rem; padding:10px 24px; border-radius:10px;">
+                        Close Guide
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
-</section>
+</div>
 
-@section scripts{
-
-    <script src="~/Content/Dashboard/plugins/datatables/jquery.dataTables.min.js"></script>
-    <script src="~/Content/Dashboard/plugins/datatables/dataTables.bootstrap.min.js"></script>
-
+@section scripts {
     <script>
-        $(function () {
-            $("#example1").DataTable();
+        // Toggle single contact active/inactive
+        function toggleContactActive(contactId, checkbox) {
+            $.post('@Url.Action("ToggleContactActive", "AddressBook", new { area = "ClientPanel" })', { contactId: contactId }, function (res) {
+                if (res && res.success) {
+                    if (window.xyzToast) {
+                        xyzToast.info('Number status updated: ' + (res.isActive ? 'Active (Will receive SMS)' : 'Disabled (Excluded from SMS)'), 'Status Updated');
+                    }
+                    updateCounts();
+                } else {
+                    checkbox.checked = !checkbox.checked;
+                    alert(res.message || 'Failed to update contact status.');
+                }
+            }).fail(function () {
+                checkbox.checked = !checkbox.checked;
+                alert('Network error updating contact status.');
+            });
+        }
 
+        // Batch toggle all contacts in this group
+        function batchToggleGroup(setActive) {
+            $.post('@Url.Action("BatchToggleGroupContacts", "AddressBook", new { area = "ClientPanel" })', { groupId: @Model.GroupId, setActive: setActive }, function (res) {
+                if (res && res.success) {
+                    $('.xyz-switch input').prop('checked', setActive);
+                    if (window.xyzToast) {
+                        xyzToast.success(res.count + ' contacts set to ' + (setActive ? 'Active' : 'Disabled'), 'Batch Updated');
+                    }
+                    updateCounts();
+                } else {
+                    alert(res.message || 'Batch update failed.');
+                }
+            });
+        }
+
+        // Delete Contact AJAX
+        function deleteContact(contactId) {
+            if (!confirm('Remove this contact from the group?')) return;
+
+            $.post('@Url.Action("DeleteContactAjax", "AddressBook", new { area = "ClientPanel" })', { contactId: contactId }, function (res) {
+                if (res && res.success) {
+                    $('#contact-row-' + contactId).fadeOut(300, function () { $(this).remove(); updateCounts(); });
+                    if (window.xyzToast) xyzToast.info('Contact removed.', 'Deleted');
+                } else {
+                    alert(res.message || 'Error deleting contact.');
+                }
+            });
+        }
+
+        function updateCounts() {
+            const total = $('#contactsTable tbody tr:visible').length;
+            const active = $('.xyz-switch input:checked').length;
+            const disabled = total - active;
+            $('#activeCountHeader').text(active);
+            $('#disabledCountHeader').text(disabled);
+        }
+
+        // Live Contact Search Filter
+        $('#contactSearchInput').on('keyup', function () {
+            const value = $(this).val().toLowerCase();
+            $('#contactsTable tbody tr').filter(function () {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+            });
+            updateCounts();
         });
+
+        // Download Sample CSV template
+        function downloadSampleCsv() {
+            const csvContent = "Phone Number,Contact Name,Note\n08031234567,John Doe,VIP Client\n2348029876543,Mary Smith,Lagos Branch\n+2349011223344,Emeka Okafor,Distributor\n07065432109,Chioma Adeleke,Retailer";
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "contacts_sample_template.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            if (window.xyzToast) xyzToast.success('Sample template downloaded!', 'Download Complete');
+        }
+
+        // Copy Sample Text
+        function copySampleTxt() {
+            const txt = document.getElementById("sampleTxtContent");
+            txt.select();
+            txt.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+            if (window.xyzToast) xyzToast.success('Sample numbers copied to clipboard!', 'Copied');
+            else alert('Sample numbers copied to clipboard!');
+        }
     </script>
 }

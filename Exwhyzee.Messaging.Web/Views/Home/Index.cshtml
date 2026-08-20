@@ -1,159 +1,380 @@
-@*@model IEnumerable<Exwhyzee.Messaging.Core.Models.Post>*@
-
 @{
-    ViewBag.Title = "XYZ SMS";
+    ViewBag.Title = "Enterprise Bulk SMS Broadcast Platform";
+    var admin = ViewBag.AdminSetting as Exwhyzee.Messaging.Core.Models.AdminSetting;
+    decimal pricePerUnit = admin != null && admin.PricePerUnit > 0 ? admin.PricePerUnit : 2.00m;
 }
 
-@section myStyles{
-    <link href="~/Content/nivoslider/themes/bar/bar.css" rel="stylesheet" />
-    <link href="~/Content/nivoslider/nivo-slider.css" rel="stylesheet" />
-    <link href="~/Content/scroll/css/smoothDivScroll.css" rel="stylesheet" />
-    @*facebook plugin*@
-    <div id="fb-root"></div>
-    <script>
-        (function (d, s, id) {
-            var js, fjs = d.getElementsByTagName(s)[0];
-            if (d.getElementById(id)) return;
-            js = d.createElement(s); js.id = id;
-            js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.9&appId=139598532805844";
-            fjs.parentNode.insertBefore(js, fjs);
-        }(document, 'script', 'facebook-jssdk'));
-    </script>
-}
-
-<div class="container-fluid" style="margin-top:0px;">
-    @section Slider{
-        @await Html.PartialAsync("_slider")
-
-    }
-</div>
-<section class="cleaning-content-block why-choose-us">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="section-title text-center">
-                    <h2>Why Choose Us</h2>
-              
-                  </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4">
-                <div class="choose-reasons">
-                    <i class="fa fa-star"></i>
-                    <h4><i class="fa fa-envelope-o" style="color:#ff6a00;"></i> SMS FEATURES</h4>
-                    <div>
-                        <ul style="list-style:circle" class="comment more">
-
-                            <li>Compose SMS with dynamic sender ID</li>
-                            <li>
-                                Create SMS that automatically pick phone book names and inserts in
-
-                                your message
-                            </li>
-                            <li>
-                                Type multiple sms recipients, select recipient or recipient group
-
-                                from phonebook @Html.ActionLink(" Read More", "SmsFeatures", "Home")
-                            </li>
-                            
-                        </ul> 
-                    </div>               
-                 </div>
-
-                <div class="choose-reasons">
-                    <i class="fa fa-users"></i>
-                    <h4><i class="fa fa-send"></i> How It Works</h4>
-<div>
-    <div>
-        
-        <ul style="list-style-type: circle;" class="text-justify comment more">
-
-            <li>
-                Log on to your account on <b style="color: #ff6a00;">www.xyzsms.com</b> if you have registered. If not, click <b style="color: #ff6a00;">“Register”</b> and put in your details to get registered. You will get an activation link on your mail that you have registered. Click on it to get you registered.
-            @Html.ActionLink(" Read More", "SmsFeatures", "Home")
-            </li>
-          
-        </ul>
-    </div>
-</div>               
-                 </div>
-            </div>
-            <div class="col-md-4">
-                <div style="margin-top:30px;">
-                    <img src="~/Content/image/xyz.jpg" alt="" style="margin-right:auto !important;margin-left:auto !important;vertical-align:middle !important;">
-
+<!-- Hero Section -->
+<section class="xyz-hero">
+    <div class="xyz-container">
+        <div class="xyz-hero-grid">
+            <!-- Left Hero Content -->
+            <div>
+                <div class="xyz-hero-badge">
+                    <span class="ping"></span> Africa's #1 Most Reliable Bulk SMS Platform
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="choose-reasons">
-                    <i class="fa fa-wrench"></i>
-                    <h4><i class="fa fa-send"></i> How To Send SMS</h4>
-<div>
-    <ul class="text-justify comment more" style="list-style-type:circle;">
-        <li> Log on to your account <b style="color: #ff6a00;">www.xyzsms.com</b></li>
-        <li>
-            Click on <b style="color: #ff6a00;">“Compose SMS”</b> on the left hand side.
-        </li>
-        <li>
-            When the Compose page opens up, type your Sender ID. This is the name that you</li>
-   @Html.ActionLink( "Read More", "SmsFeatures", "Home")
-     </ul>
-</div>                
+                <h1 class="xyz-hero-title">
+                    High-Velocity <span class="gradient-text">Bulk SMS Broadcast</span> for Growing Businesses
+                </h1>
+                <p class="xyz-hero-subtitle">
+                    Reach millions of customers across Africa in seconds. Send branded marketing broadcasts, customer appreciation notices, and scheduled alerts with 99.98% delivery rate.
+                </p>
+                <div class="xyz-hero-cta">
+                    <a href="@Url.Action("Register", "Account")" class="xyz-btn xyz-btn-primary xyz-btn-lg">
+                        <i class="fa fa-paper-plane"></i> Start Sending Free
+                    </a>
+                    <a href="@Url.Action("Developers", "Home")" class="xyz-btn xyz-btn-outline xyz-btn-lg">
+                        <i class="fa fa-code"></i> Explore Developer API
+                    </a>
                 </div>
 
-                <div class="choose-reasons">
-                    <i class="fa fa-life-ring"></i>
-                    <h4><i class="fa fa-money"></i> Sms Unit Cost Per Page</h4>
-                    <div class="content box1 style21">
+                <!-- Trust Highlights -->
+                <div class="xyz-hero-highlights">
+                    <div class="xyz-hero-highlight-item">
+                        <i class="fa fa-circle-check"></i> 20 Free Test Units
+                    </div>
+                    <div class="xyz-hero-highlight-item">
+                        <i class="fa fa-circle-check"></i> No Monthly Subscriptions
+                    </div>
+                    <div class="xyz-hero-highlight-item">
+                        <i class="fa fa-circle-check"></i> DND Auto-Bypass
+                    </div>
+                </div>
+            </div>
 
-                        <table class="table table-bordered table-responsive">
-                            <tr>
-                                <td>
-                                    
-                                </td>
-                                <td>
-                                    Unit
-                                </td>
-                                <td>
-                                    Per Sms
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    DND Enabled
-                                </td>
-                                <td>
-                                    3.5 unit
-                                </td>
-                                <td>
-                                    1 sms
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    DND Disabled
-                                </td>
-                                <td>
-                                    2 unit
-                                </td>
-                                <td>
-                                    1 sms
-                                </td>
-                            </tr>
-                           
-                        </table>
-                    </div>                
+            <!-- Right: Interactive SMS Simulator -->
+            <div>
+                <div class="xyz-phone-mockup">
+                    <div class="xyz-phone-screen">
+                        <div class="xyz-phone-header">
+                            <div class="xyz-phone-sender">
+                                <i class="fa fa-building"></i> ExwhyzeeSMS
+                                <span class="xyz-phone-sender-badge">VERIFIED</span>
+                            </div>
+                            <span id="heroTime" style="font-size:0.75rem; opacity:0.8;">12:00</span>
+                        </div>
+                        <div class="xyz-phone-body">
+                            <div class="xyz-sms-bubble">
+                                <span id="heroMsgPreview">Dear Valued Customer, thank you for patronizing us! We truly appreciate your business and look forward to serving you again. Visit us today for special offers.</span>
+                                <div class="time">Just now <i class="fa fa-check-double" style="color:#10B981; margin-left:3px;"></i></div>
+                            </div>
+
+                            <!-- Live Character & Page Counter Badge -->
+                            <div class="xyz-phone-stats">
+                                <div>
+                                    <div class="xyz-phone-stat-val" id="heroCharCount">155</div>
+                                    <div class="xyz-phone-stat-lbl">Characters</div>
+                                </div>
+                                <div>
+                                    <div class="xyz-phone-stat-val" id="heroPageCount">1</div>
+                                    <div class="xyz-phone-stat-lbl">Page(s)</div>
+                                </div>
+                                <div>
+                                    <div class="xyz-phone-stat-val" style="color:var(--xyz-success);">99.9%</div>
+                                    <div class="xyz-phone-stat-lbl">Deliverability</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Composer Input Box -->
+                    <div style="margin-top:14px;">
+                        <input type="text" id="heroMsgInput" class="xyz-calc-input" style="font-size:0.85rem; padding:10px 14px; background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.15); color:white;" placeholder="Type a message to test preview..." value="Dear Valued Customer, thank you for patronizing us! We truly appreciate your business and look forward to serving you again. Visit us today for special offers." />
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
+<!-- Trust Metrics Bar -->
+<section class="xyz-metrics-bar">
+    <div class="xyz-container">
+        <div class="xyz-metrics-grid">
+            <div class="xyz-metric-item">
+                <div class="xyz-metric-num">99.98<span>%</span></div>
+                <div class="xyz-metric-label">Direct Carrier Uptime</div>
+            </div>
+            <div class="xyz-metric-item">
+                <div class="xyz-metric-num">&lt; 2.4<span>s</span></div>
+                <div class="xyz-metric-label">Average Delivery Speed</div>
+            </div>
+            <div class="xyz-metric-item">
+                <div class="xyz-metric-num">50<span>M+</span></div>
+                <div class="xyz-metric-label">SMS Dispatched</div>
+            </div>
+            <div class="xyz-metric-item">
+                <div class="xyz-metric-num">12,000<span>+</span></div>
+                <div class="xyz-metric-label">Active Clients & Developers</div>
+            </div>
+        </div>
+    </div>
+</section>
 
-@section Scripts {
-    
-}
+<!-- What Can You Use Bulk SMS For (Real-World Use Cases) -->
+<section class="xyz-section" style="background:var(--xyz-gray-100);">
+    <div class="xyz-container">
+        <div class="xyz-section-header">
+            <span class="xyz-section-tag">Versatile Applications</span>
+            <h2 class="xyz-section-title">What Can You Use Bulk SMS For?</h2>
+            <p class="xyz-section-desc">
+                Whether you are running a retail store, school, religious organization, or corporate enterprise, explore practical ways to engage your audience and boost sales.
+            </p>
+        </div>
 
+        <div class="xyz-feature-grid">
+            <!-- Use Case 1 -->
+            <div class="xyz-feature-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                    <div class="xyz-feature-icon" style="background:rgba(229,9,20,0.1); color:var(--xyz-primary);">
+                        <i class="fa fa-hand-holding-heart"></i>
+                    </div>
+                    <h3 class="xyz-feature-title">Welcome & Customer Appreciation</h3>
+                    <p class="xyz-feature-desc" style="margin-bottom:18px;">
+                        Welcome new clients and send heartfelt "Thank you for your patronage" messages after purchases to build lifelong customer loyalty.
+                    </p>
+                </div>
+                <div style="background:var(--xyz-gray-50); border:1px dashed var(--xyz-gray-300); border-radius:var(--xyz-radius-md); padding:14px; font-size:0.85rem; color:var(--xyz-dark-800); line-height:1.5;">
+                    <strong style="color:var(--xyz-primary); display:block; font-size:0.75rem; text-transform:uppercase; margin-bottom:4px;"><i class="fa fa-comment-sms"></i> Sample SMS</strong>
+                    "Dear Customer, thank you for shopping with us! We truly appreciate your patronage and look forward to serving you again. Enjoy 10% off code: THANKYOU."
+                </div>
+            </div>
 
+            <!-- Use Case 2 -->
+            <div class="xyz-feature-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                    <div class="xyz-feature-icon" style="background:rgba(16,185,129,0.1); color:#10B981;">
+                        <i class="fa fa-tags"></i>
+                    </div>
+                    <h3 class="xyz-feature-title">Price Updates & Flash Sales</h3>
+                    <p class="xyz-feature-desc" style="margin-bottom:18px;">
+                        Instantly inform your entire customer list about price changes, arrival of new stock, weekend discounts, and clearance sales.
+                    </p>
+                </div>
+                <div style="background:var(--xyz-gray-50); border:1px dashed var(--xyz-gray-300); border-radius:var(--xyz-radius-md); padding:14px; font-size:0.85rem; color:var(--xyz-dark-800); line-height:1.5;">
+                    <strong style="color:#10B981; display:block; font-size:0.75rem; text-transform:uppercase; margin-bottom:4px;"><i class="fa fa-comment-sms"></i> Sample SMS</strong>
+                    "Price Update: New consignment of premium goods has just arrived at discounted rates! Visit our store today or order via WhatsApp before stocks clear."
+                </div>
+            </div>
+
+            <!-- Use Case 3 -->
+            <div class="xyz-feature-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                    <div class="xyz-feature-icon" style="background:rgba(99,102,241,0.1); color:var(--xyz-indigo);">
+                        <i class="fa fa-calendar-days"></i>
+                    </div>
+                    <h3 class="xyz-feature-title">Meetings & Event Invitations</h3>
+                    <p class="xyz-feature-desc" style="margin-bottom:18px;">
+                        Broadcast wedding dates, church services, burial announcements, town hall gatherings, and association meeting invitations.
+                    </p>
+                </div>
+                <div style="background:var(--xyz-gray-50); border:1px dashed var(--xyz-gray-300); border-radius:var(--xyz-radius-md); padding:14px; font-size:0.85rem; color:var(--xyz-dark-800); line-height:1.5;">
+                    <strong style="color:var(--xyz-indigo); display:block; font-size:0.75rem; text-transform:uppercase; margin-bottom:4px;"><i class="fa fa-comment-sms"></i> Sample SMS</strong>
+                    "Special Invitation: Join us for our 2026 Annual Business Conference this Saturday at 10 AM. Venue: City Hall. Refreshments will be served."
+                </div>
+            </div>
+
+            <!-- Use Case 4 -->
+            <div class="xyz-feature-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                    <div class="xyz-feature-icon" style="background:rgba(245,158,11,0.1); color:var(--xyz-warning);">
+                        <i class="fa fa-graduation-cap"></i>
+                    </div>
+                    <h3 class="xyz-feature-title">Schools & Campus Notices</h3>
+                    <p class="xyz-feature-desc" style="margin-bottom:18px;">
+                        Send resumption dates, PTA meeting schedules, exam timetables, and gentle school fee payment reminders directly to parents' phones.
+                    </p>
+                </div>
+                <div style="background:var(--xyz-gray-50); border:1px dashed var(--xyz-gray-300); border-radius:var(--xyz-radius-md); padding:14px; font-size:0.85rem; color:var(--xyz-dark-800); line-height:1.5;">
+                    <strong style="color:var(--xyz-warning); display:block; font-size:0.75rem; text-transform:uppercase; margin-bottom:4px;"><i class="fa fa-comment-sms"></i> Sample SMS</strong>
+                    "Dear Parent, school resumes on Monday, September 8th. Please ensure student supplies are complete. PTA meeting holds next Friday. Thank you."
+                </div>
+            </div>
+
+            <!-- Use Case 5 -->
+            <div class="xyz-feature-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                    <div class="xyz-feature-icon" style="background:rgba(229,9,20,0.1); color:var(--xyz-primary);">
+                        <i class="fa fa-file-invoice-dollar"></i>
+                    </div>
+                    <h3 class="xyz-feature-title">Payment & Due-Date Reminders</h3>
+                    <p class="xyz-feature-desc" style="margin-bottom:18px;">
+                        Send gentle invoice alerts, subscription renewal prompts, thrift contribution notices, and payment receipts to improve cash flow.
+                    </p>
+                </div>
+                <div style="background:var(--xyz-gray-50); border:1px dashed var(--xyz-gray-300); border-radius:var(--xyz-radius-md); padding:14px; font-size:0.85rem; color:var(--xyz-dark-800); line-height:1.5;">
+                    <strong style="color:var(--xyz-primary); display:block; font-size:0.75rem; text-transform:uppercase; margin-bottom:4px;"><i class="fa fa-comment-sms"></i> Sample SMS</strong>
+                    "Friendly Reminder: Your monthly subscription renewal is due on the 25th. Kindly renew to avoid service disruption. Thank you for your business."
+                </div>
+            </div>
+
+            <!-- Use Case 6 -->
+            <div class="xyz-feature-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                    <div class="xyz-feature-icon" style="background:rgba(16,185,129,0.1); color:#10B981;">
+                        <i class="fa fa-bullhorn"></i>
+                    </div>
+                    <h3 class="xyz-feature-title">Emergency & Relocation Alerts</h3>
+                    <p class="xyz-feature-desc" style="margin-bottom:18px;">
+                        Disseminate time-critical emergency broadcasts, office relocation notices, and public announcements with guaranteed instant delivery.
+                    </p>
+                </div>
+                <div style="background:var(--xyz-gray-50); border:1px dashed var(--xyz-gray-300); border-radius:var(--xyz-radius-md); padding:14px; font-size:0.85rem; color:var(--xyz-dark-800); line-height:1.5;">
+                    <strong style="color:#10B981; display:block; font-size:0.75rem; text-transform:uppercase; margin-bottom:4px;"><i class="fa fa-comment-sms"></i> Sample SMS</strong>
+                    "Relocation Notice: Our main branch has moved to NO. 44, Azikiwe Road, Umuahia. All operations and customer care are fully active at our new office."
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align:center; margin-top:40px;">
+            <a href="@Url.Action("Register", "Account")" class="xyz-btn xyz-btn-primary xyz-btn-lg">
+                <i class="fa fa-paper-plane"></i> Start Sending Your Broadcasts Today
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Core Platform Features -->
+<section class="xyz-section">
+    <div class="xyz-container">
+        <div class="xyz-section-header">
+            <span class="xyz-section-tag">Powerful Architecture</span>
+            <h2 class="xyz-section-title">Engineered for High Deliverability</h2>
+            <p class="xyz-section-desc">
+                Everything you need to deliver high-converting marketing campaigns, transactional alerts, and critical business messages.
+            </p>
+        </div>
+
+        <div class="xyz-feature-grid">
+            <!-- Feature 1 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-tower-broadcast"></i>
+                </div>
+                <h3 class="xyz-feature-title">High-Velocity Broadcasts</h3>
+                <p class="xyz-feature-desc">
+                    Send to hundreds of thousands of contacts concurrently. Multi-channel throughput ensures zero throttling or delivery delays.
+                </p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-id-badge"></i>
+                </div>
+                <h3 class="xyz-feature-title">Custom Sender IDs</h3>
+                <p class="xyz-feature-desc">
+                    Send branded messages with your verified company name (e.g. <code>YourBrand</code>) to boost customer trust and open rates.
+                </p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-address-book"></i>
+                </div>
+                <h3 class="xyz-feature-title">Smart Contact Groups</h3>
+                <p class="xyz-feature-desc">
+                    Import numbers seamlessly from Excel/CSV, auto-clean invalid formatting, strip duplicates, and segment target audiences.
+                </p>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-clock"></i>
+                </div>
+                <h3 class="xyz-feature-title">Scheduled Campaigns</h3>
+                <p class="xyz-feature-desc">
+                    Plan broadcasts ahead of time. Our background processing engine automatically dispatches messages at the exact second requested.
+                </p>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-credit-card"></i>
+                </div>
+                <h3 class="xyz-feature-title">Instant Online Top-Up</h3>
+                <p class="xyz-feature-desc">
+                    Fund your wallet seamlessly with Paystack (Debit Card, Bank Transfer, USSD) or redeem physical scratch vouchers instantly.
+                </p>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-chart-line"></i>
+                </div>
+                <h3 class="xyz-feature-title">Real-Time DLR Reports</h3>
+                <p class="xyz-feature-desc">
+                    Get detailed live delivery receipts (Delivered, Pending, Failed) for every single recipient with full status visibility.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Developer Hub Showcase -->
+<section class="xyz-section xyz-dev-section">
+    <div class="xyz-container">
+        <div class="xyz-section-header">
+            <span class="xyz-section-tag" style="color:var(--xyz-primary);">Developer-First API</span>
+            <h2 class="xyz-section-title" style="color:white;">Send SMS with 2 Lines of Code</h2>
+            <p class="xyz-section-desc" style="color:var(--xyz-gray-400);">
+                Integrate robust SMS capabilities into your web app, ERP, mobile app, or backend service with our RESTful API.
+            </p>
+        </div>
+
+        <div class="xyz-code-block-wrapper">
+            <div class="xyz-code-header">
+                <div class="xyz-code-tabs">
+                    <button class="xyz-code-tab active" data-lang="curl">cURL</button>
+                    <button class="xyz-code-tab" data-lang="csharp">C# (.NET)</button>
+                    <button class="xyz-code-tab" data-lang="python">Python</button>
+                    <button class="xyz-code-tab" data-lang="node">Node.js</button>
+                    <button class="xyz-code-tab" data-lang="php">PHP</button>
+                </div>
+                <button class="xyz-copy-btn" id="xyzCopyCodeBtn">
+                    <i class="fa fa-copy"></i> Copy Code
+                </button>
+            </div>
+            <pre class="xyz-code-content"><code>curl -X POST "https://api.xyzsms.com/api/sms/send" \
+  -H "ApiKey: YOUR_API_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "senderId": "YourBrand",
+    "recipients": "2348012345678,2348098765432",
+    "content": "Dear Customer, thank you for your patronage! Enjoy 10% off with code THANKYOU."
+  }'</code></pre>
+        </div>
+
+        <div style="text-align:center; margin-top:36px;">
+            <a href="@Url.Action("Developers", "Home")" class="xyz-btn xyz-btn-primary">
+                <i class="fa fa-book-bookmark"></i> Read Full API Documentation
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Call-to-Action Banner -->
+<section class="xyz-section" style="background:linear-gradient(135deg, var(--xyz-dark-900) 0%, #1A0507 100%); color:white; text-align:center;">
+    <div class="xyz-container">
+        <div style="max-width:700px; margin:0 auto;">
+            <h2 style="font-size:2.6rem; font-weight:800; letter-spacing:-0.03em; margin-bottom:16px;">
+                Ready to Supercharge Your Messaging?
+            </h2>
+            <p style="font-size:1.15rem; color:var(--xyz-gray-400); margin-bottom:32px; line-height:1.6;">
+                Join over 12,000 companies and developers who rely on Exwhyzee Messaging for high-deliverability bulk SMS and OTP delivery.
+            </p>
+            <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+                <a href="@Url.Action("Register", "Account")" class="xyz-btn xyz-btn-primary xyz-btn-lg">
+                    <i class="fa fa-rocket"></i> Create Free Account
+                </a>
+                <a href="@Url.Action("Contact", "Home")" class="xyz-btn xyz-btn-outline xyz-btn-lg" style="color:white; border-color:rgba(255,255,255,0.3);">
+                    <i class="fa fa-headset"></i> Contact Sales
+                </a>
+            </div>
+        </div>
+    </div>
+</section>

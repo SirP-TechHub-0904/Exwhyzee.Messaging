@@ -3,6 +3,7 @@ using Exwhyzee.Messaging.Core.Data.Services;
 using Exwhyzee.Messaging.Core.Models;
 using Exwhyzee.Messaging.Core.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 
 
@@ -27,6 +28,8 @@ namespace Exwhyzee.Messaging.Web.Controllers
         private Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole> _roleManager;
         private ISendEmail _email = new SendEmail();
         private IDashboardService _dashboardService = new DashboardService();
+        private readonly GoogleReCaptchaService _reCaptchaService = new GoogleReCaptchaService();
+        private ITwoFactorService _twoFactorService = new TwoFactorService();
 
 
         public AccountController(Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, Microsoft.AspNetCore.Identity.SignInManager<ApplicationUser> signInManager, Microsoft.AspNetCore.Identity.RoleManager<Microsoft.AspNetCore.Identity.IdentityRole> roleManager)
@@ -209,6 +212,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
         public ActionResult Login(string returnUrl)
         {
             ViewBag.ReturnUrl = returnUrl;
+            ViewBag.ReCaptchaSiteKey = _reCaptchaService.SiteKey;
             return View();
         }
 
@@ -220,6 +224,16 @@ namespace Exwhyzee.Messaging.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Login(LoginViewModel model, string returnUrl)
         {
+            ViewBag.ReCaptchaSiteKey = _reCaptchaService.SiteKey;
+
+            string recaptchaToken = Request.Form["g-recaptcha-response"].ToString();
+            bool isCaptchaValid = await _reCaptchaService.VerifyTokenAsync(recaptchaToken);
+            if (!isCaptchaValid)
+            {
+                TempData["error"] = "Google reCAPTCHA bot validation failed. Please check the checkbox and try again.";
+                return View(model);
+            }
+
             if (!ModelState.IsValid)
             {
                 TempData["error"] = "incorrect username or password";
@@ -227,13 +241,17 @@ namespace Exwhyzee.Messaging.Web.Controllers
             }
             //
             //Check if User Mail has been verified
-            var user = await UserManager.FindByNameAsync(model.UserName);
-            if (user == null)
+            var user = await UserManager.FindByNameAsync(model.UserName) ?? await UserManager.FindByEmailAsync(model.UserName);
+            if (user != null)
             {
+                // Check if user is in "Suspended" role ONLY
+                bool isSuspended = await UserManager.IsInRoleAsync(user, "Suspended");
 
-            }
-            else
-            {
+                if (isSuspended)
+                {
+                    return RedirectToAction("Lockout");
+                }
+
                 if (user.EmailConfirmed == false)
                 {
                     string code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
@@ -242,6 +260,45 @@ namespace Exwhyzee.Messaging.Web.Controllers
                     await _email.SendEmailAsync(mailnote, user.Email, "Account Comfirmation");
 
                     return RedirectToAction("GoToMail", new { id = user.Id });
+                }
+
+                // Check if user has 2FA enabled
+                if (user.TwoFactorEnabled && user.PreferredTwoFactorMethod != TwoFactorMethod.None)
+                {
+                    bool passwordValid = await UserManager.CheckPasswordAsync(user, model.Password);
+                    if (!passwordValid)
+                    {
+                        ModelState.AddModelError("", "Invalid username or password.");
+                        return View(model);
+                    }
+
+                    // Store pending 2FA session details
+                    HttpContext.Session.SetString("Pending2FA_UserId", user.Id);
+                    HttpContext.Session.SetString("Pending2FA_RememberMe", model.RememberMe.ToString());
+                    if (!string.IsNullOrEmpty(returnUrl))
+                    {
+                        HttpContext.Session.SetString("Pending2FA_ReturnUrl", returnUrl);
+                    }
+
+                    // Handle OTP dispatch for SMS or Email
+                    if (user.PreferredTwoFactorMethod == TwoFactorMethod.SmsOtp)
+                    {
+                        string otp = _twoFactorService.Generate6DigitOtp();
+                        user.LastOtpCode = otp;
+                        user.LastOtpExpiry = DateTime.UtcNow.AddMinutes(10);
+                        await UserManager.UpdateAsync(user);
+                        await _twoFactorService.SendSmsOtpAsync(user.PhoneNumber, otp);
+                    }
+                    else if (user.PreferredTwoFactorMethod == TwoFactorMethod.EmailOtp)
+                    {
+                        string otp = _twoFactorService.Generate6DigitOtp();
+                        user.LastOtpCode = otp;
+                        user.LastOtpExpiry = DateTime.UtcNow.AddMinutes(10);
+                        await UserManager.UpdateAsync(user);
+                        await _twoFactorService.SendEmailOtpAsync(user.Email, user.UserName, otp);
+                    }
+
+                    return RedirectToAction("VerifyTwoFactor");
                 }
 
                 // This doesn't count login failures towards account lockout
@@ -280,6 +337,148 @@ namespace Exwhyzee.Messaging.Web.Controllers
             TempData["error"] = "incorrect username or password";
             return View(model);
         }
+
+        #region TWO-FACTOR AUTHENTICATION (2FA) INTERCEPTOR
+
+        [AllowAnonymous]
+        public async Task<IActionResult> VerifyTwoFactor()
+        {
+            string userId = HttpContext.Session.GetString("Pending2FA_UserId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                return RedirectToAction("Login");
+            }
+
+            var user = await UserManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            ViewBag.Method = user.PreferredTwoFactorMethod;
+            ViewBag.MaskedTarget = user.PreferredTwoFactorMethod == TwoFactorMethod.SmsOtp ? MaskPhone(user.PhoneNumber)
+                : user.PreferredTwoFactorMethod == TwoFactorMethod.EmailOtp ? MaskEmail(user.Email)
+                : "Authenticator App";
+
+            return View();
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerifyTwoFactor(string code)
+        {
+            string userId = HttpContext.Session.GetString("Pending2FA_UserId");
+            string rememberMeStr = HttpContext.Session.GetString("Pending2FA_RememberMe");
+            string returnUrl = HttpContext.Session.GetString("Pending2FA_ReturnUrl");
+            bool rememberMe = bool.TryParse(rememberMeStr, out bool rm) && rm;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                TempData["error"] = "2FA session expired. Please log in again.";
+                return RedirectToAction("Login");
+            }
+
+            var user = await UserManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            bool isValid = false;
+
+            if (user.PreferredTwoFactorMethod == TwoFactorMethod.GoogleAuth || user.PreferredTwoFactorMethod == TwoFactorMethod.MicrosoftAuth)
+            {
+                isValid = _twoFactorService.ValidateTotpCode(user.TwoFactorSecretKey, code);
+            }
+            else if (user.PreferredTwoFactorMethod == TwoFactorMethod.SmsOtp || user.PreferredTwoFactorMethod == TwoFactorMethod.EmailOtp)
+            {
+                if (!string.IsNullOrEmpty(user.LastOtpCode) && string.Equals(user.LastOtpCode, code?.Trim(), StringComparison.Ordinal)
+                    && user.LastOtpExpiry.HasValue && user.LastOtpExpiry.Value > DateTime.UtcNow)
+                {
+                    isValid = true;
+                    user.LastOtpCode = null; // Clear OTP code after single use
+                    await UserManager.UpdateAsync(user);
+                }
+            }
+
+            if (isValid)
+            {
+                HttpContext.Session.Remove("Pending2FA_UserId");
+                HttpContext.Session.Remove("Pending2FA_RememberMe");
+                HttpContext.Session.Remove("Pending2FA_ReturnUrl");
+
+                await SignInManager.SignInAsync(user, isPersistent: rememberMe);
+
+                if (!string.IsNullOrEmpty(returnUrl))
+                {
+                    return RedirectToLocal(returnUrl);
+                }
+
+                var roles = await UserManager.GetRolesAsync(user);
+                if (roles.Contains("SuperAdmin") || roles.Contains("Admin"))
+                {
+                    return RedirectToAction("Index", "Main", new { area = "AdminPanel" });
+                }
+                return RedirectToAction("Index", "Dashboard", new { area = "ClientPanel" });
+            }
+
+            TempData["error"] = "Invalid verification code. Please check and try again.";
+            ViewBag.Method = user.PreferredTwoFactorMethod;
+            ViewBag.MaskedTarget = user.PreferredTwoFactorMethod == TwoFactorMethod.SmsOtp ? MaskPhone(user.PhoneNumber)
+                : user.PreferredTwoFactorMethod == TwoFactorMethod.EmailOtp ? MaskEmail(user.Email)
+                : "Authenticator App";
+
+            return View();
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResendTwoFactorCode()
+        {
+            string userId = HttpContext.Session.GetString("Pending2FA_UserId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Json(new { success = false, message = "Session expired." });
+            }
+
+            var user = await UserManager.FindByIdAsync(userId);
+            if (user == null) return Json(new { success = false, message = "User not found." });
+
+            string otp = _twoFactorService.Generate6DigitOtp();
+            user.LastOtpCode = otp;
+            user.LastOtpExpiry = DateTime.UtcNow.AddMinutes(10);
+            await UserManager.UpdateAsync(user);
+
+            if (user.PreferredTwoFactorMethod == TwoFactorMethod.SmsOtp)
+            {
+                await _twoFactorService.SendSmsOtpAsync(user.PhoneNumber, otp);
+            }
+            else if (user.PreferredTwoFactorMethod == TwoFactorMethod.EmailOtp)
+            {
+                await _twoFactorService.SendEmailOtpAsync(user.Email, user.UserName, otp);
+            }
+
+            return Json(new { success = true, message = "A new verification code has been dispatched." });
+        }
+
+        private string MaskPhone(string phone)
+        {
+            if (string.IsNullOrEmpty(phone) || phone.Length < 6) return "+234...";
+            return phone.Substring(0, 4) + "****" + phone.Substring(phone.Length - 2);
+        }
+
+        private string MaskEmail(string email)
+        {
+            if (string.IsNullOrEmpty(email) || !email.Contains("@")) return "your email";
+            var parts = email.Split('@');
+            string name = parts[0];
+            string domain = parts[1];
+            if (name.Length <= 2) return name[0] + "*@" + domain;
+            return name.Substring(0, 2) + "****@" + domain;
+        }
+
+        #endregion
 
 
         //change password
@@ -461,6 +660,46 @@ namespace Exwhyzee.Messaging.Web.Controllers
         }
 
         //
+        // GET: /Account/CheckUsernameAvailability
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<JsonResult> CheckUsernameAvailability(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username) || username.Trim().Length < 3)
+            {
+                return Json(new { available = false, message = "Username must be at least 3 characters." });
+            }
+
+            var user = await UserManager.FindByNameAsync(username.Trim());
+            if (user != null)
+            {
+                return Json(new { available = false, message = "Username is already taken." });
+            }
+
+            return Json(new { available = true, message = "Username is available!" });
+        }
+
+        //
+        // GET: /Account/CheckEmailAvailability
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<JsonResult> CheckEmailAvailability(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email) || !email.Contains("@"))
+            {
+                return Json(new { available = false, message = "Please enter a valid email." });
+            }
+
+            var user = await UserManager.FindByEmailAsync(email.Trim());
+            if (user != null)
+            {
+                return Json(new { available = false, message = "An account with this email already exists." });
+            }
+
+            return Json(new { available = true, message = "Email is available!" });
+        }
+
+        //
         // GET: /Account/Register
         [AllowAnonymous]
         public ActionResult Register()
@@ -477,81 +716,207 @@ namespace Exwhyzee.Messaging.Web.Controllers
         {
             if (ModelState.IsValid)
             {
-                //RecaptchaVerificationHelper recaptchaHelper = this.GetRecaptchaVerificationHelper();
-                //if (string.IsNullOrEmpty(recaptchaHelper.Response))
-                //{
-                //    ModelState.AddModelError("", "Captcha answer cannot be empty.");
-                //    return View(model);
-                //}
-                //RecaptchaVerificationResult recaptchaResult = await recaptchaHelper.VerifyRecaptchaResponseTaskAsync();
-                //if (recaptchaResult != RecaptchaVerificationResult.Success)
-                //{
-                //    ModelState.AddModelError("", "Incorrect captcha answer.");
-                //    return View(model);
-                //}
-                var user = new ApplicationUser { UserName = model.Username, Email = model.Email };
+                var recaptchaService = HttpContext.RequestServices.GetService<IGoogleReCaptchaService>();
+                if (recaptchaService != null)
+                {
+                    var recaptchaToken = Request.Form["g-recaptcha-response"].ToString();
+                    var isHuman = await recaptchaService.VerifyTokenAsync(recaptchaToken);
+                    if (!isHuman)
+                    {
+                        ModelState.AddModelError("", "Please verify the reCAPTCHA box to confirm you are not a robot.");
+                        return View(model);
+                    }
+                }
 
-                //Add Other properties
-                user.PhoneNumber = model.PhoneNumber;
-                user.DateRegitered = DateTime.UtcNow.AddHours(1);
-                user.DateOfBirth = DateTime.ParseExact(model.DateOfBirth.ToString(), "MM/dd/yyyy", null);
+                var existingUser = await UserManager.FindByNameAsync(model.Username);
+                if (existingUser != null)
+                {
+                    ModelState.AddModelError("", "This username is already taken. Please choose another.");
+                    return View(model);
+                }
+
+                var existingEmail = await UserManager.FindByEmailAsync(model.Email);
+                if (existingEmail != null)
+                {
+                    ModelState.AddModelError("", "An account with this email address already exists.");
+                    return View(model);
+                }
+
+                var user = new ApplicationUser 
+                { 
+                    UserName = model.Username.Trim(), 
+                    Email = model.Email.Trim(),
+                    PhoneNumber = model.PhoneNumber?.Trim(),
+                    DateRegitered = DateTime.UtcNow,
+                    DateOfBirth = DateTime.UtcNow.Date,
+                    EmailConfirmed = false
+                };
+
                 var result = await UserManager.CreateAsync(user, model.Password);
 
                 if (result.Succeeded)
                 {
                     await UserManager.AddToRoleAsync(user, "Client");
-                    //await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
 
-                    // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
-                    // Send an email with this link
-                    string code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
-                    var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Scheme);
-                    string mailnote = "Confirm your account " + string.Format("<a href='{0}'>HERE</a>", callbackUrl) + "<br><br>or copy the link below to your browser<br><br>"+callbackUrl;
-                    await _email.SendEmailAsync(mailnote, user.Email, "Account Comfirmation");
-                    return RedirectToAction("GoToMail", new { id = user.Id });
+                    var otpService = HttpContext.RequestServices.GetService<IOtpService>();
+                    var zeptoMail = HttpContext.RequestServices.GetService<IZeptoMailService>();
+
+                    if (otpService != null && zeptoMail != null)
+                    {
+                        var otpCode = otpService.GenerateOtp(user.Email, "email_verification");
+                        await zeptoMail.SendEmailVerificationOtpAsync(user.Email, user.UserName, otpCode);
+                    }
+
+                    TempData["Success"] = "Your account has been created! Enter the 6-digit verification code sent to your email.";
+                    return RedirectToAction("VerifyEmail", new { email = user.Email });
                 }
                 AddErrors(result);
             }
 
-            // If we got this far, something failed, redisplay form
             return View(model);
         }
 
+        //
+        // GET: /Account/VerifyEmail
         [AllowAnonymous]
-        public async Task<ActionResult> ResendActivationCode(string id)
+        public ActionResult VerifyEmail(string email)
         {
-            var user = await UserManager.FindByIdAsync(id);
-            string code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
-            var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Scheme);
-            string mailnote = "Confirm your account " + string.Format("<a href='{0}'>HERE</a>", callbackUrl) + "<br><br>or copy the link below to your browser<br><br>" + callbackUrl;
-            await _email.SendEmailAsync(mailnote, user.Email, "Account Comfirmation");
-            TempData["success"] = "Verification Mail Resent, check your inbox or spam folder";
-            return RedirectToAction("GoToMail", new { id = id });
-        }
-        //goto email view
-        [AllowAnonymous]
-        public ActionResult GoToMail(string id)
-        {
-            ViewBag.id = id;
-            return View();
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return RedirectToAction("Register");
+            }
+            return View(new VerifyEmailViewModel { Email = email });
         }
 
         //
-        // GET: /Account/ConfirmEmail
+        // POST: /Account/VerifyEmail
+        [HttpPost]
         [AllowAnonymous]
-        public async Task<ActionResult> ConfirmEmail(string userId, string code)
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> VerifyEmail(VerifyEmailViewModel model)
         {
-            if (userId == null || code == null)
+            if (!ModelState.IsValid)
             {
-                return View("Error");
+                return View(model);
             }
-            var check = await UserManager.FindByIdAsync(userId);
-            if (check.EmailConfirmed == true)
+
+            var user = await UserManager.FindByEmailAsync(model.Email);
+            if (user == null)
             {
+                ModelState.AddModelError("", "Unable to locate account. Please register again.");
+                return View(model);
+            }
+
+            if (user.EmailConfirmed)
+            {
+                TempData["Success"] = "Your email is already verified! Please sign in.";
                 return RedirectToAction("Login");
             }
-            var result = await UserManager.ConfirmEmailAsync(check, code);
-            return View(result.Succeeded ? "ConfirmEmail" : "Error");
+
+            var otpService = HttpContext.RequestServices.GetService<IOtpService>();
+            bool isValid = otpService != null && otpService.ValidateOtp(model.Email, "email_verification", model.OtpCode);
+
+            if (!isValid)
+            {
+                ModelState.AddModelError("", "Invalid or expired 6-digit verification code. Please check your inbox or click Resend.");
+                return View(model);
+            }
+
+            // Confirm Email
+            user.EmailConfirmed = true;
+            await UserManager.UpdateAsync(user);
+
+            // Credit 20 Free Units upon successful email verification
+            var db = HttpContext.RequestServices.GetService<ApplicationDbContext>();
+            var adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
+            decimal freeUnits = adminSetting != null && adminSetting.UnitPerNewMember > 0 ? adminSetting.UnitPerNewMember : 20;
+
+            var client = await db.Clients.FirstOrDefaultAsync(c => c.UserId == user.Id);
+            if (client == null)
+            {
+                client = new Client
+                {
+                    UserId = user.Id,
+                    Units = freeUnits,
+                    FirstName = user.UserName,
+                    Discount = 0,
+                    AllowNotifications = AllowNotifications.Allow
+                };
+                db.Clients.Add(client);
+                await db.SaveChangesAsync();
+            }
+            else
+            {
+                client.Units = (client.Units <= 0) ? freeUnits : (client.Units + freeUnits);
+                await db.SaveChangesAsync();
+            }
+
+            // Create Free Welcome Bonus Transaction Entry
+            try
+            {
+                var bonusTx = new Transaction
+                {
+                    UserId = user.Id,
+                    ClientId = client.ClientId,
+                    Amount = 0,
+                    AmountPaid = 0,
+                    Units = freeUnits,
+                    TransactionType = TransactionType.ByAdmin,
+                    Status = TransactionStatus.Approved,
+                    DateCreated = DateTime.UtcNow,
+                    DateApproved = DateTime.UtcNow,
+                    ApprovedBy = "System (Welcome Bonus)",
+                    Note = $"Welcome credit of {freeUnits:N0} free test units upon email verification",
+                    TransactionReference = "BONUS-" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()
+                };
+                db.Transactions.Add(bonusTx);
+                await db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Bonus Transaction Error]: {ex.Message}");
+            }
+
+            // Send Welcome Email
+            var zeptoMail = HttpContext.RequestServices.GetService<IZeptoMailService>();
+            if (zeptoMail != null)
+            {
+                await zeptoMail.SendWelcomeEmailAsync(user.Email, user.UserName, freeUnits);
+            }
+
+            // Automatically sign in the user
+            await SignInManager.SignInAsync(user, isPersistent: false);
+
+            TempData["Success"] = $"Account verified! {freeUnits:N0} Free Test Messaging Units have been credited to your wallet.";
+            return RedirectToAction("Index", "Dashboard", new { area = "ClientPanel" });
+        }
+
+        //
+        // GET: /Account/ResendVerificationOtp
+        [AllowAnonymous]
+        public async Task<ActionResult> ResendVerificationOtp(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return RedirectToAction("Register");
+            }
+
+            var user = await UserManager.FindByEmailAsync(email);
+            if (user != null && !user.EmailConfirmed)
+            {
+                var otpService = HttpContext.RequestServices.GetService<IOtpService>();
+                var zeptoMail = HttpContext.RequestServices.GetService<IZeptoMailService>();
+
+                if (otpService != null && zeptoMail != null)
+                {
+                    var otpCode = otpService.GenerateOtp(user.Email, "email_verification");
+                    await zeptoMail.SendEmailVerificationOtpAsync(user.Email, user.UserName, otpCode);
+                }
+
+                TempData["Success"] = "A fresh 6-digit verification code has been dispatched to your email.";
+            }
+
+            return RedirectToAction("VerifyEmail", new { email = email });
         }
 
         //
@@ -559,6 +924,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
         [AllowAnonymous]
         public ActionResult ForgotPassword()
         {
+            ViewBag.ReCaptchaSiteKey = _reCaptchaService.SiteKey;
             return View();
         }
 
@@ -569,68 +935,116 @@ namespace Exwhyzee.Messaging.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
-            if (ModelState.IsValid)
-            {
-                var user = await UserManager.FindByNameAsync(model.Email);
-                if (user == null || !(await UserManager.IsEmailConfirmedAsync(user)))
-                {
-                    // Don't reveal that the user does not exist or is not confirmed
-                    return View("ForgotPasswordConfirmation");
-                }
+            ViewBag.ReCaptchaSiteKey = _reCaptchaService.SiteKey;
 
-                // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
-                // Send an email with this link
-                string code = await UserManager.GeneratePasswordResetTokenAsync(user);
-                var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Scheme);
-                string mailnote = "Confirm your account " + string.Format("<a href='{0}'>HERE</a>", callbackUrl) + "<br><br>or copy the link below to your browser<br><br>" + callbackUrl;
-                await _email.SendEmailAsync(mailnote, user.Email, "Account Comfirmation");
-                return RedirectToAction("ForgotPasswordConfirmation", "Account");
+            string recaptchaToken = Request.Form["g-recaptcha-response"].ToString();
+            bool isCaptchaValid = await _reCaptchaService.VerifyTokenAsync(recaptchaToken);
+            if (!isCaptchaValid)
+            {
+                TempData["error"] = "Google reCAPTCHA bot validation failed. Please check the checkbox and try again.";
+                return View(model);
             }
 
-            // If we got this far, something failed, redisplay form
+            if (ModelState.IsValid)
+            {
+                var user = await UserManager.FindByEmailAsync(model.Email) ?? await UserManager.FindByNameAsync(model.Email);
+                if (user != null)
+                {
+                    var otpService = HttpContext.RequestServices.GetService<IOtpService>();
+                    var zeptoMail = HttpContext.RequestServices.GetService<IZeptoMailService>();
+
+                    if (otpService != null && zeptoMail != null)
+                    {
+                        var otpCode = otpService.GenerateOtp(user.Email, "password_reset");
+                        await zeptoMail.SendPasswordResetOtpAsync(user.Email, user.UserName, otpCode);
+                    }
+
+                    TempData["Success"] = "A 6-digit password reset code has been sent to your email.";
+                    return RedirectToAction("ResetPasswordOtp", new { email = user.Email });
+                }
+
+                TempData["Success"] = "If an account matches that email, a password reset code has been sent.";
+                return RedirectToAction("ResetPasswordOtp", new { email = model.Email });
+            }
+
             return View(model);
         }
 
         //
-        // GET: /Account/ForgotPasswordConfirmation
+        // GET: /Account/ResendPasswordResetOtp
         [AllowAnonymous]
-        public ActionResult ForgotPasswordConfirmation()
+        public async Task<ActionResult> ResendPasswordResetOtp(string email)
         {
-            return View();
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return RedirectToAction("ForgotPassword");
+            }
+
+            var user = await UserManager.FindByEmailAsync(email) ?? await UserManager.FindByNameAsync(email);
+            if (user != null)
+            {
+                var otpService = HttpContext.RequestServices.GetService<IOtpService>();
+                var zeptoMail = HttpContext.RequestServices.GetService<IZeptoMailService>();
+
+                if (otpService != null && zeptoMail != null)
+                {
+                    var otpCode = otpService.GenerateOtp(user.Email, "password_reset");
+                    await zeptoMail.SendPasswordResetOtpAsync(user.Email, user.UserName, otpCode);
+                }
+
+                TempData["Success"] = "A fresh 6-digit password reset code has been dispatched to your email.";
+            }
+
+            return RedirectToAction("ResetPasswordOtp", new { email = email });
         }
 
         //
-        // GET: /Account/ResetPassword
+        // GET: /Account/ResetPasswordOtp
         [AllowAnonymous]
-        public ActionResult ResetPassword(string code)
+        public ActionResult ResetPasswordOtp(string email)
         {
-            return code == null ? View("Error") : View();
+            return View(new ResetPasswordOtpViewModel { Email = email });
         }
 
         //
-        // POST: /Account/ResetPassword
+        // POST: /Account/ResetPasswordOtp
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> ResetPassword(ResetPasswordViewModel model)
+        public async Task<ActionResult> ResetPasswordOtp(ResetPasswordOtpViewModel model)
         {
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
-            var user = await UserManager.FindByNameAsync(model.Email);
+
+            var user = await UserManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
-                // Don't reveal that the user does not exist
-                return RedirectToAction("ResetPasswordConfirmation", "Account");
+                ModelState.AddModelError("", "No account found with this email address.");
+                return View(model);
             }
-            var result = await UserManager.ResetPasswordAsync(user, model.Code, model.Password);
+
+            var otpService = HttpContext.RequestServices.GetService<IOtpService>();
+            bool isValid = otpService != null && otpService.ValidateOtp(model.Email, "password_reset", model.OtpCode);
+
+            if (!isValid)
+            {
+                ModelState.AddModelError("", "Invalid or expired reset code. Please request a new code.");
+                return View(model);
+            }
+
+            var resetToken = await UserManager.GeneratePasswordResetTokenAsync(user);
+            var result = await UserManager.ResetPasswordAsync(user, resetToken, model.NewPassword);
+
             if (result.Succeeded)
             {
-                return RedirectToAction("ResetPasswordConfirmation", "Account");
+                TempData["Success"] = "Your password has been reset successfully! Please sign in with your new password.";
+                return RedirectToAction("Login");
             }
+
             AddErrors(result);
-            return View();
+            return View(model);
         }
 
         //
@@ -790,6 +1204,54 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
             base.Dispose(disposing);
         }
+
+        #region LOCKOUT EMERGENCY APPEAL TICKET
+
+        [AllowAnonymous]
+        public IActionResult Lockout()
+        {
+            ViewBag.ReCaptchaSiteKey = new GoogleReCaptchaService().SiteKey;
+            return View();
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitLockoutTicket(string senderName, string senderEmail, string senderPhone, string message, string gReCaptchaResponse)
+        {
+            string recaptchaToken = !string.IsNullOrWhiteSpace(gReCaptchaResponse) ? gReCaptchaResponse : Request.Form["g-recaptcha-response"].ToString();
+            bool isCaptchaValid = await new GoogleReCaptchaService().VerifyTokenAsync(recaptchaToken);
+            if (!isCaptchaValid)
+            {
+                TempData["error"] = "Google reCAPTCHA bot validation failed. Please check the security checkbox and try again.";
+                return RedirectToAction("Lockout");
+            }
+
+            if (string.IsNullOrWhiteSpace(senderName) || string.IsNullOrWhiteSpace(senderEmail) || string.IsNullOrWhiteSpace(message))
+            {
+                TempData["error"] = "Name, email, and detailed message are required.";
+                return RedirectToAction("Lockout");
+            }
+
+            var ticketService = new TicketService();
+            var ticket = new SupportTicket
+            {
+                SenderName = senderName.Trim(),
+                SenderEmail = senderEmail.Trim(),
+                SenderPhone = senderPhone?.Trim(),
+                Subject = "Account Restriction Appeal / Unblock Request",
+                Message = message.Trim(),
+                Category = TicketCategory.AccountSuspended,
+                Priority = TicketPriority.Urgent
+            };
+
+            await ticketService.CreateTicketAsync(ticket);
+            TempData["success"] = $"Emergency appeal ticket #{ticket.TicketNumber} submitted! Support notification email has been dispatched.";
+
+            return RedirectToAction("Lockout");
+        }
+
+        #endregion
 
         #region Helpers
 

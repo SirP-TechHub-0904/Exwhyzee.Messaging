@@ -1,0 +1,163 @@
+@using Exwhyzee.Messaging.Core.Models
+@{
+    ViewBag.Title = "User Role Management";
+    var user = ViewBag.User as ApplicationUser;
+    var currentRoles = ViewBag.CurrentRoles as IList<string> ?? new List<string>();
+    var availableRoles = ViewBag.AvailableRoles as List<string> ?? new List<string>();
+    string username = user?.UserName ?? "User";
+}
+
+<style>
+    .xyz-roles-header {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        color: #FFFFFF;
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .xyz-roles-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .xyz-role-item {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .xyz-badge-superadmin { background: #7C3AED; color: #FFF; }
+    .xyz-badge-admin { background: #2563EB; color: #FFF; }
+    .xyz-badge-client { background: #10B981; color: #FFF; }
+    .xyz-badge-default { background: #64748B; color: #FFF; }
+</style>
+
+<div class="container-fluid" style="padding-top: 10px;">
+    @Html.Partial("_ResponseMessagePartial")
+
+    <!-- EXECUTIVE HEADER -->
+    <div class="xyz-roles-header">
+        <div>
+            <h2 style="font-weight: 800; margin: 0 0 4px 0; font-size: 1.5rem; letter-spacing: -0.5px;">
+                <i class="fa fa-user-shield" style="color: #38BDF8; margin-right: 8px;"></i> User Role Management Studio
+            </h2>
+            <p style="color: #94A3B8; margin: 0; font-size: 0.9rem;">
+                Target Account: <strong style="color: #FFF;">@@@username</strong> &bull; Email: <strong style="color: #FFF;">@(user?.Email ?? "N/A")</strong>
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="@Url.Action("ClientDetails", "ManageUsers", new { area = "Adminpanel", id = user?.Id })" class="btn btn-default" style="font-weight: 800; border-radius: 8px; background: #FFF; color: #0F172A; border: none;">
+                <i class="fa fa-user"></i> View Profile
+            </a>
+            <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-default" style="font-weight: 800; border-radius: 8px; background: #334155; color: #FFF; border: none;">
+                <i class="fa fa-arrow-left"></i> Back to User Directory
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- CURRENT ASSIGNED ROLES -->
+        <div class="col-md-7">
+            <div class="xyz-roles-card">
+                <h4 style="font-weight: 800; color: #0F172A; margin: 0 0 16px 0; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px;">
+                    <i class="fa fa-shield-halved" style="color: #2563EB;"></i> Currently Assigned Roles (@currentRoles.Count)
+                </h4>
+
+                @if (!currentRoles.Any())
+                {
+                    <div style="background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 10px; padding: 16px; color: #92400E; font-weight: 600; text-align: center;">
+                        <i class="fa fa-exclamation-triangle"></i> No security roles are currently assigned to @@@username.
+                    </div>
+                }
+                else
+                {
+                    foreach (var role in currentRoles)
+                    {
+                        string badgeCss = role == "SuperAdmin" ? "xyz-badge-superadmin"
+                            : role == "Admin" ? "xyz-badge-admin"
+                            : role == "Client" ? "xyz-badge-client" : "xyz-badge-default";
+
+                        <div class="xyz-role-item">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span class="badge @badgeCss" style="font-size: 0.85rem; padding: 6px 14px; font-weight: 800;">
+                                    @role
+                                </span>
+                                <div>
+                                    <strong style="color: #0F172A; display: block;">@role Access Rights</strong>
+                                    <small style="color: #64748B;">User possesses active permissions for the @role system scope.</small>
+                                </div>
+                            </div>
+
+                            @using (Html.BeginForm("RemoveRole", "ManageUsers", new { area = "Adminpanel" }, FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@user?.Id" />
+                                <input type="hidden" name="roleName" value="@role" />
+
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to remove the @role role from @@@username?');" style="font-weight: 800; border-radius: 6px;">
+                                    <i class="fa fa-trash"></i> Remove Role
+                                </button>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- ASSIGN NEW ROLE CARD -->
+        <div class="col-md-5">
+            <div class="xyz-roles-card" style="border-color: #BFDBFE; background: #F8FAFC;">
+                <h4 style="font-weight: 800; color: #0F172A; margin: 0 0 16px 0; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px;">
+                    <i class="fa fa-user-plus" style="color: #10B981;"></i> Assign Additional Role
+                </h4>
+
+                @if (!availableRoles.Any())
+                {
+                    <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 14px; color: #1E40AF; text-align: center;">
+                        <i class="fa fa-check-circle"></i> @@@username already possesses all available system roles!
+                    </div>
+                }
+                else
+                {
+                    @using (Html.BeginForm("AssignRole", "ManageUsers", new { area = "Adminpanel" }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="userId" value="@user?.Id" />
+
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="font-weight: 700; color: #0F172A; font-size: 0.85rem;">Select Role to Grant</label>
+                            <select name="roleName" class="form-control" style="height: 44px; border-radius: 8px; font-weight: 700;" required>
+                                <option value="">-- Choose Role --</option>
+                                @foreach (var availRole in availableRoles)
+                                {
+                                    <option value="@availRole">@availRole</option>
+                                }
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-block" style="font-weight: 800; border-radius: 8px; padding: 12px; font-size: 0.95rem;">
+                            <i class="fa fa-plus-circle"></i> Assign Role to @@@username
+                        </button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

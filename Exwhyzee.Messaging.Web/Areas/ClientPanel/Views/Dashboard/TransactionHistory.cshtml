@@ -1,131 +1,413 @@
-@model IEnumerable<Exwhyzee.Messaging.Core.Models.Transaction>
+@model X.PagedList.IPagedList<Exwhyzee.Messaging.Core.Models.Transaction>
+@using X.PagedList.Mvc.Core;
 @{
-    ViewBag.Title = "Transaction History";
+    ViewBag.Title = "Transaction & Billing History";
+    int totalTrans = ViewBag.TotalTransactions ?? 0;
+    decimal totalPaid = ViewBag.TotalAmountPaid ?? 0;
+    decimal totalUnits = ViewBag.TotalUnitsCredited ?? 0;
+    decimal walletBal = ViewBag.WalletBalance ?? 0;
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard(Client)
-        <small>Transaction History</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Transaction History</a></li>
-        <li class="active">Transactions</li>
-    </ol>
-</section>
+<style>
+    .xyz-trans-hero {
+        background: linear-gradient(135deg, #0B0F19 0%, #1E1B4B 50%, #0B0F19 100%);
+        border-radius: 16px;
+        padding: 22px 28px;
+        margin-bottom: 20px;
+        color: #FFFFFF;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
 
+    .xyz-trans-hero h1 {
+        font-size: 1.45rem !important;
+        font-weight: 800 !important;
+        margin: 0 0 4px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #FFFFFF;
+    }
 
-<section class="content">
-    @Html.Partial("_ResponseMessagePartial")
-    <div class="box box-info">
-        <div class="box-header">
-            <h3 class="box-title">Transaction History </h3>
+    .xyz-stat-mini-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 6px 12px;
+        border-radius: 8px;
+        text-align: center;
+    }
 
-            @*<span class="pull-right">
-                    <a href="@Url.Content(" ../../apisettings/Create")" class="btn btn-app"><i class="fa fa-plus-circle"></i>Add API Setting</a>
-                </span>*@
+    .xyz-stat-mini-card small {
+        color: #94A3B8;
+        font-size: 0.68rem;
+        font-weight: 700;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+
+    .xyz-stat-mini-card strong {
+        color: #E2E8F0;
+        font-size: 0.95rem;
+        font-weight: 700;
+    }
+
+    .xyz-balance-hero-card {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(217, 119, 6, 0.28) 100%);
+        border: 1.5px solid rgba(245, 158, 11, 0.6);
+        box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25);
+        padding: 10px 20px;
+        border-radius: 12px;
+        text-align: center;
+        min-width: 170px;
+    }
+
+    .xyz-balance-hero-card small {
+        color: #FDE68A;
+        font-size: 0.72rem;
+        font-weight: 800;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 2px;
+    }
+
+    .xyz-balance-hero-card strong {
+        color: #FBBF24;
+        font-size: 1.65rem;
+        font-weight: 900;
+        display: block;
+        line-height: 1.1;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .xyz-trans-card {
+        background: #FFFFFF;
+        border-radius: 14px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-trans-card {
+        background: #131B2E;
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .xyz-id-tag {
+        background: #F1F5F9;
+        color: #334155;
+        border: 1px solid #CBD5E1;
+        font-weight: 800;
+        font-size: 0.85rem;
+        padding: 3px 8px;
+        border-radius: 6px;
+        display: inline-block;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    body.xyz-dark-theme .xyz-id-tag {
+        background: rgba(255, 255, 255, 0.08);
+        color: #E2E8F0;
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+</style>
+
+<!-- Hero Section with Billing Stats -->
+<div class="xyz-trans-hero">
+    <div>
+        <h1>
+            <i class="fa fa-receipt" style="color:#10B981;"></i> Transaction & Billing History
+        </h1>
+        <p>Review your wallet recharges, unit purchases, online payments, and receipts.</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <!-- 1. Big Prominent Available Balance Hero Card (FIRST) -->
+        <div class="xyz-balance-hero-card">
+            <small><i class="fa fa-wallet"></i> Available Units</small>
+            <strong>@walletBal.ToString("N2")</strong>
         </div>
-        <div class="box-body">
-            <table class="table table-bordered table-striped" id="example1">
-                <thead>
+
+        <!-- 2. Total Transactions -->
+        <div class="xyz-stat-mini-card">
+            <small>Total Txns</small>
+            <strong>@totalTrans</strong>
+        </div>
+
+        <!-- 3. Total Spent -->
+        <div class="xyz-stat-mini-card">
+            <small>Total Spent</small>
+            <strong style="color:#34D399;">&#8358;@totalPaid.ToString("N2")</strong>
+        </div>
+
+        <!-- 4. Total Units Credited -->
+        <div class="xyz-stat-mini-card">
+            <small>Total Credited</small>
+            <strong style="color:#93C5FD;">@totalUnits.ToString("N2")</strong>
+        </div>
+
+        <!-- 5. Top Up Button -->
+        <a href="@Url.Action("BuyUnit", "Dashboard", new { area = "ClientPanel" })" class="btn btn-primary" style="background:#E50914; border:none; font-weight:800; border-radius:10px; padding:12px 20px; font-size:0.95rem; box-shadow:0 4px 14px rgba(229,9,20,0.4);">
+            <i class="fa fa-plus"></i> Top Up Units
+        </a>
+    </div>
+</div>
+
+@Html.Partial("_ResponseMessagePartial")
+
+<div class="xyz-trans-card">
+    <div style="padding:16px 20px; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <!-- Search Filter Form with Perfect Alignment -->
+        <form method="get" action="@Url.Action("TransactionHistory", "Dashboard", new { area = "ClientPanel" })" style="margin:0; display:flex; align-items:center; gap:8px;">
+            <div style="display:flex; align-items:stretch; width:300px;">
+                <input type="text" name="searchString" value="@ViewBag.CurrentFilter" class="form-control" placeholder="Search by ID, reference, desc..." style="height:36px; border-radius:8px 0 0 8px; border-right:none; font-size:0.88rem;" />
+                <button type="submit" class="btn btn-default" style="height:36px; border-radius:0 8px 8px 0; border-left:1px solid #CBD5E1; padding:0 14px; display:flex; align-items:center; justify-content:center;">
+                    <i class="fa fa-search"></i>
+                </button>
+            </div>
+            @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter as string))
+            {
+                <a href="@Url.Action("TransactionHistory", "Dashboard", new { area = "ClientPanel" })" class="btn btn-xs btn-default" style="font-weight:700; border-radius:6px; height:36px; display:flex; align-items:center; padding:0 10px;">
+                    <i class="fa fa-times" style="margin-right:4px;"></i> Clear
+                </a>
+            }
+        </form>
+        <div>
+            <a href="@Url.Action("BuyUnit", "Dashboard", new { area = "ClientPanel" })" class="btn btn-xs btn-default" style="font-weight:700; border-radius:6px; padding:6px 12px;">
+                <i class="fa fa-wallet" style="color:#10B981;"></i> Top Up Units &rarr;
+            </a>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover" style="margin:0; vertical-align:middle;">
+                <thead style="background:#F8FAFC; font-weight:800; font-size:0.82rem; color:#475569; text-transform:uppercase;">
                     <tr>
-                        <th>
-                            <b>Trans ID</b>
-                        </th>
-                        <th>
-                            @*@Html.DisplayNameFor(model => model.)*@
-                            <b>Units</b>
-                        </th>
-                        <th>
-                            @*@Html.DisplayNameFor(model => model.)*@
-                            <b>Amount</b>
-                        </th>
-                        <th>
-                            <b>Amount Paid</b>
-                            @*@Html.DisplayNameFor(model => model.AmountPaid)*@
-                        </th>
-
-                        <th>
-                            <b>Transaction Type</b>
-                            @*@Html.DisplayNameFor(model => model.TransactionType)*@
-                        </th>
-                        <th>
-                            <b>Date Created</b>
-                            @*@Html.DisplayNameFor(model => model.DateCreated)*@
-                        </th>
-                        <th>
-                            <b>Date Approved</b>
-                            @*@Html.DisplayNameFor(model => model.DateApproved)*@
-                        </th>
-                        <th>
-                            <b>Status</b>
-                            @*@Html.DisplayNameFor(model => model.)*@
-                        </th>
-
-                        @*<th></th>*@
+                        <th style="padding:12px 16px;">Trans ID</th>
+                        <th>Units</th>
+                        <th>Amount Paid</th>
+                        <th>Payment Type</th>
+                        <th>Date Created</th>
+                        <th>Status</th>
+                        <th style="text-align:right; padding:12px 16px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-
                     @foreach (var item in Model)
                     {
                         <tr>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.TransactionId)
+                            <td style="padding:14px 16px;">
+                                <span class="xyz-id-tag">
+                                    #@item.TransactionId
+                                </span>
                             </td>
                             <td>
-                                @Html.DisplayFor(modelItem => item.Units)
+                                <strong style="color:#6366F1; font-size:0.95rem;">@item.Units.ToString("N2")</strong>
+                                <small style="color:#64748B; display:block; font-size:0.75rem;">units</small>
                             </td>
                             <td>
-                                @Html.DisplayFor(modelItem => item.Amount)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.AmountPaid)
-                            </td>
-
-                            <td>
-                                @Html.DisplayFor(modelItem => item.TransactionType)
-                            </td>
-
-                            <td>
-                                @Html.DisplayFor(modelItem => item.DateCreated)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.DateApproved)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.Status)
-                                @if (item.TransactionType == Exwhyzee.Messaging.Core.Models.TransactionType.OnlinePayment && item.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Pending)
+                                <strong style="color:#0F172A; font-size:0.95rem;">&#8358;@(item.AmountPaid.HasValue ? item.AmountPaid.Value.ToString("N2") : item.Amount.ToString("N2"))</strong>
+                                @if (item.AmountPaid.HasValue && item.Amount != item.AmountPaid.Value)
                                 {
-                                    @Html.ActionLink("Retry", "PayNow", new { id = item.TransactionId }, new {@class="btn btn-primary btn-xs"})
+                                    <small style="color:#94A3B8; text-decoration:line-through; display:block; font-size:0.75rem;">&#8358;@item.Amount.ToString("N2")</small>
                                 }
                             </td>
+                            <td>
+                                <span style="font-weight:700; color:var(--xyz-dash-text); font-size:0.88rem;">
+                                    @item.TransactionType
+                                </span>
+                            </td>
+                            <td>
+                                <div style="font-weight:700; color:var(--xyz-dash-text); font-size:0.88rem;">
+                                    @item.DateCreated.ToString("dd MMM yyyy, hh:mm tt")
+                                </div>
+                                @if (item.DateApproved.HasValue)
+                                {
+                                    <small style="color:#10B981; font-size:0.75rem; display:block;">
+                                        <i class="fa fa-check"></i> Approved: @item.DateApproved.Value.ToString("dd MMM yyyy")
+                                    </small>
+                                }
+                            </td>
+                            <td>
+                                @if (item.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Approved)
+                                {
+                                    <span class="badge" style="background:#10B981; font-weight:800; font-size:0.78rem; padding:4px 8px;">
+                                        <i class="fa fa-check-circle"></i> Approved
+                                    </span>
+                                }
+                                else if (item.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Pending)
+                                {
+                                    <span class="badge" style="background:#F59E0B; font-weight:800; font-size:0.78rem; padding:4px 8px;">
+                                        <i class="fa fa-clock"></i> Pending
+                                    </span>
+                                }
+                                else if (item.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Cancelled)
+                                {
+                                    <span class="badge" style="background:#EF4444; font-weight:800; font-size:0.78rem; padding:4px 8px;">
+                                        <i class="fa fa-circle-xmark"></i> Cancelled
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge" style="background:#64748B; font-weight:800; font-size:0.78rem; padding:4px 8px;">
+                                        @item.Status
+                                    </span>
+                                }
+                            </td>
+                            <td style="text-align:right; padding:14px 16px;">
+                                <div style="display:flex; justify-content:flex-end; gap:6px; align-items:center;">
+                                    <!-- In-Place Details Modal Button -->
+                                    <button type="button" class="btn btn-xs btn-primary" onclick="openTransactionModal(@item.TransactionId)" title="View Full Transaction Details" style="background:#6366F1; border:none; font-weight:700; border-radius:6px; padding:4px 9px;">
+                                        <i class="fa fa-eye"></i> Details
+                                    </button>
 
-                            @*<td>
-                                    @Html.ActionLink("Edit", "Edit", new { id=item.TransactionId }) |
-                                    @Html.ActionLink("Details", "Details", new { id=item.TransactionId }) |
-                                    @Html.ActionLink("Delete", "Delete", new { id=item.TransactionId })
-                                </td>*@
+                                    <!-- Retry Button for Pending Online Payments -->
+                                    @if (item.TransactionType == Exwhyzee.Messaging.Core.Models.TransactionType.OnlinePayment && item.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Pending)
+                                    {
+                                        <a href="@Url.Action("PayNow", "Dashboard", new { area = "ClientPanel", id = item.TransactionId })" class="btn btn-xs btn-success" title="Retry Online Payment" style="font-weight:700; border-radius:6px; padding:4px 8px;">
+                                            <i class="fa fa-bolt"></i> Pay Now
+                                        </a>
+                                    }
+                                </div>
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
+        </div>
 
+        <div style="padding:16px 20px; border-top:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <span style="font-size:0.85rem; color:var(--xyz-dash-muted);">
+                Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount (@Model.TotalItemCount Total Records)
+            </span>
+            <div>
+                @Html.PagedListPager(Model, page => Url.Action("TransactionHistory", new { page, searchString = ViewBag.CurrentFilter }))
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Empty State -->
+        <div style="padding:60px 20px; text-align:center;">
+            <div style="width:70px; height:70px; background:#F1F5F9; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px;">
+                <i class="fa fa-receipt" style="color:#64748B; font-size:2rem;"></i>
+            </div>
+            <h3 style="font-weight:800; font-size:1.25rem; margin:0 0 6px; color:#1E293B;">No Transactions Found</h3>
+            <p style="color:#64748B; max-width:420px; margin:0 auto 20px; font-size:0.92rem;">
+                No billing records match your search criteria. Click below to top up your SMS units.
+            </p>
+            <a href="@Url.Action("BuyUnit", "Dashboard", new { area = "ClientPanel" })" class="btn btn-primary" style="background:#E50914; border:none; font-weight:800; border-radius:10px; padding:10px 22px; font-size:0.95rem;">
+                <i class="fa fa-plus"></i> Buy SMS Units
+            </a>
+        </div>
+    }
+</div>
+
+<!-- ========================================================
+     INTERACTIVE TRANSACTION DETAILS MODAL (IN-PLACE POPUP)
+     ======================================================== -->
+<div class="modal fade" id="modalTransactionDetails" tabindex="-1" role="dialog" aria-labelledby="modalTransLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content" style="border-radius:16px; overflow:hidden; border:none; box-shadow:0 25px 60px rgba(0,0,0,0.3);">
+            <div class="modal-header" style="background:linear-gradient(135deg, #0B0F19 0%, #1E1B4B 100%); color:#fff; padding:18px 24px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h4 class="modal-title" id="modalTransLabel" style="font-weight:800; font-size:1.15rem; margin:0; display:flex; align-items:center; gap:8px;">
+                        <i class="fa fa-receipt" style="color:#10B981;"></i> Transaction Receipt (<span id="modalTransId">#0</span>)
+                    </h4>
+                    <span id="modalTransDateCreated" style="color:#94A3B8; font-size:0.8rem;">Created on ...</span>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#fff; opacity:0.8; font-size:1.5rem; text-shadow:none;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="padding:24px;">
+
+                <!-- 4-Stat Metrics Grid -->
+                <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:20px;">
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:12px; text-align:center;">
+                        <small style="color:#64748B; font-size:0.72rem; font-weight:700; display:block;">UNITS CREDITED</small>
+                        <strong id="modalTransUnits" style="font-size:1.2rem; color:#6366F1;">0.00</strong>
+                    </div>
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:12px; text-align:center;">
+                        <small style="color:#64748B; font-size:0.72rem; font-weight:700; display:block;">AMOUNT PAID</small>
+                        <strong id="modalTransAmount" style="font-size:1.2rem; color:#10B981;">&#8358;0.00</strong>
+                    </div>
+                </div>
+
+                <div style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:12px; padding:16px; margin-bottom:16px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.92rem;">
+                        <span style="color:#64748B; font-weight:600;">Status:</span>
+                        <span id="modalTransStatusBadge" class="badge" style="background:#10B981; font-weight:800;">Approved</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.92rem;">
+                        <span style="color:#64748B; font-weight:600;">Payment Method:</span>
+                        <strong id="modalTransType" style="color:#1E293B;">Online Payment</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-size:0.92rem;">
+                        <span style="color:#64748B; font-weight:600;">Reference:</span>
+                        <code id="modalTransRef" style="font-weight:700; color:#4338CA; background:#EEF2FF; padding:2px 6px; border-radius:4px;">N/A</code>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.92rem;">
+                        <span style="color:#64748B; font-weight:600;">Date Approved:</span>
+                        <span id="modalTransDateApproved" style="font-weight:700; color:#1E293B;">...</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-weight:700; font-size:0.88rem; margin-bottom:4px; display:block;">Description / Note:</label>
+                    <div id="modalTransDesc" style="background:#F1F5F9; border-radius:8px; padding:10px 14px; font-size:0.9rem; color:#334155;">
+                        ...
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer" style="background:#F8FAFC; border-top:1px solid #E2E8F0; padding:14px 24px; display:flex; justify-content:space-between;">
+                <button type="button" class="btn btn-default" data-dismiss="modal" style="font-weight:700; border-radius:8px;">
+                    Close
+                </button>
+                <a href="@Url.Action("BuyUnit", "Dashboard", new { area = "ClientPanel" })" class="btn btn-primary" style="background:#10B981; border:none; font-weight:800; border-radius:8px; padding:8px 18px;">
+                    <i class="fa fa-plus"></i> Buy More Units
+                </a>
+            </div>
         </div>
     </div>
-</section>
+</div>
 
-@section scripts{
-
-    <script src="~/Content/Dashboard/plugins/datatables/jquery.dataTables.min.js"></script>
-    <script src="~/Content/Dashboard/plugins/datatables/dataTables.bootstrap.min.js"></script>
-
+@section scripts {
     <script>
-        $(function () {
-            $("#example1").DataTable({
-                "order": [[0]]
-            });
+        function openTransactionModal(transId) {
+            $('#modalTransactionDetails').modal('show');
+            $('#modalTransId').text('#' + transId);
 
-        });
+            $.get('@Url.Action("GetTransactionDetailsAjax", "Dashboard", new { area = "ClientPanel" })', { id: transId }, function (res) {
+                if (res && res.success) {
+                    $('#modalTransUnits').text(parseFloat(res.units).toFixed(2) + ' Units');
+                    $('#modalTransAmount').html('&#8358;' + parseFloat(res.amountPaid).toLocaleString('en-US', { minimumFractionDigits: 2 }));
+                    $('#modalTransDateCreated').text('Created on ' + res.dateCreated);
+                    $('#modalTransType').text(res.transactionType);
+                    $('#modalTransRef').text(res.reference);
+                    $('#modalTransDateApproved').text(res.dateApproved);
+                    $('#modalTransDesc').text(res.description);
+
+                    $('#modalTransStatusBadge').text(res.status);
+                    if (res.status === 'Approved') {
+                        $('#modalTransStatusBadge').css('background', '#10B981');
+                    } else if (res.status === 'Pending') {
+                        $('#modalTransStatusBadge').css('background', '#F59E0B');
+                    } else {
+                        $('#modalTransStatusBadge').css('background', '#EF4444');
+                    }
+                }
+            });
+        }
     </script>
 }

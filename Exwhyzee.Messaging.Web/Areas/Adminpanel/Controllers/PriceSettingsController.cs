@@ -23,15 +23,44 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
         
 
-        public PriceSettingsController(PriceSettingService priceSettingService)
+        public PriceSettingsController(IPriceSettingsService priceSettingService)
         {
-            _priceService = priceSettingService;
+            _priceService = priceSettingService ?? new PriceSettingService();
         }
 
         // GET: Adminpanel/PriceSettings
         public async Task<ActionResult> Index()
         {
+            var adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
+            ViewBag.FlatUnits = adminSetting?.FlatUnitsPerSms ?? 4.0m;
             return View(await _priceService.GetPriceSettings());
+        }
+
+        // POST: Adminpanel/PriceSettings/UpdateFlatRate
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateFlatRate(decimal flatUnits)
+        {
+            if (flatUnits <= 0)
+            {
+                TempData["error"] = "Please enter a valid flat unit rate greater than zero.";
+                return RedirectToAction("Index");
+            }
+
+            var adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
+            if (adminSetting == null)
+            {
+                adminSetting = new AdminSetting { FlatUnitsPerSms = flatUnits, PricePerUnit = 2.0m };
+                db.AdminSettings.Add(adminSetting);
+            }
+            else
+            {
+                adminSetting.FlatUnitsPerSms = flatUnits;
+            }
+
+            await db.SaveChangesAsync();
+            TempData["success"] = $"Default Fallback Rate updated to {flatUnits:N2} Units/SMS.";
+            return RedirectToAction("Index");
         }
 
         // GET: Adminpanel/PriceSettings

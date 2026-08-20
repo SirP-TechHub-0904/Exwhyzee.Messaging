@@ -1,0 +1,113 @@
+@model Exwhyzee.Messaging.Core.Models.SupportTicket
+@using Exwhyzee.Messaging.Core.Models
+
+@{
+    ViewBag.Title = "Create Support Ticket";
+    string siteKey = ViewBag.ReCaptchaSiteKey as string ?? "6LciMY4tAAAAAAn4BSqUzeCAwQacub1GxgjeIwIG";
+}
+
+<script src="https://www.google.com/recaptcha/api.js?render=@siteKey"></script>
+
+<style>
+    .xyz-ticket-header {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        color: #FFFFFF;
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
+    }
+
+    .xyz-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        padding: 28px;
+        margin-bottom: 24px;
+    }
+</style>
+
+<div class="container-fluid" style="padding-top: 10px;">
+    @Html.Partial("_ResponseMessagePartial")
+
+    <!-- HEADER BANNER -->
+    <div class="xyz-ticket-header">
+        <h2 style="font-weight: 800; margin: 0 0 4px 0; font-size: 1.5rem; letter-spacing: -0.5px;">
+            <i class="fa fa-circle-question" style="color: #38BDF8; margin-right: 8px;"></i> Submit a Support Ticket
+        </h2>
+        <p style="color: #94A3B8; margin: 0; font-size: 0.9rem;">
+            Fill out the details below. Our support team will review and reply to your inquiry promptly.
+        </p>
+    </div>
+
+    <!-- TICKET FORM -->
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+            <div class="xyz-card">
+                @using (Html.BeginForm("Create", "Tickets", new { area = "ClientPanel" }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label style="font-weight: 700; color: #0F172A;">Ticket Category</label>
+                            <select name="Category" class="form-control" style="height: 44px; border-radius: 8px;" required>
+                                <option value="General">General Inquiry</option>
+                                <option value="Billing">Billing &amp; Paystack Top-Up</option>
+                                <option value="ApiIntegration">API Integration &amp; Keys</option>
+                                <option value="SmsDelivery">SMS Delivery Issue</option>
+                                <option value="AccountSuspended">Account Restriction / Lockout</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 form-group">
+                            <label style="font-weight: 700; color: #0F172A;">Priority Level</label>
+                            <select name="Priority" class="form-control" style="height: 44px; border-radius: 8px;" required>
+                                <option value="Low">Low (General Question)</option>
+                                <option value="Medium" selected="selected">Medium (Normal Request)</option>
+                                <option value="High">High (Urgent Attention)</option>
+                                <option value="Urgent">Urgent (System Critical)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="font-weight: 700; color: #0F172A;">Ticket Subject</label>
+                        @Html.TextBoxFor(m => m.Subject, new { @class = "form-control", @placeholder = "Brief summary of your issue...", @style = "height: 44px; border-radius: 8px;", @required = "required" })
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label style="font-weight: 700; color: #0F172A;">Detailed Message</label>
+                        @Html.TextAreaFor(m => m.Message, new { @class = "form-control", @rows = "6", @placeholder = "Provide full details, error messages, or transaction references...", @style = "border-radius: 10px;", @required = "required" })
+                    </div>
+
+                    <!-- GOOGLE RECAPTCHA v3 (invisible) -->
+                    <input type="hidden" name="g-recaptcha-response" id="recaptchaToken" />
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #E2E8F0; padding-top: 20px;">
+                        <a href="@Url.Action("Index", "Tickets", new { area = "ClientPanel" })" class="btn btn-default" style="font-weight: 700; border-radius: 8px; padding: 10px 20px;">
+                            Cancel &amp; Return
+                        </a>
+                        <button type="submit" class="btn btn-primary" style="font-weight: 800; border-radius: 8px; padding: 12px 28px; background: #2563EB;">
+                            <i class="fa fa-paper-plane"></i> Submit Ticket
+                        </button>
+                    </div>
+                }
+
+<script>
+    document.querySelector('form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var form = this;
+        grecaptcha.ready(function () {
+            grecaptcha.execute('@siteKey', { action: 'submit_ticket' }).then(function (token) {
+                document.getElementById('recaptchaToken').value = token;
+                form.submit();
+            });
+        });
+    });
+</script>
+            </div>
+        </div>
+    </div>
+</div>

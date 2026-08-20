@@ -2,7 +2,25 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Exwhyzee.Messaging.Core.Models;
 
+// Load local .env file into environment variables if present
+var envFile = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+if (File.Exists(envFile))
+{
+    foreach (var rawLine in File.ReadAllLines(envFile))
+    {
+        var line = rawLine.Trim();
+        if (!string.IsNullOrEmpty(line) && !line.StartsWith("#") && line.Contains('='))
+        {
+            var parts = line.Split(new[] { '=' }, 2);
+            Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
+        }
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables();
+
+Exwhyzee.Messaging.Web.AppConfig.Configuration = builder.Configuration;
 
 // Register Database Context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -22,6 +40,48 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 builder.Services.AddControllersWithViews();
+
+// Register Core Messaging Services
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.IServices.IAddressBookService, Exwhyzee.Messaging.Core.Data.Services.AddressBookService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.Services.AddressBookService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.IServices.IClientService, Exwhyzee.Messaging.Core.Data.Services.ClientService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.Services.ClientService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.IServices.IPriceSettingsService, Exwhyzee.Messaging.Core.Data.Services.PriceSettingService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.Services.PriceSettingService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.IServices.ITransactionService, Exwhyzee.Messaging.Core.Data.Services.TransactionService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.Services.TransactionService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.IServices.IVoucherService, Exwhyzee.Messaging.Core.Data.Services.VoucherService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.Services.VoucherService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.IPaystackTransferService, Exwhyzee.Messaging.Core.Services.PaystackTransferService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.PaystackTransferService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.IServices.IAdminSettings, Exwhyzee.Messaging.Core.Data.Services.AdminSettings>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.Services.AdminSettings>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.IServices.IApiSettings, Exwhyzee.Messaging.Core.Data.Services.ApiSettings>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.Services.ApiSettings>();
+
+// Register Email Services (ZeptoMail with MailKit/MimeKit)
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.IZeptoMailService, Exwhyzee.Messaging.Core.Services.ZeptoMailService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.IServices.ISendEmail, Exwhyzee.Messaging.Core.Services.ZeptoMailService>();
+
+// Register OTP Service
+builder.Services.AddSingleton<Exwhyzee.Messaging.Core.Services.IOtpService, Exwhyzee.Messaging.Core.Services.OtpService>();
+
+// Register Google reCAPTCHA Service
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.IGoogleReCaptchaService, Exwhyzee.Messaging.Core.Services.GoogleReCaptchaService>();
+
+// Register In-App Notification & OneSignal Service
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.INotificationService, Exwhyzee.Messaging.Core.Services.NotificationService>();
+
+// Register HttpClient & Google Gemini AI Contact Extractor Service
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.IGeminiContactExtractorService, Exwhyzee.Messaging.Core.Services.GeminiContactExtractorService>();
+
+// Register Scheduled Message Queue Background Worker
+builder.Services.AddHostedService<Exwhyzee.Messaging.Core.Services.ScheduledMessageProcessorBackgroundService>();
+
+// Register Low Unit Alert Service & Daily Morning Checker Background Worker
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.ILowUnitAlertService, Exwhyzee.Messaging.Core.Services.LowUnitAlertService>();
+builder.Services.AddHostedService<Exwhyzee.Messaging.Core.Services.DailyLowUnitCheckerBackgroundService>();
 
 var app = builder.Build();
 

@@ -1,0 +1,83 @@
+@{
+    ViewBag.Title = "HTML Sitemap";
+}
+
+<!-- Sitemap Hero -->
+<section class="xyz-hero" style="padding:50px 0 60px;">
+    <div class="xyz-container" style="text-align:center; max-width:800px;">
+        <span class="xyz-hero-badge">
+            <i class="fa fa-sitemap"></i> Site Index & Navigation
+        </span>
+        <h1 class="xyz-hero-title">
+            Website <span class="gradient-text">Sitemap</span>
+        </h1>
+        <p class="xyz-hero-subtitle" style="margin:0 auto 20px;">
+            Complete directory of all pages, features, developer APIs, documentation, and support channels on the Exwhyzee Bulk SMS portal.
+        </p>
+    </div>
+</section>
+
+<!-- Sitemap Directory Grid -->
+<section class="xyz-section" style="padding-top:20px;">
+    <div class="xyz-container">
+        <div class="xyz-feature-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+            
+            <!-- Category 1: Main Pages -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon" style="background:rgba(229,9,20,0.1); color:var(--xyz-primary);">
+                    <i class="fa fa-globe"></i>
+                </div>
+                <h3 class="xyz-feature-title" style="margin-bottom:16px;">Main Pages</h3>
+                <ul class="xyz-footer-links" style="font-size:0.95rem;">
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("Index", "Home")" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> Homepage &amp; Broadcast Simulator</a></li>
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("SmsFeatures", "Home")" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> Platform Features &amp; Routing</a></li>
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("SmsPlan", "Home")" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> Transparent Pricing &amp; Tariffs</a></li>
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("About", "Home")" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> About Us (Since 2014)</a></li>
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("Contact", "Home")" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> Contact &amp; Support Channels</a></li>
+                </ul>
+            </div>
+
+            <!-- Category 2: Developers & API -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon" style="background:rgba(99,102,241,0.1); color:var(--xyz-indigo);">
+                    <i class="fa fa-code"></i>
+                </div>
+                <h3 class="xyz-feature-title" style="margin-bottom:16px;">Developers &amp; API</h3>
+                <ul class="xyz-footer-links" style="font-size:0.95rem;">
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("Developers", "Home")" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> Developer REST API v1.0</a></li>
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("Developers", "Home")#endpoints" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> /api/sms/send Endpoint</a></li>
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("Developers", "Home")#endpoints" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> /api/sms/balance Endpoint</a></li>
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("Developers", "Home")#endpoints" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> /api/sms/history Endpoint</a></li>
+                </ul>
+            </div>
+
+            <!-- Category 3: Legal & Security -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon" style="background:rgba(16,185,129,0.1); color:#10B981;">
+                    <i class="fa fa-shield-halved"></i>
+                </div>
+                <h3 class="xyz-feature-title" style="margin-bottom:16px;">Legal, Compliance &amp; Help</h3>
+                <ul class="xyz-footer-links" style="font-size:0.95rem;">
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("Privacy", "Home")" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> Privacy Policy &amp; Data Protection</a></li>
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("Terms", "Home")" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> Terms of Service &amp; Anti-Spam Policy</a></li>
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("Faq", "Home")" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> Frequently Asked Questions (FAQ)</a></li>
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("Sitemap", "Home")" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> HTML Sitemap Index</a></li>
+                </ul>
+            </div>
+
+            <!-- Category 4: User Accounts & Portal -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon" style="background:rgba(245,158,11,0.1); color:var(--xyz-warning);">
+                    <i class="fa fa-user-lock"></i>
+                </div>
+                <h3 class="xyz-feature-title" style="margin-bottom:16px;">User Accounts &amp; Portal</h3>
+                <ul class="xyz-footer-links" style="font-size:0.95rem;">
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("Register", "Account")" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> Register Free (20 Free Units)</a></li>
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("Login", "Account")" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> Client Sign In</a></li>
+                    <li style="margin-bottom:10px;"><a href="@Url.Action("ForgotPassword", "Account")" style="color:var(--xyz-dark-800);"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px;"></i> Password Recovery</a></li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</section>

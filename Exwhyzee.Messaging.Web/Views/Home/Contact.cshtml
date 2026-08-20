@@ -1,17 +1,152 @@
-﻿@{
-    ViewBag.Title = "Contact";
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    ViewBag.Title = "Contact Support & Inquiries";
+    var reCaptchaSiteKey = Configuration["GoogleReCaptcha:SiteKey"] ?? "6LciMY4tAAAAAAn4BSqUzeCAwQacub1GxgjeIwIG";
 }
-<h2>@ViewBag.Title.</h2>
-<h3>@ViewBag.Message</h3>
 
-<address>
-    One Microsoft Way<br />
-    Redmond, WA 98052-6399<br />
-    <abbr title="Phone">P:</abbr>
-    425.555.0100
-</address>
+<!-- Hero Section -->
+<section class="xyz-hero" style="padding: 60px 0 50px;">
+    <div class="xyz-container" style="text-align: center; max-width: 800px;">
+        <span class="xyz-hero-badge" style="background: rgba(229,9,20,0.1); color: var(--xyz-primary); border-color: rgba(229,9,20,0.25);">
+            <i class="fa fa-headset"></i> 24/7 Support Desk
+        </span>
+        <h1 class="xyz-hero-title">
+            Get in <span class="gradient-text">Touch With Us</span>
+        </h1>
+        <p class="xyz-hero-subtitle" style="margin: 0 auto; font-size: 1.1rem;">
+            Have questions about custom volume pricing, API integrations, or sender ID approvals? We are here to help.
+        </p>
+    </div>
+</section>
 
-<address>
-    <strong>Support:</strong>   <a href="mailto:Support@example.com">Support@example.com</a><br />
-    <strong>Marketing:</strong> <a href="mailto:Marketing@example.com">Marketing@example.com</a>
-</address>
+<!-- Contact Info & Form Section -->
+<section class="xyz-section" style="padding: 60px 0 80px; background: var(--xyz-gray-50);">
+    <div class="xyz-container">
+        <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 40px; align-items: flex-start;">
+            <!-- Left: Direct Channels -->
+            <div>
+                <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--xyz-dark-900); margin-bottom: 8px;">Direct Support Channels</h3>
+                <p style="color: var(--xyz-gray-500); font-size: 0.95rem; margin-bottom: 28px;">
+                    Our support team is active 24/7 to assist with account funding, enterprise contracts, and technical troubleshooting.
+                </p>
+
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <div class="xyz-feature-card" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+                        <div class="xyz-feature-icon" style="margin: 0; width: 48px; height: 48px; font-size: 1.3rem;">
+                            <i class="fab fa-whatsapp" style="color: #10B981;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--xyz-gray-500); font-weight: 700;">Instant Chat</div>
+                            <a href="https://wa.me/2348068669344" target="_blank" style="font-weight: 700; color: var(--xyz-dark-900); font-size: 1.05rem;">
+                                +234 806 866 9344
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="xyz-feature-card" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+                        <div class="xyz-feature-icon" style="margin: 0; width: 48px; height: 48px; font-size: 1.3rem;">
+                            <i class="fa fa-envelope"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--xyz-gray-500); font-weight: 700;">Email Desk</div>
+                            <a href="mailto:info@exwhyzee.ng" style="font-weight: 700; color: var(--xyz-dark-900); font-size: 1.05rem;">
+                                info@exwhyzee.ng
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="xyz-feature-card" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+                        <div class="xyz-feature-icon" style="margin: 0; width: 48px; height: 48px; font-size: 1.3rem;">
+                            <i class="fa fa-phone"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--xyz-gray-500); font-weight: 700;">Phone Lines</div>
+                            <div style="font-weight: 700; color: var(--xyz-dark-900); font-size: 1.05rem;">
+                                <a href="tel:+2348068669344" style="color: inherit;">+234 806 866 9344</a>, <a href="tel:07060530000" style="color: inherit;">07060530000</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="xyz-feature-card" style="padding: 20px;">
+                        <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--xyz-gray-500); font-weight: 700; margin-bottom: 6px;">Office Addresses</div>
+                        <p style="margin: 0 0 8px; font-size: 0.92rem; color: var(--xyz-dark-800);">
+                            <strong style="color: var(--xyz-primary);">Main Office:</strong> No. 37 urban dwell estate, airport road, abuja
+                        </p>
+                        <p style="margin: 0; font-size: 0.92rem; color: var(--xyz-dark-800);">
+                            <strong style="color: var(--xyz-primary);">Branch Office:</strong> NO. 44, Azikiwe Road, Umuahia.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Interactive Inquiry Form -->
+            <div class="xyz-feature-card" style="padding: 36px;">
+                <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--xyz-dark-900); margin-bottom: 8px;">Send Us a Message</h3>
+                <p style="color: var(--xyz-gray-500); font-size: 0.9rem; margin-bottom: 24px;">Fill out this form and our support manager will follow up with you promptly.</p>
+
+                @if (TempData["Success"] != null)
+                {
+                    <div style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #065f46; padding: 14px 18px; border-radius: var(--xyz-radius-md); margin-bottom: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa fa-circle-check" style="color: #10B981; font-size: 1.2rem;"></i>
+                        <span>@TempData["Success"]</span>
+                    </div>
+                }
+
+                @if (TempData["Error"] != null)
+                {
+                    <div style="background: rgba(229,9,20,0.1); border: 1px solid rgba(229,9,20,0.25); color: var(--xyz-primary); padding: 14px 18px; border-radius: var(--xyz-radius-md); margin-bottom: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                        <i class="fa fa-circle-exclamation" style="font-size: 1.2rem;"></i>
+                        <span>@TempData["Error"]</span>
+                    </div>
+                }
+
+                <form asp-action="Contact" asp-controller="Home" method="post">
+                    @Html.AntiForgeryToken()
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                        <div>
+                            <label style="font-weight: 600; font-size: 0.88rem; color: var(--xyz-dark-800); margin-bottom: 6px; display: block;">Your Full Name *</label>
+                            <input type="text" name="FullName" class="xyz-calc-input" placeholder="e.g. John Doe" required />
+                        </div>
+                        <div>
+                            <label style="font-weight: 600; font-size: 0.88rem; color: var(--xyz-dark-800); margin-bottom: 6px; display: block;">Email Address *</label>
+                            <input type="email" name="Email" class="xyz-calc-input" placeholder="e.g. john@company.com" required />
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 16px;">
+                        <label style="font-weight: 600; font-size: 0.88rem; color: var(--xyz-dark-800); margin-bottom: 6px; display: block;">Phone Number</label>
+                        <input type="tel" name="PhoneNumber" class="xyz-calc-input" placeholder="e.g. 08012345678" />
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="font-weight: 600; font-size: 0.88rem; color: var(--xyz-dark-800); margin-bottom: 6px; display: block;">Your Inquiry / Message *</label>
+                        <textarea name="Message" class="xyz-calc-input" rows="4" placeholder="How can we assist your business today?" required></textarea>
+                    </div>
+
+                    <!-- Google reCAPTCHA v3 (invisible) -->
+                    <input type="hidden" name="g-recaptcha-response" id="recaptchaToken" />
+
+                    <button type="submit" class="xyz-btn xyz-btn-primary" style="width: 100%;">
+                        <i class="fa fa-paper-plane"></i> Submit Inquiry
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script src="https://www.google.com/recaptcha/api.js?render=@reCaptchaSiteKey"></script>
+<script>
+    document.querySelector('form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var form = this;
+        grecaptcha.ready(function () {
+            grecaptcha.execute('@reCaptchaSiteKey', { action: 'contact_inquiry' }).then(function (token) {
+                document.getElementById('recaptchaToken').value = token;
+                form.submit();
+            });
+        });
+    });
+</script>
+}

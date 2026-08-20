@@ -1,0 +1,20 @@
+{
+  "name": "Exwhyzee Bulk SMS",
+  "short_name": "Exwhyzee SMS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0F19",
+  "theme_color": "#E50914",
+  "icons": [
+    {
+      "src": "/Content/image/xyzico.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/Content/image/SMS-LOGO.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -34,14 +34,15 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 
         private IClientService _clientService = new ClientService();
         private ISendEmail _email = new SendEmail();
+        private IZeptoMailService _zeptoMail = new ZeptoMailService();
 
         private IPayStackApi _paystack = new PayStackApi(AppConfig.PayStackSecretKey);
         private ITransactionService _transactions = new TransactionService();
         private IDashboardService _dashboardService = new DashboardService();
         private IPaystackTransactionService _paystackTransactionService = new PaystackTransactionService();
+        private IGeminiContactExtractorService _geminiExtractor = new GeminiContactExtractorService();
+        private ITwoFactorService _twoFactorService = new TwoFactorService();
         private System.Random randomInteger = new System.Random();
-
-        
 
         public DashboardController()
         {
@@ -175,13 +176,142 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             var clientUnit = userclient.Units;
             ViewBag.clientUnit = clientUnit;
 
-            //transaction count
+            // counts
             ViewBag.ScheduleCount = lastSchedule.Count();
+            var userId = User.Identity.GetUserId();
+            ViewBag.TotalMessagesSent = await db.Messages.Where(x => x.UserId == userId).CountAsync();
+            ViewBag.SenderIdCount = await db.XyzSenderIDs.Where(x => x.ClientId == userclient.ClientId).CountAsync();
+            ViewBag.ApprovedTransactions = await db.Transactions.Where(x => x.ClientId == userclient.ClientId && x.Status == TransactionStatus.Approved).CountAsync();
 
-            //
+            // Analytics: Top Sender IDs Breakdown
+            var topSenderIds = await db.Messages
+                .Where(x => x.UserId == userId && !string.IsNullOrEmpty(x.SenderId))
+                .GroupBy(x => x.SenderId)
+                .Select(g => new { SenderId = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .Take(5)
+                .ToListAsync();
+
+            ViewBag.SenderLabels = topSenderIds.Select(s => s.SenderId).ToArray();
+            ViewBag.SenderCounts = topSenderIds.Select(s => s.Count).ToArray();
+
+            // Analytics: Delivery Status Distribution
+            var statusSent = await db.Messages.CountAsync(x => x.UserId == userId && x.Status == MessageStatus.Sent);
+            var statusPending = await db.Messages.CountAsync(x => x.UserId == userId && x.Status == MessageStatus.Pending);
+            var statusFailed = await db.Messages.CountAsync(x => x.UserId == userId && x.Status == MessageStatus.Failed);
+
+            ViewBag.StatusSent = (statusSent == 0 && statusPending == 0 && statusFailed == 0) ? 85 : statusSent;
+            ViewBag.StatusPending = statusPending;
+            ViewBag.StatusFailed = (statusSent == 0 && statusPending == 0 && statusFailed == 0) ? 5 : statusFailed;
+
+            // Analytics: 7-Day Trend Labels
+            var last7Days = Enumerable.Range(0, 7)
+                .Select(i => DateTime.UtcNow.Date.AddDays(-6 + i))
+                .ToList();
+            ViewBag.TrendLabels = last7Days.Select(d => d.ToString("MMM dd")).ToArray();
+
             var modal = await db.ModalInfos.FirstOrDefaultAsync();
             ViewBag.Modal = modal;
             return View();
+        }
+
+        //
+        // GET: /ClientPanel/Dashboard/Notifications
+        public async Task<ActionResult> Notifications()
+        {
+            var userId = User.Identity.GetUserId();
+            var userclient = await _clientService.GetClientDetailsByUserId(userId);
+
+            // Fetch Real AppNotifications from DB
+            var notifs = await db.AppNotifications
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.DateCreated)
+                .Take(30)
+                .ToListAsync();
+
+            // If empty, auto-seed default welcome alerts
+            if (!notifs.Any())
+            {
+                var welcomeNotif = new AppNotification
+                {
+                    UserId = userId,
+                    Title = "Welcome to Exwhyzee Bulk SMS",
+                    Message = "Your account is active with 20 complimentary test units. Start sending high-deliverability SMS!",
+                    NotificationType = "Wallet",
+                    ActionUrl = "/ClientPanel/Dashboard/compose",
+                    IsRead = false,
+                    DateCreated = DateTime.UtcNow
+                };
+                var senderNotif = new AppNotification
+                {
+                    UserId = userId,
+                    Title = "Register Your Sender ID",
+                    Message = "Submit alphanumeric sender IDs to send branded messages to your customers.",
+                    NotificationType = "SenderId",
+                    ActionUrl = "/ClientPanel/Dashboard/SenderByUser",
+                    IsRead = false,
+                    DateCreated = DateTime.UtcNow.AddMinutes(-5)
+                };
+                db.AppNotifications.AddRange(welcomeNotif, senderNotif);
+                await db.SaveChangesAsync();
+
+                notifs = new List<AppNotification> { welcomeNotif, senderNotif };
+            }
+
+            ViewBag.NotificationsList = notifs;
+            ViewBag.UnreadCount = notifs.Count(x => !x.IsRead);
+
+            var recentTransactions = await db.Transactions
+                .Where(x => x.ClientId == userclient.ClientId)
+                .OrderByDescending(x => x.TransactionId)
+                .Take(10)
+                .ToListAsync();
+
+            var recentSenderIds = await db.XyzSenderIDs
+                .Where(x => x.ClientId == userclient.ClientId)
+                .OrderByDescending(x => x.Id)
+                .Take(5)
+                .ToListAsync();
+
+            ViewBag.RecentTransactions = recentTransactions;
+            ViewBag.RecentSenderIds = recentSenderIds;
+            ViewBag.Client = userclient;
+
+            return View();
+        }
+
+        //
+        // POST: /ClientPanel/Dashboard/MarkNotificationRead
+        [HttpPost]
+        public async Task<IActionResult> MarkNotificationRead(int id)
+        {
+            var userId = User.Identity.GetUserId();
+            var notif = await db.AppNotifications.FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId);
+            if (notif != null)
+            {
+                notif.IsRead = true;
+                notif.DateRead = DateTime.UtcNow;
+                await db.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            return Json(new { success = false, message = "Notification not found" });
+        }
+
+        //
+        // POST: /ClientPanel/Dashboard/MarkAllNotificationsRead
+        [HttpPost]
+        public async Task<IActionResult> MarkAllNotificationsRead()
+        {
+            var userId = User.Identity.GetUserId();
+            var unread = await db.AppNotifications.Where(x => x.UserId == userId && !x.IsRead).ToListAsync();
+            foreach (var item in unread)
+            {
+                item.IsRead = true;
+                item.DateRead = DateTime.UtcNow;
+            }
+            await db.SaveChangesAsync();
+            TempData["Success"] = "All notifications marked as read.";
+            return RedirectToAction("Notifications");
         }
 
 
@@ -252,16 +382,138 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         /// </summary>
         /// <returns></returns>
 
-        public ActionResult Compose()
+        [HttpGet]
+        public async Task<ActionResult> Compose()
         {
             string userId = User.Identity.GetUserId();
-            var groups = db.Groups.OrderBy(x => x.Name).Where(x => x.Name != null && x.UserId == userId).Select(g => new
+            var client = await _clientService.GetClientDetailsByUserId(userId);
+
+            // 1. Registered & Approved Sender IDs
+            var userSenderIds = await _clientService.GetAllSenderIdById(userId);
+            var approvedList = userSenderIds
+                .Where(x => x.XYZ_status == "Approved" || x.XYZ_status == "Active")
+                .Select(x => x.SenderId?.Trim())
+                .Where(s => !string.IsNullOrEmpty(s))
+                .Distinct()
+                .ToList();
+
+            if (!approvedList.Any() && userSenderIds.Any())
             {
-                GroupId = g.GroupId,
-                Name = g.Name
-            }).ToList();
+                approvedList = userSenderIds.Select(x => x.SenderId?.Trim()).Where(s => !string.IsNullOrEmpty(s)).Distinct().ToList();
+            }
+            ViewBag.ApprovedSenderIds = approvedList;
+
+            // 2. Address Book Groups with Member Count
+            var groups = await db.Groups
+                .Where(x => x.Name != null && x.UserId == userId)
+                .OrderBy(x => x.Name)
+                .Select(g => new
+                {
+                    GroupId = g.GroupId,
+                    Name = g.Name,
+                    ContactCount = db.Contacts.Count(c => c.GroupId == g.GroupId && c.IsActive)
+                }).ToListAsync();
+
+            ViewBag.GroupList = groups;
             ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
+
+            // 3. User Wallet Balance & Gemini Configuration
+            var adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
+            ViewBag.WalletBalance = client?.Units ?? 0;
+            ViewBag.HasGeminiKey = !string.IsNullOrWhiteSpace(client?.GeminiApiKey);
+            ViewBag.BaseUnitsPerSms = adminSetting?.FlatUnitsPerSms ?? 4.0m;
+
+            // 4. Tariff Dial Rules for Real-Time Cost Estimator
+            try
+            {
+                var dialRules = await db.DialCodes
+                    .Include(d => d.PriceSetting)
+                    .AsNoTracking()
+                    .Where(d => d.PriceSetting != null)
+                    .Select(d => new
+                    {
+                        Prefix = d.NumberPrefix,
+                        DialCode = d.PriceSetting.InternationalDialCode ?? "234",
+                        Rate = d.PriceSetting.UnitsPerSms
+                    })
+                    .ToListAsync();
+
+                ViewBag.TariffRulesJson = System.Text.Json.JsonSerializer.Serialize(dialRules);
+            }
+            catch
+            {
+                ViewBag.TariffRulesJson = "[]";
+            }
+
             return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> GenerateSmsAi(string prompt, string tone)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(prompt))
+                {
+                    return Json(new { success = false, message = "Please enter a description or prompt for the SMS." });
+                }
+
+                string userId = User.Identity.GetUserId();
+                var client = await _clientService.GetClientDetailsByUserId(userId);
+                string geminiKey = client?.GeminiApiKey;
+
+                if (string.IsNullOrWhiteSpace(geminiKey))
+                {
+                    return Json(new { success = false, keyMissing = true, message = "Google Gemini API Key is not configured. Please add your key in API Settings." });
+                }
+
+                string toneDesc = string.IsNullOrWhiteSpace(tone) ? "Professional and Friendly" : tone;
+
+                string systemPrompt = $@"You are an expert SMS copywriter. Write an effective, high-converting, crisp SMS broadcast message based on the user's request.
+Tone: {toneDesc}
+User Request: {prompt}
+
+STRICT NON-NEGOTIABLE RULES:
+1. Do NOT include ANY emojis, emoticons, or non-standard symbols. Use ONLY standard alphanumeric plain ASCII / GSM-7 text (letters, numbers, basic punctuation . , ! ? - / : ; @ &).
+2. If the user asks for a specific length or page count (e.g. 1 page, 2 pages, etc.), adhere to it closely. Otherwise, write a punchy, impactful SMS copy.
+3. Do NOT wrap the output in quotes, backticks, or write conversational explanations (e.g. 'Here is your SMS:'). Return ONLY the raw plain text of the SMS message itself.";
+
+                var payload = new
+                {
+                    contents = new[]
+                    {
+                        new { parts = new[] { new { text = systemPrompt } } }
+                    },
+                    generationConfig = new
+                    {
+                        temperature = 0.7,
+                        maxOutputTokens = 1000
+                    }
+                };
+
+                string rawResponse = await _geminiExtractor.PostToGeminiWithFallbackAsync(payload, geminiKey);
+                string generatedText = "";
+
+                using var doc = System.Text.Json.JsonDocument.Parse(rawResponse);
+                if (doc.RootElement.TryGetProperty("candidates", out var candidates) && candidates.GetArrayLength() > 0)
+                {
+                    var first = candidates[0];
+                    if (first.TryGetProperty("content", out var content) && content.TryGetProperty("parts", out var parts) && parts.GetArrayLength() > 0)
+                    {
+                        generatedText = parts[0].GetProperty("text").GetString()?.Trim() ?? "";
+                    }
+                }
+
+                // Strip any rogue emojis or enclosing markdown / quotes
+                generatedText = System.Text.RegularExpressions.Regex.Replace(generatedText, @"[^\u0000-\u007F]+", "");
+                generatedText = generatedText.Trim('"', '\'', '`', ' ');
+
+                return Json(new { success = true, text = generatedText });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPost]
@@ -275,24 +527,32 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
                 scheduleDate = DateTime.ParseExact(model.ScheduleDate.ToString(), "dd/MM/yyyy hh:mm", null);
             }
 
-            ///MM/dd/yyyy
-            ///Reading Contacts from .txt file
-            ///
+            // Multi-Format File Ingestion (.xlsx, .xls, .docx, .txt, .csv)
             if (file != null && file.Length > 0)
             {
-                string directory = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "Uploads/Contacts/");
-                int genNumber = randomInteger.Next(1000000000);
-                string line;
-                string numbers = "";
-                if (file.FileName.ToLower().Contains("txt"))
+                try
                 {
-                    var fileName = Path.GetFileName(file.FileName);
-                    using (var stream = new System.IO.FileStream(Path.Combine(directory, genNumber + fileName), System.IO.FileMode.Create)) { file.CopyTo(stream); }
-                    line = System.IO.File.ReadAllText(directory + genNumber + fileName);
-                    numbers = line.Replace("\r\n", ",").Replace(" ", ",");
-                    // System.IO.File.Delete(directory + genNumber + fileName);
+                    using var ms = new MemoryStream();
+                    await file.CopyToAsync(ms);
+                    byte[] fileBytes = ms.ToArray();
+                    var extracted = await _geminiExtractor.ExtractFromFileAsync(fileBytes, file.FileName, client?.GeminiApiKey);
+                    if (extracted != null && extracted.Any())
+                    {
+                        string numbers = string.Join(",", extracted.Select(c => c.Phone));
+                        model.Recipients = (model.Recipients ?? "") + "," + numbers;
+                    }
                 }
-                model.Recipients = model.Recipients + "," + numbers + ",";
+                catch (Exception ex)
+                {
+                    // Fallback to basic text read
+                    if (file.FileName.ToLower().Contains("txt"))
+                    {
+                        using var reader = new StreamReader(file.OpenReadStream());
+                        string txtContent = await reader.ReadToEndAsync();
+                        string numbers = txtContent.Replace("\r\n", ",").Replace("\n", ",").Replace(" ", ",");
+                        model.Recipients = (model.Recipients ?? "") + "," + numbers;
+                    }
+                }
             }
 
             var groups = db.Groups.OrderBy(x => x.Name).Where(x => x.Name != null && x.UserId == userId).Select(g => new
@@ -307,7 +567,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 
                 foreach (var item in GroupId)
                 {
-                    var itemContacts = db.Contacts.Where(x => x.GroupId == item).Select(x => x.PhoneNumber);
+                    var itemContacts = db.Contacts.Where(x => x.GroupId == item && x.IsActive != false).Select(x => x.PhoneNumber);
                     contacts = string.Join(",", itemContacts.ToList());
                     combined = combined + contacts + ",";
 
@@ -363,6 +623,31 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
                     return View(model);
                 }
 
+                // Parse Schedule Date cleanly
+                DateTime parsedScheduleDate = DateTime.Now.AddMinutes(30);
+                if (model.ScheduleDate != null && !string.IsNullOrWhiteSpace(model.ScheduleDate.ToString()))
+                {
+                    string sDateStr = model.ScheduleDate.ToString().Trim();
+                    string[] formats = new[] { 
+                        "dd/MM/yyyy HH:mm", "dd/MM/yyyy hh:mm tt", "dd/MM/yyyy h:mm tt", "dd/MM/yyyy HH:mm:ss", 
+                        "dd/MM/yyyy", "yyyy-MM-ddTHH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-ddTHH:mm:ss", 
+                        "d/M/yyyy HH:mm", "d/M/yyyy h:mm tt", "MM/dd/yyyy HH:mm", "MM/dd/yyyy hh:mm tt" 
+                    };
+
+                    if (DateTime.TryParseExact(sDateStr, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dExact))
+                    {
+                        parsedScheduleDate = dExact;
+                    }
+                    else if (DateTime.TryParse(sDateStr, CultureInfo.GetCultureInfo("en-GB"), DateTimeStyles.None, out var dGb))
+                    {
+                        parsedScheduleDate = dGb;
+                    }
+                    else if (DateTime.TryParse(sDateStr, out var d1))
+                    {
+                        parsedScheduleDate = d1;
+                    }
+                }
+
                 //Save message to History
                 Message message = new Message();
                 message.DeliveredDate = DateTime.UtcNow;
@@ -370,12 +655,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
                 message.Recipients = string.Join(",", fNumbers.ToList());
                 message.Response = "Pending";
                 message.SenderId = model.SenderId.ToString();
-                //message.Scheduleddate = Convert.ToDateTime(model.ScheduleDate)/*;*/
-                if (message.Scheduleddate != null)
-                {
-                    message.Scheduleddate = DateTime.ParseExact(model.ScheduleDate.ToString(), "dd/MM/yyyy hh:mm", null);
-
-                }
+                message.Scheduleddate = parsedScheduleDate;
 
                 if (model.SendOption == "SendLater")
                 {
@@ -404,6 +684,14 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
                         //Update Client
                         client.Units = client.Units - totalUnitsNeeded;
                         await _clientService.UpdateClient(client);
+
+                        // Asynchronous Low Unit Alert Trigger (ASAP)
+                        try
+                        {
+                            var lowUnitService = new LowUnitAlertService();
+                            _ = Task.Run(() => lowUnitService.CheckAndTriggerLowUnitAlertAsync(userId, client.Units));
+                        }
+                        catch { }
 
                         sentMessage.UnitsUsed = totalUnitsNeeded;
                         sentMessage.Status = MessageStatus.Sent;
@@ -474,33 +762,190 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
                 }
                 else if (model.SendOption == "SendLater")
                 {
-                    DateTime currentTime = DateTime.UtcNow.AddHours(1);
-                    TimeSpan elapsedTime = scheduleDate.Subtract(currentTime);
-
-                    BackgroundJob.Schedule(() => SendLater(message.MessageId, client.ClientId, totalUnitsNeeded), TimeSpan.FromMinutes(elapsedTime.TotalMinutes));
-                    ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
-                    TempData["success"] = "Message has been scheduled to send in " + elapsedTime.Minutes + "mins";
-                    return RedirectToAction("Compose");
+                    TempData["success"] = $"Broadcast to {fNumbers.Count} recipient(s) has been successfully scheduled for {parsedScheduleDate:dd MMM yyyy, hh:mm tt}!";
+                    return RedirectToAction("ScheduledMessages");
                 }
                 else if (model.SendOption == "SaveDraft")
                 {
-                    ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
                     TempData["success"] = "Message has been saved as Draft successfully.";
-                    return RedirectToAction("Compose");
+                    return RedirectToAction("DraftMessages");
                 }
-                //else
-                //{
-                //    await SendLater(message.MessageId, client.ClientId, totalUnitsNeeded);
-                //    ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
-                //    TempData["success"] = "Message has been sent successfully. Total Units used is " + totalUnitsNeeded + ".";
-                //    return RedirectToAction("Compose");
-                //}
+
                 ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
                 TempData["error"] = "Sending Message Failed. Please Contact the Administrator.";
                 return View(model);
             }
             ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
             return View(model);
+        }
+
+        // ========================================================
+        // SCHEDULED MESSAGES QUEUE & MANAGEMENT
+        // ========================================================
+
+        // GET: ClientPanel/Dashboard/ScheduledMessages
+        public async Task<ActionResult> ScheduledMessages(string searchString, string currentFilter, int? page)
+        {
+            if (searchString != null)
+            {
+                page = 1;
+            }
+            else
+            {
+                searchString = currentFilter;
+            }
+            ViewBag.CurrentFilter = searchString;
+
+            var user = await UserManager.FindByNameAsync(User.Identity.Name);
+            var query = db.Messages.Where(x => x.UserId == user.Id && x.Status == MessageStatus.Scheduled);
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                query = query.Where(s => s.SenderId.Contains(searchString) || s.MessageContent.Contains(searchString) || s.Recipients.Contains(searchString));
+            }
+
+            var list = await query.OrderBy(x => x.Scheduleddate).ToListAsync();
+            int pageSize = 15;
+            int pageNumber = page ?? 1;
+
+            return View(list.ToPagedList(pageNumber, pageSize));
+        }
+
+        // GET: ClientPanel/Dashboard/EditScheduledMessage/5
+        public async Task<ActionResult> EditScheduledMessage(int id)
+        {
+            var user = await UserManager.FindByNameAsync(User.Identity.Name);
+            var message = await db.Messages.FirstOrDefaultAsync(m => m.MessageId == id && m.UserId == user.Id && m.Status == MessageStatus.Scheduled);
+            if (message == null)
+            {
+                TempData["error"] = "Scheduled message not found or is no longer in scheduled queue.";
+                return RedirectToAction("ScheduledMessages");
+            }
+
+            var userSenderIds = await _clientService.GetAllSenderIdById(user.Id);
+            ViewBag.ApprovedSenderIds = userSenderIds.Where(x => x.XYZ_status == "Approved" || x.XYZ_status == "Active").Select(x => x.SenderId?.Trim()).Distinct().ToList();
+
+            return View(message);
+        }
+
+        // POST: ClientPanel/Dashboard/EditScheduledMessage
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> EditScheduledMessage(int id, string senderId, string recipients, string messageContent, string scheduleDate)
+        {
+            var user = await UserManager.FindByNameAsync(User.Identity.Name);
+            var message = await db.Messages.FirstOrDefaultAsync(m => m.MessageId == id && m.UserId == user.Id && m.Status == MessageStatus.Scheduled);
+            if (message == null)
+            {
+                TempData["error"] = "Scheduled message not found or cannot be edited.";
+                return RedirectToAction("ScheduledMessages");
+            }
+
+            if (string.IsNullOrWhiteSpace(senderId) || string.IsNullOrWhiteSpace(recipients) || string.IsNullOrWhiteSpace(messageContent))
+            {
+                TempData["error"] = "Please fill in all required fields.";
+                return RedirectToAction("EditScheduledMessage", new { id });
+            }
+
+            DateTime parsedScheduleDate = DateTime.Now.AddMinutes(30);
+            if (!string.IsNullOrWhiteSpace(scheduleDate))
+            {
+                if (DateTime.TryParse(scheduleDate, out var dt))
+                {
+                    parsedScheduleDate = dt;
+                }
+                else if (DateTime.TryParseExact(scheduleDate, new[] { "dd/MM/yyyy HH:mm", "dd/MM/yyyy hh:mm", "yyyy-MM-ddTHH:mm" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dtExact))
+                {
+                    parsedScheduleDate = dtExact;
+                }
+            }
+
+            message.SenderId = senderId.Trim().ToUpper();
+            message.Recipients = recipients.Trim();
+            message.MessageContent = messageContent.Trim();
+            message.Scheduleddate = parsedScheduleDate;
+
+            db.Entry(message).State = EntityState.Modified;
+            await db.SaveChangesAsync();
+
+            TempData["success"] = "Scheduled broadcast updated successfully!";
+            return RedirectToAction("ScheduledMessages");
+        }
+
+        // POST: ClientPanel/Dashboard/DeleteScheduledMessage/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> DeleteScheduledMessage(int id)
+        {
+            var user = await UserManager.FindByNameAsync(User.Identity.Name);
+            var message = await db.Messages.FirstOrDefaultAsync(m => m.MessageId == id && m.UserId == user.Id);
+            if (message != null)
+            {
+                db.Messages.Remove(message);
+                await db.SaveChangesAsync();
+                TempData["success"] = "Scheduled broadcast has been cancelled and deleted.";
+            }
+            return RedirectToAction("ScheduledMessages");
+        }
+
+        // POST: ClientPanel/Dashboard/SendScheduledNow/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> SendScheduledNow(int id)
+        {
+            var user = await UserManager.FindByNameAsync(User.Identity.Name);
+            var message = await db.Messages.FirstOrDefaultAsync(m => m.MessageId == id && m.UserId == user.Id && m.Status == MessageStatus.Scheduled);
+            if (message == null)
+            {
+                TempData["error"] = "Scheduled message not found or is no longer in scheduled queue.";
+                return RedirectToAction("ScheduledMessages");
+            }
+
+            var client = await _clientService.GetClientDetailsByUserId(user.Id);
+            var rawNumbers = SmsServices.RemoveDuplicates(message.Recipients ?? "");
+            var formattedNumbers = SmsServices.FormatNumbers(rawNumbers);
+
+            if (!formattedNumbers.Any())
+            {
+                TempData["error"] = "No valid recipients found in this message.";
+                return RedirectToAction("ScheduledMessages");
+            }
+
+            int pageCount = SmsServices.CountPage(message.MessageContent ?? "");
+            decimal unitsRate = SmsServices.UnitsPerPage(formattedNumbers);
+            decimal totalUnitsNeeded = pageCount * unitsRate;
+
+            if (client.Units < totalUnitsNeeded)
+            {
+                TempData["error"] = $"Insufficient wallet units ({client.Units:N2} available vs {totalUnitsNeeded:N2} required). Please top up.";
+                return RedirectToAction("ScheduledMessages");
+            }
+
+            var response = await _clientService.SendSmsById(message.MessageId, totalUnitsNeeded);
+            if (response != null && response.status.ToLower().Contains("success"))
+            {
+                client.Units -= totalUnitsNeeded;
+                await _clientService.UpdateClient(client);
+
+                message.UnitsUsed = totalUnitsNeeded;
+                message.Status = MessageStatus.Sent;
+                message.DeliveredDate = DateTime.UtcNow;
+                message.Response = response.msg;
+                message.Response_status = response.status;
+                message.Response_cost = response.cost;
+                message.Response_msg = response.msg;
+                message.Response_page = response.page;
+                message.Response_error_code = response.error_code;
+                await _clientService.UpdateMessageStatus(message);
+
+                TempData["success"] = $"Scheduled broadcast dispatched immediately to {formattedNumbers.Count} recipient(s)! ({totalUnitsNeeded:N2} units used).";
+                return RedirectToAction("MessageHistory");
+            }
+            else
+            {
+                TempData["error"] = $"Dispatch error: {response?.msg ?? "Gateway rejected broadcast."}";
+                return RedirectToAction("ScheduledMessages");
+            }
         }
 
         //resend
@@ -773,7 +1218,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             return View(model);
         }
 
-        // GET: ClientPanel/messagehistory
+        // GET: ClientPanel/Dashboard/MessageHistory
         public async Task<ActionResult> MessageHistory(string searchString, string currentFilter, int? page)
         {
             if (searchString != null)
@@ -787,61 +1232,157 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             ViewBag.CurrentFilter = searchString;
 
             var user = await UserManager.FindByNameAsync(User.Identity.Name);
-            var msg = await _clientService.GetClientMessageHistory(user.Id);
+            var query = db.Messages.Where(x => x.UserId == user.Id && x.Status != MessageStatus.Draft);
 
-            if (!String.IsNullOrEmpty(searchString))
+            if (!string.IsNullOrEmpty(searchString))
             {
-
-                msg = msg.Where(s => s.SenderId.ToUpper().Contains(searchString.ToUpper())).ToList();
-
-
+                query = query.Where(s => s.SenderId.Contains(searchString) || s.Recipients.Contains(searchString) || s.MessageContent.Contains(searchString));
             }
 
-            int pageSize = 20;
-            int pageNumber = (page ?? 1);
+            var allUserMessages = await db.Messages.Where(x => x.UserId == user.Id && x.Status != MessageStatus.Draft).ToListAsync();
+            ViewBag.TotalMessages = allUserMessages.Count;
+            ViewBag.TotalUnitsUsed = allUserMessages.Sum(x => x.UnitsUsed);
+            ViewBag.DeliveredCount = allUserMessages.Count(x => x.Status == MessageStatus.Sent);
 
-            return View(msg.OrderByDescending(x => x.DeliveredDate).ToPagedList(pageNumber, pageSize));
+            var msgList = await query.OrderByDescending(x => x.DeliveredDate ?? x.Scheduleddate ?? DateTime.MinValue).ToListAsync();
+
+            int pageSize = 15;
+            int pageNumber = page ?? 1;
+
+            return View(msgList.ToPagedList(pageNumber, pageSize));
         }
-         
+
+        // GET: ClientPanel/Dashboard/GetMessageDetailsAjax/5
+        [HttpGet]
+        public async Task<IActionResult> GetMessageDetailsAjax(int id)
+        {
+            var user = await UserManager.FindByNameAsync(User.Identity.Name);
+            var msg = await db.Messages.FirstOrDefaultAsync(m => m.MessageId == id && m.UserId == user.Id);
+            if (msg == null)
+            {
+                return Json(new { success = false, message = "Message not found." });
+            }
+
+            var rawRecipients = (msg.Recipients ?? "").Split(new[] { ',', ' ', '\n', '\r', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            var uniqueRecipients = rawRecipients.Distinct().ToList();
+            int pageCount = SmsServices.CountPage(msg.MessageContent ?? "");
+
+            return Json(new
+            {
+                success = true,
+                messageId = msg.MessageId,
+                senderId = msg.SenderId,
+                messageContent = msg.MessageContent,
+                recipients = string.Join(", ", uniqueRecipients),
+                recipientCount = uniqueRecipients.Count,
+                unitsUsed = msg.UnitsUsed,
+                status = msg.Status.ToString(),
+                deliveredDate = msg.DeliveredDate.HasValue ? msg.DeliveredDate.Value.ToString("dd MMM yyyy, hh:mm tt") : "Pending",
+                scheduledDate = msg.Scheduleddate.HasValue ? msg.Scheduleddate.Value.ToString("dd MMM yyyy, hh:mm tt") : "None",
+                responseMsg = msg.Response_msg ?? msg.Response ?? "Dispatched",
+                responseStatus = msg.Response_status ?? "Success",
+                responseErrorCode = msg.Response_error_code ?? "0",
+                responseCost = msg.Response_cost ?? "0",
+                pageCount = pageCount,
+                charCount = (msg.MessageContent ?? "").Length
+            });
+        }
+
+        // GET: ClientPanel/Dashboard/DraftMessages
         public async Task<ActionResult> DraftMessages()
         {
             var user = await UserManager.FindByNameAsync(User.Identity.Name);
+            var drafts = await db.Messages
+                .Where(x => x.UserId == user.Id && x.Status == MessageStatus.Draft)
+                .OrderByDescending(x => x.MessageId)
+                .ToListAsync();
 
-            return View(await _clientService.GetClientDraftMessages(user.Id));
+            return View(drafts);
         }
 
-        public async Task<ActionResult> MessageDetails(int? id)
+        // POST: ClientPanel/Dashboard/DeleteDraft/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> DeleteDraft(int id)
         {
-            if (id == null)
+            var user = await UserManager.FindByNameAsync(User.Identity.Name);
+            var draft = await db.Messages.FirstOrDefaultAsync(m => m.MessageId == id && m.UserId == user.Id && m.Status == MessageStatus.Draft);
+            if (draft != null)
             {
-                id = 0;
+                db.Messages.Remove(draft);
+                await db.SaveChangesAsync();
+                TempData["success"] = "Draft message deleted successfully.";
             }
-            Message message = await _clientService.GetMessage(id);
-
-            if (message == null)
-            {
-                return NotFound();
-            }
-
-            return View(message);
+            return RedirectToAction("DraftMessages");
         }
 
-        public async Task<ActionResult> TransactionHistory()
+        // GET: ClientPanel/Dashboard/TransactionHistory
+        public async Task<ActionResult> TransactionHistory(string searchString, string currentFilter, int? page)
+        {
+            if (searchString != null)
+            {
+                page = 1;
+            }
+            else
+            {
+                searchString = currentFilter;
+            }
+            ViewBag.CurrentFilter = searchString;
+
+            var user = await UserManager.FindByNameAsync(User.Identity.Name);
+            var client = await _clientService.GetClientDetailsByUserId(user.Id);
+            
+            var approvedList = await db.Transactions.AsNoTracking()
+                .Where(x => x.ClientId == client.ClientId && x.Status == TransactionStatus.Approved)
+                .Select(t => new { AmountPaid = t.AmountPaid ?? t.Amount, Units = t.Units })
+                .ToListAsync();
+
+            ViewBag.TotalTransactions = approvedList.Count;
+            ViewBag.TotalAmountPaid = approvedList.Sum(t => t.AmountPaid);
+            ViewBag.TotalUnitsCredited = approvedList.Sum(t => t.Units);
+            ViewBag.WalletBalance = client.Units;
+
+            var query = db.Transactions.AsNoTracking().Where(x => x.ClientId == client.ClientId);
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                searchString = searchString.Trim();
+                query = query.Where(t => t.TransactionId.ToString().Contains(searchString) || (t.Note != null && t.Note.Contains(searchString)) || (t.TransactionReference != null && t.TransactionReference.Contains(searchString)));
+            }
+
+            int pageSize = 20;
+            int pageNumber = page ?? 1;
+            var list = query.OrderByDescending(x => x.DateCreated).ToPagedList(pageNumber, pageSize);
+
+            return View(list);
+        }
+
+        // GET: ClientPanel/Dashboard/GetTransactionDetailsAjax/5
+        [HttpGet]
+        public async Task<IActionResult> GetTransactionDetailsAjax(int id)
         {
             var user = await UserManager.FindByNameAsync(User.Identity.Name);
             var client = await _clientService.GetClientDetailsByUserId(user.Id);
-            var transactions = await _transactions.GetTransactionsByClient(client.ClientId);
+            var trans = await db.Transactions.FirstOrDefaultAsync(t => t.TransactionId == id && t.ClientId == client.ClientId);
+            if (trans == null)
+            {
+                return Json(new { success = false, message = "Transaction not found." });
+            }
 
-            return View(transactions);
-        }
-
-        public async Task<ActionResult> TransactionDetails(int Id)
-        {
-            var user = await UserManager.FindByNameAsync(User.Identity.Name);
-            var client = await _clientService.GetClientDetailsByUserId(user.Id);
-            var transactions = await _transactions.GetTransaction(Id);
-
-            return View(transactions);
+            return Json(new
+            {
+                success = true,
+                transactionId = trans.TransactionId,
+                units = trans.Units,
+                amount = trans.Amount,
+                amountPaid = trans.AmountPaid ?? trans.Amount,
+                transactionType = trans.TransactionType.ToString(),
+                status = trans.Status.ToString(),
+                dateCreated = trans.DateCreated.ToString("dd MMM yyyy, hh:mm tt"),
+                dateApproved = trans.DateApproved.HasValue ? trans.DateApproved.Value.ToString("dd MMM yyyy, hh:mm tt") : "Pending",
+                description = trans.Note ?? "SMS Unit Purchase",
+                reference = trans.TransactionReference ?? "N/A"
+            });
         }
 
         public ActionResult LoadVoucher()
@@ -957,12 +1498,170 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             return View(item);
         }
 
-        public ActionResult BuyUnit()
+        // GET: ClientPanel/Dashboard/NetworkPricing
+        public async Task<ActionResult> NetworkPricing()
         {
-            ViewBag.PricePerUnit = db.AdminSettings.FirstOrDefault().PricePerUnit;
+            var priceSettings = await db.PriceSettings.Include(p => p.DialCodes).OrderBy(p => p.Country).ThenBy(p => p.NetworkProvider).ToListAsync();
+            var adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
+            ViewBag.AdminSetting = adminSetting;
+            ViewBag.PricePerUnit = adminSetting?.PricePerUnit ?? 2.0m;
+            ViewBag.FlatUnits = adminSetting?.FlatUnitsPerSms ?? 2.0m;
+
+            return View(priceSettings);
+        }
+
+        // GET: ClientPanel/Dashboard/BuyUnit
+        public async Task<ActionResult> BuyUnit()
+        {
+            var adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
+            ViewBag.PricePerUnit = adminSetting?.PricePerUnit ?? 2.0m;
+            ViewBag.PaystackPublicKey = AppConfig.PayStackPublicKey;
+
+            var user = await UserManager.FindByNameAsync(User.Identity.Name);
+            var client = await _clientService.GetClientDetailsByUserId(user.Id);
+            ViewBag.Client = client;
+            ViewBag.UserEmail = user.Email;
+
             return View();
         }
 
+        // POST: ClientPanel/Dashboard/InitializePaystackInline
+        [HttpPost]
+        public async Task<IActionResult> InitializePaystackInline(decimal units)
+        {
+            if (units <= 0)
+            {
+                return Json(new { success = false, message = "Please enter a valid unit quantity greater than zero." });
+            }
+
+            var adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
+            decimal pricePerUnit = adminSetting?.PricePerUnit ?? 2.0m;
+            decimal totalAmount = units * pricePerUnit;
+
+            var user = await UserManager.FindByNameAsync(User.Identity.Name);
+            var client = await _clientService.GetClientDetailsByUserId(user.Id);
+
+            Transaction transaction = new Transaction
+            {
+                Units = units,
+                Amount = totalAmount,
+                AmountPaid = totalAmount,
+                ClientId = client.ClientId,
+                UserId = user.Id,
+                TransactionType = TransactionType.OnlinePayment,
+                PaymentSource = "Paystack",
+                IsPaystackOutflow = true,
+                IsAdminTransferred = false,
+                Status = TransactionStatus.Pending,
+                DateCreated = DateTime.UtcNow.AddHours(1),
+                Note = $"Paystack Top-Up of {units:N2} units at NGN {pricePerUnit:N2}/unit"
+            };
+
+            await _transactions.AddTransaction(transaction);
+
+            int amountInKobo = (int)Math.Round(totalAmount * 100);
+
+            return Json(new
+            {
+                success = true,
+                transactionId = transaction.TransactionId,
+                amount = totalAmount,
+                amountInKobo = amountInKobo,
+                units = units,
+                pricePerUnit = pricePerUnit,
+                email = user.Email,
+                firstName = client.FirstName ?? user.UserName,
+                surname = client.Surname ?? "",
+                publicKey = AppConfig.PayStackPublicKey
+            });
+        }
+
+        // POST: ClientPanel/Dashboard/VerifyPaystackInline
+        [HttpPost]
+        public async Task<IActionResult> VerifyPaystackInline(string reference, int transactionId)
+        {
+            if (string.IsNullOrWhiteSpace(reference) || transactionId <= 0)
+            {
+                return Json(new { success = false, message = "Invalid transaction parameters." });
+            }
+
+            var user = await UserManager.FindByNameAsync(User.Identity.Name);
+            var client = await _clientService.GetClientDetailsByUserId(user.Id);
+            var transaction = await _transactions.GetTransaction(transactionId);
+
+            if (transaction == null || transaction.ClientId != client.ClientId)
+            {
+                return Json(new { success = false, message = "Transaction record not found." });
+            }
+
+            if (transaction.Status == TransactionStatus.Approved)
+            {
+                return Json(new
+                {
+                    success = true,
+                    message = "Transaction has already been credited.",
+                    newBalance = client.Units,
+                    units = transaction.Units,
+                    amount = transaction.Amount
+                });
+            }
+
+            try
+            {
+                TransactionResponseModel response = await _paystack.Transactions.VerifyTransaction(reference);
+
+                if (response != null && response.status == true)
+                {
+                    // Approve transaction
+                    transaction.Status = TransactionStatus.Approved;
+                    transaction.DateApproved = DateTime.UtcNow.AddHours(1);
+                    transaction.TransactionReference = reference;
+                    transaction.AmountPaid = transaction.Amount;
+                    transaction.ApprovedBy = "Paystack Inline";
+                    transaction.IsPaystackOutflow = true;
+                    transaction.GatewayResponse = response.message ?? "Successful";
+
+                    // Credit Client Units
+                    client.Units += transaction.Units;
+                    await _clientService.UpdateClient(client);
+                    await _transactions.UpdateTransactionStatus(transaction);
+
+                    // Send in-app notification
+                    var notifService = HttpContext.RequestServices.GetService<INotificationService>();
+                    if (notifService != null)
+                    {
+                        await notifService.SendNotificationAsync(
+                            user.Id,
+                            "Wallet Credited via Paystack",
+                            $"Your wallet was credited with {transaction.Units:N2} units (NGN {transaction.Amount:N2}). New balance: {client.Units:N2} units.",
+                            "TOPUP_SUCCESS",
+                            "/ClientPanel/Dashboard/TransactionHistory");
+                    }
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = $"Congratulations! Your wallet has been credited with {transaction.Units:N2} SMS units!",
+                        newBalance = client.Units,
+                        units = transaction.Units,
+                        amount = transaction.Amount,
+                        reference = reference
+                    });
+                }
+                else
+                {
+                    transaction.GatewayResponse = response?.message ?? "Verification failed";
+                    await _transactions.UpdateTransactionStatus(transaction);
+                    return Json(new { success = false, message = response?.message ?? "Payment verification failed with Paystack." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Verification error: {ex.Message}" });
+            }
+        }
+
+        // POST: ClientPanel/Dashboard/BuyUnit
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> BuyUnit(BuyUnitsViewModel model)
@@ -1109,18 +1808,34 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 
                         await _transactions.UpdateTransactionStatus(transaction);
 
-                        clientedit.Units += transaction.Amount;
+                        decimal unitsToAdd = transaction.Units > 0 ? transaction.Units : transaction.Amount;
+                        clientedit.Units += unitsToAdd;
                         await _clientService.UpdateClient(clientedit);
-
 
                         TempData["success"] = $"Transaction with Reference {tranxRef} was successful.";
 
-                        string MessageBody = TempData["success"] + " Your xyzsms account has been credited. Balance is N" + clientedit.Units + ". Thanks for your patronage @ http://xyzsms.com.";
-                        var emailMessage = string.Format("{0};??{1};??{2};??{3}", "Transaction Notification", "Transaction Notification", "Thanks " + clientedit.User.UserName, MessageBody);
+                        string messageBody = $"Your XYZSMS account has been credited with {unitsToAdd:N0} units (₦{transaction.Amount:N2}). New balance: {clientedit.Units:N2} units. Thank you for your patronage!";
 
-                        await _email.SendEmailAsync(emailMessage, clientedit.User.Email, "Transaction Notification");
-                        await _clientService.SendSms("xyzsms", MessageBody, clientedit.User.PhoneNumber);
+                        // Send rich HTML Receipt via ZeptoMail (automatically logged in EmailLogs)
+                        try
+                        {
+                            await _zeptoMail.SendPaymentSuccessReceiptAsync(
+                                recipientEmail: clientedit.User.Email,
+                                username: clientedit.User.UserName ?? clientedit.FirstName,
+                                unitsPurchased: unitsToAdd,
+                                totalNewBalance: (decimal)clientedit.Units,
+                                amountPaid: transaction.Amount,
+                                transactionRef: tranxRef,
+                                paymentMethod: "Online (Paystack)"
+                            );
+                        }
+                        catch { }
 
+                        try
+                        {
+                            await _clientService.SendSms("XYZSMS", messageBody, clientedit.User.PhoneNumber);
+                        }
+                        catch { }
 
                         return RedirectToAction("TransactionDetails", new { id = transaction.TransactionId });
                     }
@@ -1160,24 +1875,48 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             return View();
         }
 
-        // POST: Adminpanel/XyzSenderIDs/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: ClientPanel/Dashboard/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(string SenderId, string Message)
         {
-            if (ModelState.IsValid)
+            if (string.IsNullOrWhiteSpace(SenderId))
             {
-                string userId = User.Identity.GetUserId();
-                var response = await _clientService.AddSender(userId, SenderId, Message);
-                TempData["success"] = response;
+                TempData["error"] = "Please enter a valid alphanumeric Sender ID.";
                 return RedirectToAction("SenderByUser");
             }
-            TempData["error"] = "unable to process";
-            return View(); 
-        }
 
+            SenderId = SenderId.Trim().ToUpper();
+            if (SenderId.Length > 11)
+            {
+                TempData["error"] = "Sender ID cannot exceed 11 characters.";
+                return RedirectToAction("SenderByUser");
+            }
+
+            string userId = User.Identity.GetUserId();
+            var response = await _clientService.AddSender(userId, SenderId, Message ?? "Account verification and transactional alerts.");
+            
+            // Add In-App Notification
+            try
+            {
+                var notif = new AppNotification
+                {
+                    UserId = userId,
+                    Title = $"Sender ID Submitted: [{SenderId}]",
+                    Message = $"Your request for Sender ID [{SenderId}] has been submitted to the gateway for operator approval.",
+                    NotificationType = "SenderId",
+                    ActionUrl = "/ClientPanel/Dashboard/SenderByUser",
+                    IsRead = false,
+                    DateCreated = DateTime.UtcNow
+                };
+                db.AppNotifications.Add(notif);
+                await db.SaveChangesAsync();
+            }
+            catch { }
+
+            TempData["success"] = response;
+            return RedirectToAction("SenderByUser");
+        }
 
         [HttpPost]
         public async Task<ActionResult> VerifySenderId(string senderId)
@@ -1185,7 +1924,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             try
             {
                 var response = await _clientService.VerifySender(senderId);
-                TempData["success"] = response;
+                TempData["success"] = $"Status for [{senderId}]: {response}";
             }
             catch (Exception ex)
             {
@@ -1194,12 +1933,176 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             return RedirectToAction("SenderByUser");
         }
 
+        [HttpPost]
+        public async Task<IActionResult> CheckSenderIdAjax(string senderId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(senderId))
+                {
+                    return Json(new { success = false, message = "Invalid Sender ID" });
+                }
+
+                var status = await _clientService.VerifySender(senderId);
+                return Json(new { success = true, senderId = senderId, status = status });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResubmitSenderAjax(string senderId, string message)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(senderId))
+                {
+                    return Json(new { success = false, message = "Invalid Sender ID" });
+                }
+
+                string userId = User.Identity.GetUserId();
+                var result = await _clientService.AddSender(userId, senderId.Trim().ToUpper(), message ?? "Account verification and transactional alerts.");
+                return Json(new { success = true, message = result, senderId = senderId });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteSenderAjax(string senderId)
+        {
+            try
+            {
+                string userId = User.Identity.GetUserId();
+                var client = await db.Clients.FirstOrDefaultAsync(x => x.UserId == userId);
+                var sid = await db.XyzSenderIDs.FirstOrDefaultAsync(x => x.SenderId == senderId && x.ClientId == client.ClientId);
+                if (sid != null)
+                {
+                    db.XyzSenderIDs.Remove(sid);
+                    await db.SaveChangesAsync();
+                    return Json(new { success = true, senderId = senderId });
+                }
+                return Json(new { success = false, message = "Sender ID not found" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
         //user profile
         public async Task<ActionResult> Details()
         {
             var client = await _clientService.GetClientDetailsByUserId(User.Identity.GetUserId());
             return View(client);
         }
+
+        #region TWO-FACTOR SECURITY SETTINGS
+
+        [HttpGet]
+        public async Task<IActionResult> TwoFactor()
+        {
+            var userId = UserManager.GetUserId(User);
+            var user = await UserManager.FindByIdAsync(userId);
+            if (user == null) return RedirectToAction("Index");
+
+            ViewBag.TwoFactorEnabled = user.TwoFactorEnabled;
+            ViewBag.ActiveMethod = user.PreferredTwoFactorMethod;
+            ViewBag.PhoneNumber = user.PhoneNumber;
+            ViewBag.Email = user.Email;
+
+            // Generate secret key for TOTP setup
+            string secretKey = string.IsNullOrEmpty(user.TwoFactorSecretKey) ? _twoFactorService.GenerateSecretKey() : user.TwoFactorSecretKey;
+            ViewBag.SecretKey = secretKey;
+
+            string qrUri = _twoFactorService.GenerateQrCodeUri(user.UserName, secretKey);
+            ViewBag.QrImageUrl = _twoFactorService.GenerateQrCodeImageUrl(qrUri);
+
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EnableTwoFactor(TwoFactorMethod method, string secretKey, string confirmationCode)
+        {
+            var userId = UserManager.GetUserId(User);
+            var user = await UserManager.FindByIdAsync(userId);
+            if (user == null) return RedirectToAction("Index");
+
+            if (method == TwoFactorMethod.GoogleAuth || method == TwoFactorMethod.MicrosoftAuth)
+            {
+                if (string.IsNullOrEmpty(confirmationCode) || !_twoFactorService.ValidateTotpCode(secretKey, confirmationCode))
+                {
+                    TempData["error"] = "Invalid 6-digit confirmation code from your Authenticator app. Please scan the QR Code Barcode and try again.";
+                    return RedirectToAction("TwoFactor");
+                }
+                user.TwoFactorSecretKey = secretKey;
+            }
+            else if (method == TwoFactorMethod.SmsOtp)
+            {
+                if (string.IsNullOrEmpty(user.PhoneNumber))
+                {
+                    TempData["error"] = "Please update your phone number in Profile before enabling SMS OTP.";
+                    return RedirectToAction("TwoFactor");
+                }
+            }
+            else if (method == TwoFactorMethod.EmailOtp)
+            {
+                if (string.IsNullOrEmpty(user.Email))
+                {
+                    TempData["error"] = "Email address missing. Cannot enable Email OTP.";
+                    return RedirectToAction("TwoFactor");
+                }
+            }
+
+            user.TwoFactorEnabled = true;
+            user.PreferredTwoFactorMethod = method;
+
+            var u = await db.Users.FirstOrDefaultAsync(x => x.Id == userId);
+            if (u != null)
+            {
+                u.TwoFactorEnabled = true;
+                u.PreferredTwoFactorMethod = method;
+                u.TwoFactorSecretKey = user.TwoFactorSecretKey;
+            }
+
+            await db.SaveChangesAsync();
+            TempData["success"] = $"Two-Factor Authentication ({method}) has been successfully enabled for your account!";
+            return RedirectToAction("TwoFactor");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DisableTwoFactor()
+        {
+            var userId = UserManager.GetUserId(User);
+            var user = await UserManager.FindByIdAsync(userId);
+            if (user == null) return RedirectToAction("Index");
+
+            user.TwoFactorEnabled = false;
+            user.PreferredTwoFactorMethod = TwoFactorMethod.None;
+            user.TwoFactorSecretKey = null;
+            user.LastOtpCode = null;
+
+            var u = await db.Users.FirstOrDefaultAsync(x => x.Id == userId);
+            if (u != null)
+            {
+                u.TwoFactorEnabled = false;
+                u.PreferredTwoFactorMethod = TwoFactorMethod.None;
+                u.TwoFactorSecretKey = null;
+                u.LastOtpCode = null;
+            }
+
+            await db.SaveChangesAsync();
+            TempData["success"] = "Two-Factor Authentication (2FA) has been disabled.";
+            return RedirectToAction("TwoFactor");
+        }
+
+        #endregion
 
         protected override void Dispose(bool disposing)
         {

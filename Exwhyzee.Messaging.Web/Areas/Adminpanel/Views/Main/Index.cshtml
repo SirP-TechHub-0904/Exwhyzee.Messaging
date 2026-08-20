@@ -1,300 +1,970 @@
 @{
-    ViewBag.Title = "Dashboard";
+    ViewBag.Title = "Executive Admin Analytics Dashboard";
+
+    var firstBal = ViewBag.firstbalance as Exwhyzee.Messaging.Core.Dtos.ApiBalanceFirstDto;
+    var secondBal = ViewBag.secondbalance as Exwhyzee.Messaging.Core.Dtos.ApiBalanceSecondDto;
+    int pendingTrans = ViewBag.AllpendingTransactions ?? 0;
+    int pendingSenders = ViewBag.PendingSenderIdsCount ?? 0;
+    int totalClients = ViewBag.TotalClientsCount ?? 0;
+    decimal totalLiability = ViewBag.TotalClientUnitsLiability ?? 0;
+    int msgsToday = ViewBag.Allmessage ?? 0;
+    int clientsToday = ViewBag.allclienttoday ?? 0;
+    int liveActiveUsers = ViewBag.LiveActiveUsers ?? 1;
+
+    var topUsers = ViewBag.TopUsersUsage as List<Exwhyzee.Messaging.Core.Dtos.TopUserUsageDto> ?? new List<Exwhyzee.Messaging.Core.Dtos.TopUserUsageDto>();
+    var topFunders = ViewBag.TopFunders as List<Exwhyzee.Messaging.Core.Dtos.TopFunderDto> ?? new List<Exwhyzee.Messaging.Core.Dtos.TopFunderDto>();
+    var topBurners = ViewBag.TopUnitBurners as List<Exwhyzee.Messaging.Core.Dtos.TopUserUsageDto> ?? new List<Exwhyzee.Messaging.Core.Dtos.TopUserUsageDto>();
+    var heavySenders = ViewBag.HeavyBlastSenders as List<Exwhyzee.Messaging.Core.Dtos.HeavyBlastSenderDto> ?? new List<Exwhyzee.Messaging.Core.Dtos.HeavyBlastSenderDto>();
+    var paystackLiquidity = ViewBag.PaystackLiquidity as Exwhyzee.Messaging.Core.Dtos.PaystackLiquidityDto ?? new Exwhyzee.Messaging.Core.Dtos.PaystackLiquidityDto();
 }
+
 @using Exwhyzee.Messaging.Core.Services
-<section class="content-header">
-    <h1>
-        Dashboard(Admin)
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Admin </a></li>
-        <li class="active">Dashboard</li>
-    </ol>
-</section>
-<!-- Main content -->
-<section class="content">
 
-    <div class="row">
+<style>
+    /* Executive Admin Dashboard Theme */
+    .xyz-admin-hero {
+        background: linear-gradient(135deg, #0B0F19 0%, #1E1B4B 50%, #0B0F19 100%);
+        border-radius: 16px;
+        padding: 22px 28px;
+        margin-bottom: 24px;
+        color: #FFFFFF;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
 
-        <div class=" col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-red-gradient">
-                <div class="inner">
-                    <h3>@ViewBag.firstbalance.Balance</h3>
-                    <p>01: @ViewBag.firstbalance.Name</p>
-                    <p>Unit Balance</p>
-                </div>
-                <div class="icon">
-                    <i class="fa fa-money"></i>
-                </div>
-                <p class="small-box-footer">Unit Balance<i class="fa fa-arrow-circle-right"></i></p>
-            </div>
-        </div><!-- ./col -->
-        <!-- Client Units-->
-        <div class=" col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-orange">
-                <div class="inner">
-                    <h3>@ViewBag.secondbalance.Balance</h3>
-                    <p>02: @ViewBag.secondbalance.Name</p>
-                    <p>Unit Balance</p>
-                </div>
-                <div class="icon">
-                    <i class="fa fa-money"></i>
-                </div>
-                <p class="small-box-footer">Unit Balance<i class="fa fa-arrow-circle-right"></i></p>
-            </div>
-        </div><!-- ./col -->
-        <!-- Pending transactions -->
-        <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-primary">
-                <div class="inner">
+    .xyz-admin-hero h1 {
+        font-size: 1.45rem !important;
+        font-weight: 800 !important;
+        margin: 0 0 4px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #FFFFFF;
+    }
 
-                    <h3>@ViewBag.Allmessage</h3>
-                    <p>  Total Sent Messages</p>
-                    <p> Today</p>
-                </div>
-                <div class="icon">
-                    <i class="fa fa-envelope-square"></i>
-                </div>
-                <p class="small-box-footer"> Total Sent Messages Today <i class="fa fa-arrow-circle-right"></i></p>
-            </div>
-        </div><!-- ./col -->
+    .xyz-admin-hero p {
+        margin: 0;
+        color: #94A3B8;
+        font-size: 0.88rem;
+    }
 
+    .xyz-hero-pill {
+        border-radius: 10px;
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none !important;
+        transition: transform 0.2s ease;
+    }
 
+    .xyz-hero-pill:hover {
+        transform: translateY(-2px);
+    }
 
+    .xyz-hero-pill small {
+        font-size: 0.68rem;
+        font-weight: 800;
+        display: block;
+        text-transform: uppercase;
+    }
 
-        <div class=" col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-green">
-                <div class="inner">
-                    <h3>@ViewBag.allclienttoday</h3>
-                    <p>New Client(s)</p>
-                    <p>Today</p>
-                </div>
-                <div class="icon">
-                    <i class="fa fa-users"></i>
-                </div>
-                <p class="small-box-footer"> All Registered Client(s) <i class="fa fa-arrow-circle-right"></i></p>
-            </div>
-        </div><!-- ./col -->
+    .xyz-hero-pill strong {
+        font-size: 1rem;
+        font-weight: 800;
+    }
+
+    /* KPI Grid */
+    .xyz-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    @@media (max-width: 1200px) {
+        .xyz-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @@media (max-width: 768px) {
+        .xyz-kpi-grid { grid-template-columns: 1fr; }
+    }
+
+    .xyz-kpi-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        padding: 20px 22px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    body.xyz-dark-theme .xyz-kpi-card {
+        background: #131B2E;
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .xyz-kpi-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .xyz-kpi-card.gateway-promo { border-top: 4px solid #10B981; }
+    .xyz-kpi-card.gateway-trans { border-top: 4px solid #8B5CF6; }
+    .xyz-kpi-card.kpi-dispatches { border-top: 4px solid #3B82F6; }
+    .xyz-kpi-card.kpi-users      { border-top: 4px solid #F59E0B; }
+
+    .xyz-kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .xyz-kpi-title {
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748B;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    body.xyz-dark-theme .xyz-kpi-title { color: #94A3B8; }
+
+    .xyz-kpi-value {
+        font-size: 1.75rem;
+        font-weight: 900;
+        color: #0F172A;
+        font-family: 'JetBrains Mono', monospace;
+        margin-bottom: 4px;
+        line-height: 1.1;
+    }
+
+    body.xyz-dark-theme .xyz-kpi-value { color: #F1F5F9; }
+
+    .xyz-kpi-sub {
+        font-size: 0.82rem;
+        color: #64748B;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .xyz-kpi-footer {
+        border-top: 1px solid #F1F5F9;
+        padding-top: 10px;
+        margin-top: auto;
+    }
+
+    body.xyz-dark-theme .xyz-kpi-footer { border-top-color: rgba(255, 255, 255, 0.06); }
+
+    .xyz-kpi-footer a {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #6366F1;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .xyz-kpi-footer a:hover { color: #4F46E5; text-decoration: underline; }
+
+    .xyz-pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .xyz-pulse-dot.online  { background: #10B981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25); }
+    .xyz-pulse-dot.warning { background: #F59E0B; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25); }
+    .xyz-pulse-dot.error   { background: #EF4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25); }
+
+    .xyz-badge {
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .xyz-badge-success { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+    .xyz-badge-pending { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+    .xyz-badge-failed  { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+    .xyz-badge-promo   { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
+    .xyz-badge-trans   { background: #F5F3FF; color: #5B21B6; border: 1px solid #DDD6FE; }
+    .xyz-badge-paystack{ background: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD; }
+
+    .xyz-id-chip {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 800;
+        font-size: 0.82rem;
+        background: #F1F5F9;
+        color: #334155;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid #E2E8F0;
+    }
+
+    body.xyz-dark-theme .xyz-id-chip { background: rgba(255,255,255,0.06); color: #CBD5E1; border-color: rgba(255,255,255,0.1); }
+
+    /* Panel Card */
+    .xyz-panel-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-panel-card { background: #131B2E; border-color: rgba(255, 255, 255, 0.08); }
+
+    .xyz-panel-header {
+        padding: 18px 22px;
+        border-bottom: 1px solid #E2E8F0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #FAFAFA;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    body.xyz-dark-theme .xyz-panel-header { background: rgba(255, 255, 255, 0.02); border-bottom-color: rgba(255, 255, 255, 0.06); }
+
+    .xyz-panel-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #1E293B;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    body.xyz-dark-theme .xyz-panel-header h3 { color: #F1F5F9; }
+
+    /* Date Range Filter Pills */
+    .xyz-filter-btn-group {
+        display: inline-flex;
+        background: #E2E8F0;
+        padding: 3px;
+        border-radius: 10px;
+        gap: 4px;
+    }
+
+    body.xyz-dark-theme .xyz-filter-btn-group { background: rgba(255, 255, 255, 0.08); }
+
+    .xyz-filter-btn {
+        border: none;
+        background: transparent;
+        color: #475569;
+        font-size: 0.78rem;
+        font-weight: 800;
+        padding: 5px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    body.xyz-dark-theme .xyz-filter-btn { color: #94A3B8; }
+
+    .xyz-filter-btn.active {
+        background: #6366F1;
+        color: #FFFFFF;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+
+    /* Paystack Liquidity Studio Box */
+    .xyz-paystack-studio {
+        background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+        border-radius: 16px;
+        padding: 22px 26px;
+        color: #FFFFFF;
+        box-shadow: 0 6px 24px rgba(2, 132, 199, 0.25);
+        margin-bottom: 24px;
+    }
+
+    .xyz-paystack-studio h3 {
+        font-size: 1.15rem !important;
+        font-weight: 800 !important;
+        margin: 0 0 6px;
+        color: #FFFFFF;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+</style>
+
+<!-- Hero Section with Live Telemetry -->
+<div class="xyz-admin-hero">
+    <div>
+        <h1>
+            <i class="fa fa-chart-line" style="color:#6366F1;"></i> Executive Command &amp; Analytics Studio
+        </h1>
+        <p>Real-time telecommunication gateways health, user traffic rankings, and Paystack liquidity monitor.</p>
     </div>
-    <div class="row">
-        <!-- left colume -->
-        <div class="col-lg-6">
-            <div class="box box-danger">
-                <div class="box-header btn-danger">
-                    <i class="fa fa-envelope"></i>
-                    <h3 class="box-title">Last Ten Failed/Pending Messages</h3>
-                </div>
-                <div class="box-body">
-                    <table class="table table-bordered table-striped table-responsive">
-                        <thead>
-                            <tr class="bg-danger">
-                                <th>
-                                    Sender ID
-                                </th>
-                                <th>
-                                    By
-                                </th>
-                                <th>
-                                    Date
-                                </th>
-                                <th>
-                                    Status
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-
-                            @foreach (var item in ViewBag.failmessage)
-                            {
-                                <tr>
-                                    <td>
-                                        @item.SenderId
-                                    </td>
-                                    <td>
-                                        @GeneralServices.UserName(item.UserId)
-
-                                    </td>
-                                    <td>
-                                        @item.DeliveredDate
-                                    </td>
-                                    <td>
-                                        @item.Status
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <!-- Live Active Users Pill -->
+        <div class="xyz-hero-pill" style="background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.35);">
+            <span class="xyz-pulse-dot online"></span>
+            <div>
+                <small style="color:#A7F3D0;">Live Users Online</small>
+                <strong style="color:#34D399;">@liveActiveUsers Active</strong>
             </div>
         </div>
-        <div class="col-lg-6">
-            <div class="box box-danger">
-                <div class="box-header btn-danger">
-                    <i class="fa fa-money"></i>
-                    <h3 class="box-title">Last Ten Failed Transactions</h3>
-                </div>
-                <div class="box-body">
-                    <table class="table table-bordered table-striped table-responsive">
-                        <thead>
-                            <tr class="bg-danger">
-                                <th>
-                                    Transaction Id
-                                </th>
-                                <th>Client</th>
-                                <th>By</th>
-                                <th>
-                                    Transaction Date
-                                </th>
-                                <th>
-                                    Transaction Status
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
 
-                            @foreach (var item in ViewBag.lastTenFailedTransaction)
-                            {
-                                <tr>
-                                    <td>
-                                        @item.TransactionId
-                                    </td>
-                                    <td>
-                                        @GeneralServices.ClientName(item.ClientId)
-
-                                    </td>
-                                    <td>
-                                        @GeneralServices.UserName(item.UserId)
-
-                                    </td>
-                                    <td>
-                                        @item.DateCreated
-                                    </td>
-                                    <td>
-                                        @item.Status
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+        <!-- Pending Sender IDs Pill -->
+        <a href="@Url.Action("Index", "XyzSenderIDs", new { area = "Adminpanel" })" class="xyz-hero-pill" style="background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.35);">
+            <span class="xyz-pulse-dot warning"></span>
+            <div>
+                <small style="color:#FDE68A;">Pending Sender IDs</small>
+                <strong style="color:#FBBF24;">@pendingSenders Application@(pendingSenders == 1 ? "" : "s")</strong>
             </div>
+        </a>
 
-            <!-- right colume -->
+        <!-- Pending Recharges Pill -->
+        <a href="@Url.Action("Pending", "Transactions", new { area = "Adminpanel" })" class="xyz-hero-pill" style="background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.35);">
+            <span class="xyz-pulse-dot error"></span>
+            <div>
+                <small style="color:#FECACA;">Pending Recharges</small>
+                <strong style="color:#F87171;">@pendingTrans Pending</strong>
+            </div>
+        </a>
+
+        <!-- User Wallet Liability Pill -->
+        <div class="xyz-hero-pill" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+            <div>
+                <small style="color:#94A3B8;">User Balance Liability</small>
+                <strong style="color:#38BDF8;">@totalLiability.ToString("N2") Units</strong>
+            </div>
         </div>
     </div>
-    <div class="clearfix"></div>
-    <div class="row">
-        <!-- left colume -->
-        <div class="col-lg-6">
-            <div class="box box-success">
-                <div class="box-header btn-success">
-                    <i class="fa fa-envelope"></i>
-                    <h3 class="box-title">Last Ten Success Messages</h3>
-                </div>
-                <div class="box-body">
-                    <table class="table table-bordered table-striped table-responsive">
-                        <thead>
-                            <tr class="bg-success">
-                                <th>
-                                    Sender ID
-                                </th>
-                                <th>
-                                    By
-                                </th>
-                                <th>
-                                    Date
-                                </th>
-                                <th>
-                                    Status
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
+</div>
 
-                            @foreach (var item in ViewBag.successmessage)
-                            {
-                                <tr>
-                                    <td>
-                                        @item.SenderId
-                                    </td>
-                                    <td>
-                                        @GeneralServices.UserName(item.UserId)
+@Html.Partial("_ResponseMessagePartial")
 
-                                    </td>
-                                    <td>
-                                        @item.DeliveredDate
-                                    </td>
-                                    <td>
-                                        @item.Status
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+<!-- 4 Executive Gateway & Platform KPI Cards -->
+<div class="xyz-kpi-grid">
+    <!-- Card 1: Promotional Gateway (Kudi SMS) -->
+    <div class="xyz-kpi-card gateway-promo">
+        <div>
+            <div class="xyz-kpi-header">
+                <span class="xyz-kpi-title">
+                    <span class="xyz-pulse-dot @(firstBal?.IsSuccess == true ? "online" : "warning")"></span>
+                    Kudi SMS (Promotional)
+                </span>
+                <span class="xyz-badge xyz-badge-promo">Route 1</span>
+            </div>
+            <div class="xyz-kpi-value" style="color:#059669;">
+                @(firstBal?.Balance ?? "0.00")
+            </div>
+            <div class="xyz-kpi-sub">
+                <i class="fa fa-envelope-open-text" style="color:#10B981;"></i>
+                <span>@(firstBal?.Name ?? "Promotional Route")</span>
             </div>
         </div>
-        <div class="col-lg-6">
-            <div class="box box-success">
-                <div class="box-header btn-success">
-                    <i class="fa fa-money"></i>
-                    <h3 class="box-title">Last Ten Transactions</h3>
-                </div>
-                <div class="box-body">
-                    <table class="table table-bordered table-striped table-responsive">
-                        <thead>
-                            <tr class="bg-success">
-                                <th>
-                                    Transaction Id
-                                </th>
-                                <th>Client</th>
-                                <th>By</th>
-                                <th>
-                                    Transaction Date
-                                </th>
-                                <th>
-                                    Transaction Status
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-
-                            @foreach (var item in ViewBag.lastTenSuccessTransaction)
-                            {
-                                <tr>
-                                    <td>
-                                        @item.TransactionId
-                                    </td>
-                                    <td>
-                                        @GeneralServices.ClientName(item.ClientId)
-
-                                    </td>
-                                    <td>
-                                        @GeneralServices.UserName(item.UserId)
-
-                                    </td>
-                                    <td>
-                                        @item.DateCreated
-                                    </td>
-                                    <td>
-                                        @item.Status
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- right colume -->
+        <div class="xyz-kpi-footer">
+            <a href="@Url.Action("Index", "ApiSettings", new { area = "Adminpanel" })">
+                <span>Manage API Key</span>
+                <i class="fa fa-arrow-right"></i>
+            </a>
         </div>
     </div>
 
+    <!-- Card 2: Transactional Gateway (Kudi SMS) -->
+    <div class="xyz-kpi-card gateway-trans">
+        <div>
+            <div class="xyz-kpi-header">
+                <span class="xyz-kpi-title">
+                    <span class="xyz-pulse-dot @(secondBal?.IsSuccess == true ? "online" : "warning")"></span>
+                    Kudi SMS (Transactional)
+                </span>
+                <span class="xyz-badge xyz-badge-trans">Route 2</span>
+            </div>
+            <div class="xyz-kpi-value" style="color:#7C3AED;">
+                @if (secondBal != null && secondBal.IsSuccess)
+                {
+                    <span>@secondBal.Balance</span>
+                }
+                else
+                {
+                    <span style="font-size:1.15rem; color:#D97706; font-weight:800;">
+                        <i class="fa fa-circle-exclamation"></i> Token Missing
+                    </span>
+                }
+            </div>
+            <div class="xyz-kpi-sub">
+                <i class="fa fa-shield-halved" style="color:#8B5CF6;"></i>
+                <span>@(secondBal?.Name ?? "Transactional Route")</span>
+            </div>
+        </div>
+        <div class="xyz-kpi-footer">
+            <a href="@Url.Action("Index", "ApiSettings", new { area = "Adminpanel" })">
+                <span>Configure Token</span>
+                <i class="fa fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
 
-</section><!-- /.content -->
+    <!-- Card 3: Today's Dispatches -->
+    <div class="xyz-kpi-card kpi-dispatches">
+        <div>
+            <div class="xyz-kpi-header">
+                <span class="xyz-kpi-title">
+                    <span class="xyz-pulse-dot online"></span>
+                    Today's Dispatches
+                </span>
+                <span class="xyz-badge" style="background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE;">Live Traffic</span>
+            </div>
+            <div class="xyz-kpi-value" style="color:#2563EB;">
+                @msgsToday.ToString("N0")
+            </div>
+            <div class="xyz-kpi-sub">
+                <i class="fa fa-paper-plane" style="color:#3B82F6;"></i>
+                <span>Total Messages Dispatched Today</span>
+            </div>
+        </div>
+        <div class="xyz-kpi-footer">
+            <a href="@Url.Action("Messages", "Main", new { area = "Adminpanel" })">
+                <span>View Message Log</span>
+                <i class="fa fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
 
+    <!-- Card 4: Registered Clients -->
+    <div class="xyz-kpi-card kpi-users">
+        <div>
+            <div class="xyz-kpi-header">
+                <span class="xyz-kpi-title">
+                    <span class="xyz-pulse-dot online"></span>
+                    Registered Clients
+                </span>
+                <span class="xyz-badge" style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A;">+@clientsToday Today</span>
+            </div>
+            <div class="xyz-kpi-value" style="color:#D97706;">
+                @totalClients.ToString("N0")
+            </div>
+            <div class="xyz-kpi-sub">
+                <i class="fa fa-users" style="color:#F59E0B;"></i>
+                <span>Total Active Clients Onboarded</span>
+            </div>
+        </div>
+        <div class="xyz-kpi-footer">
+            <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel" })">
+                <span>Manage Users</span>
+                <i class="fa fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
 
+<!-- ===================== MODULE 2: TOP 20 USERS ANALYTICS BAR CHART STUDIO ===================== -->
+<div class="xyz-panel-card">
+    <div class="xyz-panel-header">
+        <h3>
+            <i class="fa fa-chart-column" style="color:#6366F1;"></i> Top 20 Active Users Dispatches &amp; Frequency Analysis
+        </h3>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <!-- Filter Pills -->
+            <div class="xyz-filter-btn-group">
+                <button type="button" class="xyz-filter-btn active" onclick="loadTopUsersChart('all', this)">All Time</button>
+                <button type="button" class="xyz-filter-btn" onclick="loadTopUsersChart('today', this)">Today</button>
+                <button type="button" class="xyz-filter-btn" onclick="loadTopUsersChart('weekly', this)">This Week</button>
+                <button type="button" class="xyz-filter-btn" onclick="loadTopUsersChart('monthly', this)">This Month</button>
+                <button type="button" class="xyz-filter-btn" onclick="toggleCustomDateControls(this)">Custom Range</button>
+            </div>
+
+            <!-- Custom Date Range Inputs (Hidden by Default) -->
+            <div id="xyzCustomDateControls" style="display:none; align-items:center; gap:6px;">
+                <input type="date" id="xyzFromDate" class="form-control input-sm" style="width:130px;" />
+                <span style="font-size:0.8rem; font-weight:700; color:#64748B;">to</span>
+                <input type="date" id="xyzToDate" class="form-control input-sm" style="width:130px;" />
+                <button type="button" class="btn btn-xs btn-primary" onclick="applyCustomDateChart()" style="font-weight:800; padding:6px 12px;">Apply</button>
+            </div>
+        </div>
+    </div>
+    <div style="padding: 24px;">
+        <div style="position: relative; height: 320px; width: 100%;">
+            <canvas id="xyzTopUsersBarChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== MODULE 4: PAYSTACK CASHFLOW & PAYOUT STUDIO ===================== -->
+<div class="xyz-paystack-studio">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h3>
+                <i class="fa fa-credit-card"></i> Paystack Revenue &amp; Gateway Payout Liquidity Studio
+            </h3>
+            <p style="margin:0; opacity:0.9; font-size:0.88rem;">
+                Platform transactions tagged with <strong style="text-decoration:underline;">@paystackLiquidity.AppTag</strong>. Track Paystack income vs funds transferred out to buy SMS units.
+            </p>
+        </div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <div style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); border-radius:12px; padding:10px 18px; text-align:center;">
+                <small style="font-size:0.68rem; font-weight:800; text-transform:uppercase; display:block;">Total Paystack Revenue</small>
+                <strong style="font-size:1.3rem; font-family:'JetBrains Mono', monospace;">&#x20A6;@paystackLiquidity.TotalPaystackRevenue.ToString("N2")</strong>
+            </div>
+
+            <div style="background:rgba(245,158,11,0.25); border:1px solid rgba(245,158,11,0.45); border-radius:12px; padding:10px 18px; text-align:center;">
+                <small style="font-size:0.68rem; font-weight:800; text-transform:uppercase; display:block; color:#FDE68A;">Pending Withdrawal</small>
+                <strong style="font-size:1.3rem; font-family:'JetBrains Mono', monospace; color:#FBBF24;">&#x20A6;@paystackLiquidity.TotalPendingTransferAmount.ToString("N2")</strong>
+            </div>
+
+            <div style="background:rgba(16,185,129,0.25); border:1px solid rgba(16,185,129,0.45); border-radius:12px; padding:10px 18px; text-align:center;">
+                <small style="font-size:0.68rem; font-weight:800; text-transform:uppercase; display:block; color:#A7F3D0;">Transferred Out</small>
+                <strong style="font-size:1.3rem; font-family:'JetBrains Mono', monospace; color:#34D399;">&#x20A6;@paystackLiquidity.TotalAdminTransferredAmount.ToString("N2")</strong>
+            </div>
+
+            <a href="@Url.Action("Index", "Transactions", new { area = "Adminpanel" })" class="btn btn-sm btn-default" style="font-weight:800; border-radius:10px; padding:10px 16px; background:#FFFFFF; color:#0369A1;">
+                Manage Transfers &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== MODULE 3: FINANCIAL & USAGE LEADERBOARDS (3 COLUMNS) ===================== -->
+<div class="row">
+    <!-- Leaderboard 1: Top Spenders on Wallet Funding (Paystack) -->
+    <div class="col-lg-4 col-md-6">
+        <div class="xyz-panel-card">
+            <div class="xyz-panel-header">
+                <h3>
+                    <i class="fa fa-wallet" style="color:#10B981;"></i> Top Wallet Funders (Paystack)
+                </h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover" style="margin:0; font-size:0.85rem;">
+                    <thead style="background:#F8FAFC; font-weight:800; font-size:0.72rem; color:#475569; text-transform:uppercase;">
+                        <tr>
+                            <th style="padding:10px 14px;">User</th>
+                            <th>Amount Paid</th>
+                            <th style="text-align:right; padding:10px 14px;">Units Bought</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (topFunders.Any())
+                        {
+                            foreach (var item in topFunders)
+                            {
+                                <tr>
+                                    <td style="padding:10px 14px;">
+                                        <strong style="color:#1E293B; display:block;">@item.FullName</strong>
+                                        <small style="color:#64748B;">@item.Username</small>
+                                    </td>
+                                    <td>
+                                        <strong style="color:#10B981; font-family:'JetBrains Mono', monospace;">&#x20A6;@item.TotalAmountPaid.ToString("N2")</strong>
+                                        <small style="color:#64748B; display:block;">@item.TransactionCount Recharge@(item.TransactionCount == 1 ? "" : "s")</small>
+                                    </td>
+                                    <td style="text-align:right; padding:10px 14px;">
+                                        <span class="xyz-id-chip">+@item.TotalUnitsBought.ToString("N0")</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" style="text-align:center; padding:24px; color:#94A3B8;">No funding transactions logged yet.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard 2: Top Spenders on SMS Unit Consumption -->
+    <div class="col-lg-4 col-md-6">
+        <div class="xyz-panel-card">
+            <div class="xyz-panel-header">
+                <h3>
+                    <i class="fa fa-fire" style="color:#E50914;"></i> Top Unit Burners (SMS Usage)
+                </h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover" style="margin:0; font-size:0.85rem;">
+                    <thead style="background:#F8FAFC; font-weight:800; font-size:0.72rem; color:#475569; text-transform:uppercase;">
+                        <tr>
+                            <th style="padding:10px 14px;">User</th>
+                            <th>Units Burned</th>
+                            <th style="text-align:right; padding:10px 14px;">Success Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (topBurners.Any())
+                        {
+                            foreach (var item in topBurners)
+                            {
+                                <tr>
+                                    <td style="padding:10px 14px;">
+                                        <strong style="color:#1E293B; display:block;">@item.FullName</strong>
+                                        <small style="color:#64748B;">@item.MessagesCount Broadcasts</small>
+                                    </td>
+                                    <td>
+                                        <strong style="color:#E50914; font-family:'JetBrains Mono', monospace;">@item.UnitsBurned.ToString("N0") Units</strong>
+                                    </td>
+                                    <td style="text-align:right; padding:10px 14px;">
+                                        <span class="xyz-badge xyz-badge-success">@item.DeliveryRate%</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" style="text-align:center; padding:24px; color:#94A3B8;">No unit consumption records found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard 3: Heavy Blast Senders (Bulk Phone Numbers Reach) -->
+    <div class="col-lg-4 col-md-12">
+        <div class="xyz-panel-card">
+            <div class="xyz-panel-header">
+                <h3>
+                    <i class="fa fa-users-viewfinder" style="color:#8B5CF6;"></i> Heavy Blast Senders (Bulk Reach)
+                </h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover" style="margin:0; font-size:0.85rem;">
+                    <thead style="background:#F8FAFC; font-weight:800; font-size:0.72rem; color:#475569; text-transform:uppercase;">
+                        <tr>
+                            <th style="padding:10px 14px;">User</th>
+                            <th>Max Single Blast</th>
+                            <th style="text-align:right; padding:10px 14px;">Total Reach</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (heavySenders.Any())
+                        {
+                            foreach (var item in heavySenders)
+                            {
+                                <tr>
+                                    <td style="padding:10px 14px;">
+                                        <strong style="color:#1E293B; display:block;">@item.FullName</strong>
+                                        <small style="color:#64748B;">@item.TotalBroadcasts Campaigns</small>
+                                    </td>
+                                    <td>
+                                        <span class="xyz-id-chip">@item.MaxRecipientsInSingleMsg.ToString("N0") Numbers</span>
+                                    </td>
+                                    <td style="text-align:right; padding:10px 14px;">
+                                        <strong style="color:#7C3AED; font-family:'JetBrains Mono', monospace;">@item.TotalRecipientsReached.ToString("N0")</strong>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" style="text-align:center; padding:24px; color:#94A3B8;">No bulk blast senders recorded.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== MODULE 5: OPERATIONAL DISPATCHES & APPROVALS STREAM ===================== -->
+<div class="row">
+    <!-- Left Column: Recent Failed / Pending Broadcasts -->
+    <div class="col-md-6">
+        <div class="xyz-panel-card">
+            <div class="xyz-panel-header">
+                <h3>
+                    <i class="fa fa-triangle-exclamation" style="color:#EF4444;"></i> Recent Failed / Pending Broadcasts
+                </h3>
+                <a href="@Url.Action("Messages", "Main", new { area = "Adminpanel" })" class="btn btn-xs btn-default" style="font-weight:700; border-radius:6px;">
+                    View All &rarr;
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover" style="margin:0; vertical-align:middle; font-size:0.88rem;">
+                    <thead style="background:#F8FAFC; font-weight:800; font-size:0.78rem; color:#475569; text-transform:uppercase;">
+                        <tr>
+                            <th style="padding:10px 14px;">Sender ID</th>
+                            <th>Dispatched By</th>
+                            <th>Date / Time</th>
+                            <th style="text-align:right; padding:10px 14px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (ViewBag.failmessage != null && ((IEnumerable<dynamic>)ViewBag.failmessage).Any())
+                        {
+                            foreach (var item in ViewBag.failmessage)
+                            {
+                                <tr>
+                                    <td style="padding:10px 14px;">
+                                        <span class="xyz-id-chip">@item.SenderId</span>
+                                    </td>
+                                    <td>
+                                        <strong style="color:#1E293B;">@GeneralServices.UserName(item.UserId)</strong>
+                                    </td>
+                                    <td>
+                                        <small style="color:#64748B;">@item.DeliveredDate</small>
+                                    </td>
+                                    <td style="text-align:right; padding:10px 14px;">
+                                        <div style="display:inline-flex; gap:6px; align-items:center;">
+                                            <span class="xyz-badge xyz-badge-failed">@item.Status</span>
+                                            @using (Html.BeginForm("RevokeMessage", "Main", new { area = "Adminpanel", id = item.MessageId }, FormMethod.Post, null, new { style = "display:inline;" }))
+                                            {
+                                                <button type="submit" class="btn btn-xs btn-danger" style="font-weight:800; border-radius:6px;" onclick="return confirm('Revoke broadcast message #@item.MessageId?');" title="Revoke & Clear from Queue">
+                                                    <i class="fa fa-ban"></i> Revoke
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" style="text-align:center; padding:24px; color:#94A3B8;">
+                                    <i class="fa fa-circle-check" style="color:#10B981; font-size:1.5rem; display:block; margin-bottom:6px;"></i>
+                                    No pending or failed messages found. All routes operating smoothly!
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Pending Recharges Awaiting Action -->
+    <div class="col-md-6">
+        <div class="xyz-panel-card">
+            <div class="xyz-panel-header">
+                <h3>
+                    <i class="fa fa-clock" style="color:#F59E0B;"></i> Pending Recharges Awaiting Action
+                </h3>
+                <a href="@Url.Action("Pending", "Transactions", new { area = "Adminpanel" })" class="btn btn-xs btn-default" style="font-weight:700; border-radius:6px;">
+                    View All &rarr;
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover" style="margin:0; vertical-align:middle; font-size:0.88rem;">
+                    <thead style="background:#F8FAFC; font-weight:800; font-size:0.78rem; color:#475569; text-transform:uppercase;">
+                        <tr>
+                            <th style="padding:10px 14px;">Trans ID</th>
+                            <th>Client</th>
+                            <th>Date Created</th>
+                            <th style="text-align:right; padding:10px 14px;">Actions &amp; Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (ViewBag.lastTenFailedTransaction != null && ((IEnumerable<dynamic>)ViewBag.lastTenFailedTransaction).Any())
+                        {
+                            foreach (var item in ViewBag.lastTenFailedTransaction)
+                            {
+                                <tr>
+                                    <td style="padding:10px 14px;">
+                                        <span class="xyz-id-chip">#@item.TransactionId</span>
+                                    </td>
+                                    <td>
+                                        <strong style="color:#1E293B;">@GeneralServices.ClientName(item.ClientId)</strong>
+                                        <small style="color:#64748B; display:block;">By: @GeneralServices.UserName(item.UserId)</small>
+                                    </td>
+                                    <td>
+                                        <small style="color:#64748B;">@item.DateCreated</small>
+                                    </td>
+                                    <td style="text-align:right; padding:10px 14px;">
+                                        <div style="display:inline-flex; gap:6px; align-items:center;">
+                                            <span class="xyz-badge xyz-badge-pending">@item.Status</span>
+                                            @using (Html.BeginForm("UpdateStatus", "Transactions", new { area = "Adminpanel", id = item.TransactionId, status = "Approve" }, FormMethod.Post, null, new { style = "display:inline;" }))
+                                            {
+                                                <button type="submit" class="btn btn-xs btn-success" style="font-weight:800; border-radius:6px;" onclick="return confirm('Approve transaction #@item.TransactionId?');">
+                                                    <i class="fa fa-check"></i> Approve
+                                                </button>
+                                            }
+                                            @using (Html.BeginForm("UpdateStatus", "Transactions", new { area = "Adminpanel", id = item.TransactionId, status = "Revoke" }, FormMethod.Post, null, new { style = "display:inline;" }))
+                                            {
+                                                <button type="submit" class="btn btn-xs btn-warning" style="font-weight:800; border-radius:6px;" onclick="return confirm('Revoke transaction #@item.TransactionId?');" title="Revoke & Clear from Queue">
+                                                    <i class="fa fa-ban"></i> Revoke
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" style="text-align:center; padding:24px; color:#94A3B8;">
+                                    <i class="fa fa-check-double" style="color:#10B981; font-size:1.5rem; display:block; margin-bottom:6px;"></i>
+                                    No pending transactions in queue!
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== CHART.JS RENDER & INTERACTIVE AJAX SCRIPT ===================== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let topUsersChartInstance = null;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Initial Top 20 Users Bar Chart Rendering with Server Data
+        const initialUsers = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(topUsers.Select(u => new {
+            name = !string.IsNullOrEmpty(u.FullName) ? u.FullName : u.Username,
+            msgs = u.MessagesCount,
+            units = u.UnitsBurned
+        })));
+
+        const labels = initialUsers.map(u => u.name);
+        const msgsData = initialUsers.map(u => u.msgs);
+        const unitsData = initialUsers.map(u => u.units);
+
+        renderTopUsersChart(labels, msgsData, unitsData);
+    });
+
+    function renderTopUsersChart(labels, msgsData, unitsData) {
+        const ctx = document.getElementById("xyzTopUsersBarChart");
+        if (!ctx) return;
+
+        if (topUsersChartInstance) {
+            topUsersChartInstance.destroy();
+        }
+
+        topUsersChartInstance = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels.length > 0 ? labels : ["No Dispatches Recorded"],
+                datasets: [
+                    {
+                        label: "Messages Dispatched",
+                        data: msgsData.length > 0 ? msgsData : [0],
+                        backgroundColor: "rgba(99, 102, 241, 0.85)",
+                        hoverBackgroundColor: "#4F46E5",
+                        borderRadius: 6,
+                        barPercentage: 0.6
+                    },
+                    {
+                        label: "Units Consumed",
+                        data: unitsData.length > 0 ? unitsData : [0],
+                        backgroundColor: "rgba(229, 9, 20, 0.75)",
+                        hoverBackgroundColor: "#B80710",
+                        borderRadius: 6,
+                        barPercentage: 0.6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: "top",
+                        labels: { font: { size: 12, weight: "bold" } }
+                    },
+                    tooltip: {
+                        backgroundColor: "#0B0F19",
+                        titleFont: { size: 13, weight: "bold" },
+                        bodyFont: { size: 12 },
+                        padding: 12,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11, weight: "600" } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: "rgba(0,0,0,0.05)" },
+                        ticks: { font: { size: 11, weight: "600" } }
+                    }
+                }
+            }
+        });
+    }
+
+    function loadTopUsersChart(range, btnElement) {
+        document.getElementById("xyzCustomDateControls").style.display = "none";
+
+        if (btnElement) {
+            const btns = btnElement.parentElement.querySelectorAll(".xyz-filter-btn");
+            btns.forEach(b => b.classList.remove("active"));
+            btnElement.classList.add("active");
+        }
+
+        fetch(`@Url.Action("GetTopUsersAnalytics", "Main", new { area = "Adminpanel" })?range=${range}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    renderTopUsersChart(data.labels, data.messageCounts, data.unitsBurned);
+                }
+            })
+            .catch(err => console.error("Error fetching analytics:", err));
+    }
+
+    function toggleCustomDateControls(btnElement) {
+        const controls = document.getElementById("xyzCustomDateControls");
+        const isHidden = controls.style.display === "none";
+        controls.style.display = isHidden ? "inline-flex" : "none";
+
+        if (btnElement) {
+            const btns = btnElement.parentElement.querySelectorAll(".xyz-filter-btn");
+            btns.forEach(b => b.classList.remove("active"));
+            btnElement.classList.add("active");
+        }
+    }
+
+    function applyCustomDateChart() {
+        const from = document.getElementById("xyzFromDate").value;
+        const to = document.getElementById("xyzToDate").value;
+
+        if (!from || !to) {
+            alert("Please select both 'From' and 'To' dates.");
+            return;
+        }
+
+        fetch(`@Url.Action("GetTopUsersAnalytics", "Main", new { area = "Adminpanel" })?range=custom&fromDate=${from}&toDate=${to}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    renderTopUsersChart(data.labels, data.messageCounts, data.unitsBurned);
+                }
+            })
+            .catch(err => console.error("Error fetching custom analytics:", err));
+    }
+</script>

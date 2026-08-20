@@ -1,0 +1,148 @@
+@{
+    ViewBag.Title = "Developer API & Documentation";
+}
+
+<!-- Developer Hero -->
+<section class="xyz-hero" style="background:radial-gradient(circle at 80% 20%, rgba(99,102,241,0.08) 0%, transparent 60%), var(--xyz-white); padding:50px 0 60px;">
+    <div class="xyz-container" style="text-align:center; max-width:800px;">
+        <span class="xyz-hero-badge" style="background:var(--xyz-indigo-light); color:var(--xyz-indigo); border-color:rgba(99,102,241,0.2);">
+            <i class="fa fa-terminal"></i> REST API v1.0
+        </span>
+        <h1 class="xyz-hero-title">
+            Programmatic Messaging for <span class="gradient-text">Developers</span>
+        </h1>
+        <p class="xyz-hero-subtitle" style="margin:0 auto 28px;">
+            Send transactional alerts, dynamic notices, and high-volume broadcasts directly from your code with our lightning-fast, high-deliverability JSON REST API.
+        </p>
+        <div style="display:flex; justify-content:center; gap:14px;">
+            <a href="@Url.Action("Register", "Account")" class="xyz-btn xyz-btn-primary">
+                <i class="fa fa-key"></i> Get Your Free API Key
+            </a>
+            <a href="#endpoints" class="xyz-btn xyz-btn-outline">
+                <i class="fa fa-book-open"></i> Explore Endpoints
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Authentication Guide -->
+<section class="xyz-section" style="padding-top:20px;">
+    <div class="xyz-container">
+        <div class="xyz-feature-card" style="border-left:4px solid var(--xyz-primary);">
+            <h3 class="xyz-feature-title" style="display:flex; align-items:center; gap:10px;">
+                <i class="fa fa-lock" style="color:var(--xyz-primary);"></i> Authentication
+            </h3>
+            <p class="xyz-feature-desc" style="margin-bottom:16px;">
+                Authenticate all API requests by providing your custom API token generated in your client dashboard. You can pass the key in either the <code>ApiKey</code> custom header or as a standard <code>Bearer</code> token:
+            </p>
+            <div style="background:var(--xyz-dark-900); padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.88rem; color:#E2E8F0; overflow-x:auto;">
+                <code>ApiKey: YOUR_API_TOKEN_HERE</code><br/>
+                <span style="color:var(--xyz-gray-500);"># OR</span><br/>
+                <code>Authorization: Bearer YOUR_API_TOKEN_HERE</code>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Endpoints Section -->
+<section class="xyz-section" id="endpoints" style="background:var(--xyz-gray-100);">
+    <div class="xyz-container">
+        <div class="xyz-section-header">
+            <span class="xyz-section-tag">API Reference</span>
+            <h2 class="xyz-section-title">Core REST Endpoints</h2>
+            <p class="xyz-section-desc">
+                Simple, predictable HTTP endpoints with multi-language code snippets and standard JSON payloads.
+            </p>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:30px;">
+            <!-- Endpoint 1: Send SMS with Multi-Language Code Switcher -->
+            <div class="xyz-feature-card" style="padding:32px;">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                    <span style="background:var(--xyz-success); color:white; font-weight:800; font-size:0.8rem; padding:4px 10px; border-radius:6px; font-family:var(--xyz-font-mono);">POST</span>
+                    <h3 style="margin:0; font-size:1.3rem; font-family:var(--xyz-font-mono); color:var(--xyz-dark-900);">/api/sms/send</h3>
+                </div>
+                <p style="color:var(--xyz-gray-600); margin-bottom:20px;">
+                    Dispatches a single message or bulk broadcast to one or multiple comma-separated recipient numbers.
+                </p>
+
+                <!-- Interactive Code Tabs Switcher -->
+                <div class="xyz-code-block-wrapper" style="margin-bottom:24px;">
+                    <div class="xyz-code-header">
+                        <div class="xyz-code-tabs">
+                            <button class="xyz-code-tab active" data-lang="curl">cURL</button>
+                            <button class="xyz-code-tab" data-lang="csharp">C# (.NET)</button>
+                            <button class="xyz-code-tab" data-lang="python">Python</button>
+                            <button class="xyz-code-tab" data-lang="node">Node.js</button>
+                            <button class="xyz-code-tab" data-lang="php">PHP</button>
+                        </div>
+                        <button class="xyz-copy-btn">
+                            <i class="fa fa-copy"></i> Copy Code
+                        </button>
+                    </div>
+                    <pre class="xyz-code-content"><code>curl -X POST "https://api.xyzsms.com/api/sms/send" \
+  -H "ApiKey: YOUR_API_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "senderId": "YourBrand",
+    "recipients": "2348012345678,2348098765432",
+    "content": "Dear Customer, thank you for your patronage! Enjoy 10% off with code THANKYOU."
+  }'</code></pre>
+                </div>
+
+                <h4 style="font-size:0.95rem; font-weight:700; text-transform:uppercase; color:var(--xyz-gray-500); margin-bottom:8px;">Response (200 OK)</h4>
+                <div style="background:var(--xyz-dark-900); padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.85rem; color:#10B981; overflow-x:auto;">
+<pre style="margin:0; color:inherit;">{
+  "success": true,
+  "responseCode": "200",
+  "message": "Message queued and dispatched successfully",
+  "description": "2 message(s) sent. 2 units deducted."
+}</pre>
+                </div>
+            </div>
+
+            <!-- Endpoint 2: Check Balance -->
+            <div class="xyz-feature-card" style="padding:32px;">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                    <span style="background:var(--xyz-indigo); color:white; font-weight:800; font-size:0.8rem; padding:4px 10px; border-radius:6px; font-family:var(--xyz-font-mono);">GET</span>
+                    <h3 style="margin:0; font-size:1.3rem; font-family:var(--xyz-font-mono); color:var(--xyz-dark-900);">/api/sms/balance</h3>
+                </div>
+                <p style="color:var(--xyz-gray-600); margin-bottom:20px;">
+                    Returns the available messaging credit units remaining in your account.
+                </p>
+
+                <h4 style="font-size:0.95rem; font-weight:700; text-transform:uppercase; color:var(--xyz-gray-500); margin-bottom:8px;">Response (200 OK)</h4>
+                <div style="background:var(--xyz-dark-900); padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.85rem; color:#10B981; overflow-x:auto;">
+<pre style="margin:0; color:inherit;">{
+  "balance": 4820.50
+}</pre>
+                </div>
+            </div>
+
+            <!-- Endpoint 3: View History -->
+            <div class="xyz-feature-card" style="padding:32px;">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                    <span style="background:var(--xyz-indigo); color:white; font-weight:800; font-size:0.8rem; padding:4px 10px; border-radius:6px; font-family:var(--xyz-font-mono);">GET</span>
+                    <h3 style="margin:0; font-size:1.3rem; font-family:var(--xyz-font-mono); color:var(--xyz-dark-900);">/api/sms/history</h3>
+                </div>
+                <p style="color:var(--xyz-gray-600); margin-bottom:20px;">
+                    Retrieves the 50 most recent message records dispatched via your account.
+                </p>
+
+                <h4 style="font-size:0.95rem; font-weight:700; text-transform:uppercase; color:var(--xyz-gray-500); margin-bottom:8px;">Response (200 OK)</h4>
+                <div style="background:var(--xyz-dark-900); padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.85rem; color:#10B981; overflow-x:auto;">
+<pre style="margin:0; color:inherit;">[
+  {
+    "senderId": "YourBrand",
+    "recipients": "2348012345678",
+    "messageContent": "Dear Customer, thank you for your patronage! Enjoy 10% off with code THANKYOU.",
+    "unitsUsed": 1.0,
+    "status": "Sent",
+    "deliveredDate": "2026-08-19T10:14:22Z"
+  }
+]</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

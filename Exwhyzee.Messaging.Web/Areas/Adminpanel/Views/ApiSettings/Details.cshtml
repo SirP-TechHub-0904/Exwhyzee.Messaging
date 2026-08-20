@@ -1,68 +1,68 @@
 @model Exwhyzee.Messaging.Core.Models.ApiSetting
 
 @{
-    ViewBag.Title = "Details";
+    ViewBag.Title = "API Setting Details";
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>Api Settings</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Api Settings</a></li>
-        <li class="active"> Details</li>
-    </ol>
-</section>
-<section class="content">
+<style>
+    .xyz-details-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        padding: 28px;
+        max-width: 680px;
+        margin: 0 auto 30px;
+    }
+</style>
 
-    <div class="box">
-        <div class="box-header">
-            <h3 class="box-title"> Api Setting Details </h3>
+@Html.Partial("_ResponseMessagePartial")
 
-            <span class="pull-right">
-                <a href="@Url.Content(" ../../apisettings")" class="btn btn-app"><i class="fa fa-backward"></i>Back</a>
-                <a href="@Url.Content(" ../../apisettings/edit/"+ Model.ApiSettingId)" class="btn btn-app"><i class="fa fa-pencil-square-o"></i>Edit Api Setting</a>
-            </span>
+<div class="xyz-details-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; border-bottom:1px solid #E2E8F0; padding-bottom:16px;">
+        <div>
+            <h3 style="margin:0 0 4px; font-weight:800; font-size:1.3rem; color:#0F172A;">
+                <i class="fa fa-circle-info" style="color:#0284C7;"></i> Gateway Details: @Model.Name
+            </h3>
+            <span style="color:#64748B; font-size:0.88rem;">Configuration ID #@Model.ApiSettingId</span>
         </div>
-        <div class="box-body">
-
-            <div>
-               
-                <dl class="dl-horizontal">
-                    <dt>
-                        @Html.DisplayNameFor(model => model.Name)
-                    </dt>
-
-                    <dd>
-                        @Html.DisplayFor(model => model.Name)
-                    </dd>
-
-                    <dt>
-                        @Html.DisplayNameFor(model => model.Sending)
-                    </dt>
-
-                    <dd>
-                        @Html.DisplayFor(model => model.Sending)
-                    </dd>
-
-                    <dt>
-                        @Html.DisplayNameFor(model => model.CheckBalance)
-                    </dt>
-
-                    <dd>
-                        @Html.DisplayFor(model => model.CheckBalance)
-                    </dd>
-
-                    <dt>
-                        @Html.DisplayNameFor(model => model.IsDefault)
-                    </dt>
-
-                    <dd>
-                        @Html.DisplayFor(model => model.IsDefault)
-                    </dd>
-                </dl>
-            </div>
+        <div style="display:flex; gap:8px;">
+            <a href="@Url.Action("Edit", "ApiSettings", new { area = "Adminpanel", id = Model.ApiSettingId })" class="btn btn-sm btn-warning" style="font-weight:700; border-radius:8px;">
+                <i class="fa fa-pen-to-square"></i> Edit API Setting
+            </a>
+            <a href="@Url.Action("Index", "ApiSettings", new { area = "Adminpanel" })" class="btn btn-sm btn-default" style="font-weight:700; border-radius:8px;">
+                &larr; Back to List
+            </a>
         </div>
     </div>
-</section>
+
+    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:20px;">
+        <div style="margin-bottom:14px;">
+            <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">Gateway Name</small>
+            <strong style="font-size:1.1rem; color:#0F172A;">@Model.Name</strong>
+        </div>
+        <div style="margin-bottom:14px;">
+            <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">Secret API Token</small>
+            <code style="font-family:'JetBrains Mono', monospace; font-size:0.9rem; color:#0284C7; font-weight:800; word-break:break-all;">@Model.Token</code>
+        </div>
+        <div style="margin-bottom:14px;">
+            <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">Dispatch Endpoint URL</small>
+            <code style="font-family:'JetBrains Mono', monospace; font-size:0.88rem; color:#334155; word-break:break-all;">@Model.Sending</code>
+        </div>
+        <div style="margin-bottom:14px;">
+            <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">Check Balance Endpoint URL</small>
+            <code style="font-family:'JetBrains Mono', monospace; font-size:0.88rem; color:#334155; word-break:break-all;">@(Model.CheckBalance ?? "N/A")</code>
+        </div>
+        <div>
+            <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">Primary Gateway Status</small>
+            @if (Model.IsDefault)
+            {
+                <span class="label label-success" style="font-size:0.82rem; padding:4px 10px; border-radius:6px; background:#059669;">Primary Default Gateway</span>
+            }
+            else
+            {
+                <span class="label label-default" style="font-size:0.82rem; padding:4px 10px; border-radius:6px;">Secondary Gateway</span>
+            }
+        </div>
+    </div>
+</div>

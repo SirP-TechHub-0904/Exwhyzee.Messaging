@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-
 namespace Exwhyzee.Messaging.Core.Models
 {
     public class Transaction
@@ -12,6 +11,8 @@ namespace Exwhyzee.Messaging.Core.Models
             Status = TransactionStatus.Pending;
             DateCreated = DateTime.UtcNow.AddHours(1);
             TransactionType = TransactionType.None;
+            PaymentSource = null;
+            IsAdminTransferred = false;
         }
 
         public int TransactionId { get; set; }
@@ -26,10 +27,18 @@ namespace Exwhyzee.Messaging.Core.Models
         public DateTime? DateApproved { get; set; }
         public TransactionStatus Status { get; set; }
         public string Note { get; set; }
+
         [System.ComponentModel.DataAnnotations.Schema.ForeignKey("UserId")]
         public ApplicationUser User { get; set; }
+
         public string TransactionReference { get; set; }
         public string ApprovedBy { get; set; }
+
+        // Paystack Source & Admin Payout Outflow Tracking
+        public string PaymentSource { get; set; }
+        public bool IsPaystackOutflow { get; set; }
+        public bool IsAdminTransferred { get; set; }
+        public DateTime? DateTransferred { get; set; }
+        public string TransferredBy { get; set; }
     }
 }
-

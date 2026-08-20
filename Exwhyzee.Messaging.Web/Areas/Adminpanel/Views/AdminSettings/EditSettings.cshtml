@@ -1,159 +1,233 @@
 @model Exwhyzee.Messaging.Core.Models.AdminSetting
 
 @{
-    ViewBag.Title = "Admin Settings";
+    ViewBag.Title = "Global Platform Admin Settings";
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>Admin Settings</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Admin Settings</a></li>
-        <li class="active"> Settings</li>
-    </ol>
-</section>
+<style>
+    .xyz-settings-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        padding: 28px;
+        margin-bottom: 24px;
+    }
+    .xyz-section-title {
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: #0F172A;
+        margin: 0 0 16px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #E2E8F0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .xyz-toggle-card {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+    }
+    .xyz-toggle-card:hover {
+        border-color: #CBD5E1;
+        background: #F1F5F9;
+    }
+    .xyz-toggle-label {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #1E293B;
+        margin: 0;
+        cursor: pointer;
+    }
+    .xyz-toggle-desc {
+        font-size: 0.78rem;
+        color: #64748B;
+        margin: 2px 0 0;
+    }
+</style>
 
-<section class="content">
+@Html.Partial("_ResponseMessagePartial")
 
-    <div class="box">
-        <div class="box-header">
-            <h3 class="box-title"> Api Setting Details </h3>
-        </div>
-        <div class="box-body">
-            @if (TempData["EditSettings"] != null)
-            {
-                <div class="alert alert-success alert-dismissable">
-                    <button type="button" class="close" data-dismiss="alert">&times;</button>
-                   @TempData["EditSettings"]
-                </div>
-            }
+@if (TempData["EditSettings"] != null)
+{
+    <div class="alert alert-success alert-dismissible" style="border-radius:10px; font-weight:700;">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fa fa-circle-check"></i> @TempData["EditSettings"]
+    </div>
+}
 
-            @using (Html.BeginForm())
-            {
-                @Html.AntiForgeryToken()
-
-                <div class="form-horizontal">
-
-                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-                    @Html.HiddenFor(model => model.AdminSettingId)
-                    @Html.HiddenFor(model => model.PreventApiModification)
-
-                    <div class="form-group">
-                        @Html.Label("Unit Per New Member", htmlAttributes: new { @class = "control-label col-md-4" })
-                        <div class="col-md-8">
-                            @Html.EditorFor(model => model.UnitPerNewMember, new { htmlAttributes = new { @class = "form-control" } })
-                            @Html.ValidationMessageFor(model => model.UnitPerNewMember, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        @Html.Label("Flat Units PerSms", htmlAttributes: new { @class = "control-label col-md-4" })
-                        <div class="col-md-8">
-                            @Html.EditorFor(model => model.FlatUnitsPerSms, new { htmlAttributes = new { @class = "form-control" } })
-                            @Html.ValidationMessageFor(model => model.FlatUnitsPerSms, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        @Html.Label("Default User Unit Reorder Level", htmlAttributes: new { @class = "control-label col-md-4" })
-                        <div class="col-md-8">
-                            @Html.EditorFor(model => model.DefaultUserUnitReorderLevel, new { htmlAttributes = new { @class = "form-control" } })
-                            @Html.ValidationMessageFor(model => model.DefaultUserUnitReorderLevel, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        @Html.Label("Price Per Unit", htmlAttributes: new { @class = "control-label col-md-4" })
-                        <div class="col-md-8">
-                            @Html.EditorFor(model => model.PricePerUnit, new { htmlAttributes = new { @class = "form-control" } })
-                            @Html.ValidationMessageFor(model => model.PricePerUnit, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        @Html.Label("Send Order Approved Notification", htmlAttributes: new { @class = "control-label col-md-4" })
-                        <div class="col-md-8">
-                            <div class="checkbox">
-                                @Html.EditorFor(model => model.SendOrderApprovedNotification)
-                                @Html.ValidationMessageFor(model => model.SendOrderApprovedNotification, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        @Html.Label("Send Low On Units Notification", htmlAttributes: new { @class = "control-label col-md-4" })
-                        <div class="col-md-8">
-                            <div class="checkbox">
-                                @Html.EditorFor(model => model.SendLowOnUnitsNotification)
-                                @Html.ValidationMessageFor(model => model.SendLowOnUnitsNotification, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        @Html.Label("Send Recieved Request Notification", htmlAttributes: new { @class = "control-label col-md-4" })
-                        <div class="col-md-8">
-                            <div class="checkbox">
-                                @Html.EditorFor(model => model.SendRecievedRequestNotification)
-                                @Html.ValidationMessageFor(model => model.SendRecievedRequestNotification, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        @Html.Label("Send Reminder To Debtor", htmlAttributes: new { @class = "control-label col-md-4" })
-                        <div class="col-md-8">
-                            <div class="checkbox">
-                                @Html.EditorFor(model => model.SendReminderToDebtor)
-                                @Html.ValidationMessageFor(model => model.SendReminderToDebtor, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        @Html.Label("Send Account Credited Notification", htmlAttributes: new { @class = "control-label col-md-4" })
-                        <div class="col-md-8">
-                            <div class="checkbox">
-                                @Html.EditorFor(model => model.SendAccountCreditedNotification)
-                                @Html.ValidationMessageFor(model => model.SendAccountCreditedNotification, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        @Html.Label("Send User Birthday Wishes", htmlAttributes: new { @class = "control-label col-md-4" })
-                        <div class="col-md-8">
-                            <div class="checkbox">
-                                @Html.EditorFor(model => model.SendUserBirthdayWishes)
-                                @Html.ValidationMessageFor(model => model.SendUserBirthdayWishes, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        @Html.Label("Black Listed Words", htmlAttributes: new { @class = "control-label col-md-4" })
-                        <div class="col-md-8">
-                            @Html.EditorFor(model => model.BlackListedWords, new { htmlAttributes = new { @class = "form-control" } })
-                            @Html.ValidationMessageFor(model => model.BlackListedWords, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <div class="col-md-offset-2 col-md-10">
-                            <input type="submit" value="Save" class="btn btn-primary" />
-                        </div>
-                    </div>
-                </div>
-            }
+<!-- Hero Header Card -->
+<div class="xyz-settings-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h2 style="margin:0 0 4px; font-weight:800; font-size:1.4rem; color:#0F172A;">
+                <i class="fa fa-sliders" style="color:#0284C7;"></i> Global Platform Admin Settings
+            </h2>
+            <p style="margin:0; color:#64748B; font-size:0.9rem;">Configure default registration unit bonuses, fallback SMS pricing, automated notification triggers, and spam word filters.</p>
         </div>
     </div>
-</section>
+</div>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    @Html.HiddenFor(model => model.AdminSettingId)
+    @Html.HiddenFor(model => model.PreventApiModification)
+
+    <!-- SECTION 1: UNIT PRICING & REORDER THRESHOLDS -->
+    <div class="xyz-settings-card">
+        <h4 class="xyz-section-title">
+            <i class="fa fa-coins" style="color:#D97706;"></i> Unit Pricing & Default Balance Thresholds
+        </h4>
+
+        <div class="row">
+            <div class="col-md-6 form-group" style="margin-bottom:16px;">
+                <label style="font-weight:700; font-size:0.85rem; color:#334155;">Free Units for New Members (Registration Bonus)</label>
+                @Html.EditorFor(model => model.UnitPerNewMember, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:700;", placeholder = "2.00" } })
+                <small style="color:#64748B; font-size:0.8rem; margin-top:4px; display:block;">SMS units credited automatically upon email account verification.</small>
+                @Html.ValidationMessageFor(model => model.UnitPerNewMember, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="col-md-6 form-group" style="margin-bottom:16px;">
+                <label style="font-weight:700; font-size:0.85rem; color:#334155;">Default Fallback Flat Units Per SMS</label>
+                @Html.EditorFor(model => model.FlatUnitsPerSms, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:700;", placeholder = "7.00" } })
+                <small style="color:#64748B; font-size:0.8rem; margin-top:4px; display:block;">Fallback unit rate charged when recipient number does not match assigned network prefixes.</small>
+                @Html.ValidationMessageFor(model => model.FlatUnitsPerSms, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 form-group" style="margin-bottom:16px;">
+                <label style="font-weight:700; font-size:0.85rem; color:#334155;">Default Low Unit Reminder Threshold</label>
+                @Html.EditorFor(model => model.DefaultUserUnitReorderLevel, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:700;", placeholder = "50.00" } })
+                <small style="color:#64748B; font-size:0.8rem; margin-top:4px; display:block;">Global default balance limit for automated low-unit warnings.</small>
+                @Html.ValidationMessageFor(model => model.DefaultUserUnitReorderLevel, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="col-md-6 form-group" style="margin-bottom:16px;">
+                <label style="font-weight:700; font-size:0.85rem; color:#334155;">Price Per Unit (NGN ₦)</label>
+                @Html.EditorFor(model => model.PricePerUnit, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:700;", placeholder = "1.00" } })
+                <small style="color:#64748B; font-size:0.8rem; margin-top:4px; display:block;">Base price in Naira per SMS unit for wallet top-ups.</small>
+                @Html.ValidationMessageFor(model => model.PricePerUnit, "", new { @class = "text-danger" })
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: AUTOMATED SYSTEM NOTIFICATION TRIGGERS -->
+    <div class="xyz-settings-card">
+        <h4 class="xyz-section-title">
+            <i class="fa fa-bell" style="color:#0284C7;"></i> Automated System Notification Triggers
+        </h4>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="xyz-toggle-card">
+                    <div>
+                        <label class="xyz-toggle-label" for="SendOrderApprovedNotification">Send Order Approved Notification</label>
+                        <p class="xyz-toggle-desc">Notify client via email/in-app when unit purchase order is confirmed.</p>
+                    </div>
+                    <div>
+                        @Html.CheckBoxFor(model => model.SendOrderApprovedNotification, new { style = "width:20px; height:20px; cursor:pointer;" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="xyz-toggle-card">
+                    <div>
+                        <label class="xyz-toggle-label" for="SendLowOnUnitsNotification">Send Low On Units Notification</label>
+                        <p class="xyz-toggle-desc">Trigger automated low-unit reminders when balance drops below threshold.</p>
+                    </div>
+                    <div>
+                        @Html.CheckBoxFor(model => model.SendLowOnUnitsNotification, new { style = "width:20px; height:20px; cursor:pointer;" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="xyz-toggle-card">
+                    <div>
+                        <label class="xyz-toggle-label" for="SendRecievedRequestNotification">Send Received Request Notification</label>
+                        <p class="xyz-toggle-desc">Notify client when custom request or ticket is logged.</p>
+                    </div>
+                    <div>
+                        @Html.CheckBoxFor(model => model.SendRecievedRequestNotification, new { style = "width:20px; height:20px; cursor:pointer;" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="xyz-toggle-card">
+                    <div>
+                        <label class="xyz-toggle-label" for="SendReminderToDebtor">Send Reminder to Debtor</label>
+                        <p class="xyz-toggle-desc">Automated payment reminders for pending invoices or negative balances.</p>
+                    </div>
+                    <div>
+                        @Html.CheckBoxFor(model => model.SendReminderToDebtor, new { style = "width:20px; height:20px; cursor:pointer;" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="xyz-toggle-card">
+                    <div>
+                        <label class="xyz-toggle-label" for="SendAccountCreditedNotification">Send Account Credited Notification</label>
+                        <p class="xyz-toggle-desc">Send instant receipt when wallet units are credited successfully.</p>
+                    </div>
+                    <div>
+                        @Html.CheckBoxFor(model => model.SendAccountCreditedNotification, new { style = "width:20px; height:20px; cursor:pointer;" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="xyz-toggle-card">
+                    <div>
+                        <label class="xyz-toggle-label" for="SendUserBirthdayWishes">Send User Birthday Wishes</label>
+                        <p class="xyz-toggle-desc">Automated birthday SMS &amp; email greetings on client birthdays.</p>
+                    </div>
+                    <div>
+                        @Html.CheckBoxFor(model => model.SendUserBirthdayWishes, new { style = "width:20px; height:20px; cursor:pointer;" })
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: SPAM MODERATION & BLACKLISTED WORDS -->
+    <div class="xyz-settings-card">
+        <h4 class="xyz-section-title">
+            <i class="fa fa-shield-halved" style="color:#DC2626;"></i> Content Moderation &amp; Blacklisted Words
+        </h4>
+
+        <div class="form-group" style="margin-bottom:0;">
+            <label style="font-weight:700; font-size:0.85rem; color:#334155;">Blacklisted Words (Comma Separated)</label>
+            @Html.TextAreaFor(model => model.BlackListedWords, new { @class = "form-control", rows = 4, style = "border-radius:8px; font-size:0.9rem; padding:12px; font-family:'JetBrains Mono', monospace;", placeholder = "e.g. scam, fraud, lottery, betting, win" })
+            <small style="color:#64748B; font-size:0.8rem; margin-top:6px; display:block;">Outbound SMS broadcasts containing any of these keywords will be blocked automatically by system filters.</small>
+            @Html.ValidationMessageFor(model => model.BlackListedWords, "", new { @class = "text-danger" })
+        </div>
+    </div>
+
+    <!-- SAVE BUTTON -->
+    <div style="margin-bottom:40px;">
+        <button type="submit" class="btn btn-primary btn-block" style="background:#0284C7; border:none; font-weight:800; font-size:1rem; padding:14px; border-radius:10px; box-shadow:0 4px 14px rgba(2,132,199,0.3);">
+            <i class="fa fa-save"></i> Save Global Admin Settings
+        </button>
+    </div>
+}
 
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
 }
-
-
-
-

@@ -1,83 +1,64 @@
 @model Exwhyzee.Messaging.Core.Models.ApiSetting
 
 @{
-    ViewBag.Title = "Create";
+    ViewBag.Title = "Add API Setting";
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>API Settings</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> API Settings</a></li>
-        <li class="active">Add API Setting</li>
-    </ol>
-</section>
-<section class="content">
+<style>
+    .xyz-form-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        padding: 28px;
+        max-width: 680px;
+        margin: 0 auto 30px;
+    }
+</style>
 
-    <div class="box">
-        <div class="box-header">
-            <h3 class="box-title">API Settings </h3>
+@Html.Partial("_ResponseMessagePartial")
 
-            <span class="pull-right">
-                <a href="@Url.Content(" ../../apisettings/")" class="btn btn-app"><i class="fa fa-backward"></i>Back</a>
-            </span>
-        </div>
-        <div class="box-body">
-            <div class="col-md-8 col-md-offset-2">
-                @using (Html.BeginForm())
-            {
-                    @Html.AntiForgeryToken()
-
-                    <div class="form-horizontal">
-
-                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.Token, htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                @Html.EditorFor(model => model.Token, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.Token, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.Sending, htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                @Html.EditorFor(model => model.Sending, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.Sending, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.CheckBalance, htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                @Html.EditorFor(model => model.CheckBalance, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.CheckBalance, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="col-md-offset-2 col-md-10">
-                                <input type="submit" value="Create" class="btn btn-default" />
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
+<div class="xyz-form-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #E2E8F0; padding-bottom:16px;">
+        <h3 style="margin:0; font-weight:800; font-size:1.3rem; color:#0F172A;">
+            <i class="fa fa-plus-circle" style="color:#0284C7;"></i> Add New Gateway API Setting
+        </h3>
+        <a href="@Url.Action("Index", "ApiSettings", new { area = "Adminpanel" })" class="btn btn-sm btn-default" style="font-weight:700; border-radius:8px;">
+            &larr; Back to List
+        </a>
     </div>
-</section>
-@section Scripts {
-    @Scripts.Render("~/bundles/jqueryval")
-}
 
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "text-danger", style = "margin-bottom:16px;" })
 
+        <div class="form-group" style="margin-bottom:16px;">
+            <label style="font-weight:700; font-size:0.85rem; color:#334155;">Gateway Display Name <span style="color:#E50914;">*</span></label>
+            @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", placeholder = "e.g. Primary Kudi SMS Gateway", style = "border-radius:8px; height:42px; font-weight:600;", required = "required" } })
+            @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+            <label style="font-weight:700; font-size:0.85rem; color:#334155;">API Secret Token / Key <span style="color:#E50914;">*</span></label>
+            @Html.EditorFor(model => model.Token, new { htmlAttributes = new { @class = "form-control", placeholder = "Enter bearer token or API secret key", style = "border-radius:8px; height:42px; font-family:'JetBrains Mono', monospace; font-weight:600;", required = "required" } })
+            @Html.ValidationMessageFor(model => model.Token, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+            <label style="font-weight:700; font-size:0.85rem; color:#334155;">SMS Broadcast Dispatch Endpoint URL <span style="color:#E50914;">*</span></label>
+            @Html.EditorFor(model => model.Sending, new { htmlAttributes = new { @class = "form-control", placeholder = "https://kudisms.net/api/v1/send", style = "border-radius:8px; height:42px; font-weight:600;", required = "required" } })
+            @Html.ValidationMessageFor(model => model.Sending, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px;">
+            <label style="font-weight:700; font-size:0.85rem; color:#334155;">Check Gateway Balance Endpoint URL</label>
+            @Html.EditorFor(model => model.CheckBalance, new { htmlAttributes = new { @class = "form-control", placeholder = "https://kudisms.net/api/v1/balance", style = "border-radius:8px; height:42px; font-weight:600;" } })
+            @Html.ValidationMessageFor(model => model.CheckBalance, "", new { @class = "text-danger" })
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" style="background:#0284C7; border:none; font-weight:800; font-size:1rem; padding:12px; border-radius:10px; box-shadow:0 4px 14px rgba(2,132,199,0.3);">
+            <i class="fa fa-save"></i> Save API Configuration
+        </button>
+    }
+</div>

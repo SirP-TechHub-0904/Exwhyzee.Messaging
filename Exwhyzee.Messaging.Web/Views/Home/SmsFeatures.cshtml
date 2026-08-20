@@ -1,171 +1,225 @@
-﻿
 @{
-    ViewBag.Title = "Sms Features";
+    ViewBag.Title = "Platform Features & Capabilities";
 }
-<div class="container">
-    <h1 style="color:red;" class="text-center"><u style="color:red;">Exwhyzee SMS Features</u></h1>
-    <div class="row">
-        <div class="col-md-5" style="margin:20px 10px 10px 40px;">
-            <div class="">
-                <h2 style="color:red;">SMS Features</h2>
-            </div>
-            <div>
-                <ul style="list-style:circle">
 
-                    <li>Compose SMS with dynamic sender ID</li>
-                    <li>
-                        Create SMS that automatically pick phone book names and inserts in
-
-                        your message
-                    </li>
-                    <li>
-                        Type multiple sms recipients, select recipient or recipient group
-
-                        from phonebook
-                    </li>
-                    <li>Edit/delete messages from your draft folder <span style="color:red;"><b>Coming Soon !!!</b></span></li>
-                    <li>SMS character counter for composing SMS</li>
-                    <li>SMS scheduling for future delivery.</li>
-                    <li>Removes duplicate/repeated numbers in recipient list.</li>
-                    <li>Accepts multiple numbers and uploaded numbers with comma.</li>
-                    <li>
-                        Automatic removal of invalid characters from numbers e.g
-
-                        space,;,:,.,',`,(,),,{,},#,-,_ and ?
-                    </li>
-                    <li>Displays member SMS units left</li>
-                </ul>
-            </div>
-        </div>
-        <div class="col-md-5" style="margin:20px 10px 10px 40px;">
-            <div class="">
-                <h2 style="color:red;">How It Works</h2>
-            </div>
-            <div>
-                <p>HELP LINES: <b style="color: #ff6a00;">234-7069608881; 234-8081151115</b></p>
-
-                <ul style="list-style-type: circle;" class="text-justify comment more">
-
-                    <li>
-                        Log on to your account on <b style="color: #ff6a00;">www.xyzsms.com</b> if you have registered. If not, click <b style="color: #ff6a00;">“Register”</b> and put in your details to get registered. You will get an activation link on your mail that you have registered. Click on it to get you registered.
-                    </li>
-                    <li>
-                        When logged in, click on <b style="color: #ff6a00;">“Buy SMS”</b> on the xyzmenu on the left.
-                    </li>
-                    <li>
-                        Then type in the amount of SMS units you want.
-                    </li>
-                    <li>
-                        Choose <b style="color: #ff6a00;">"BANK"</b> payment method if you want to make bank deposit. The Account details is on the "Price List" page. Your ordered unit will be credit once payment is verified.
-                    </li>
-                    <li>
-                        Choose <b style="color: #ff6a00;">"VoguePay"</b> if you want to use MasterCard, Interswitch, ETranzact or VoguePay. Your units will be credited immediately payment is made.
-                    </li>     NB: Please when making payments to any bank, use your username as name of depositor.
-                </ul>
-            </div>
+<!-- Page Header Hero -->
+<section class="xyz-hero" style="padding:50px 0 60px;">
+    <div class="xyz-container" style="text-align:center; max-width:800px;">
+        <span class="xyz-hero-badge">
+            <i class="fa fa-sparkles"></i> Comprehensive Messaging Suite
+        </span>
+        <h1 class="xyz-hero-title">
+            Enterprise Features Built for <span class="gradient-text">Speed & Deliverability</span>
+        </h1>
+        <p class="xyz-hero-subtitle" style="margin:0 auto 28px;">
+            Whether you are broadcasting targeted customer appreciation notices, price updates, event announcements, or high-volume marketing campaigns, Exwhyzee Messaging provides the tools, speed, and reliability you need.
+        </p>
+        <div style="display:flex; justify-content:center; gap:14px;">
+            <a href="@Url.Action("Register", "Account")" class="xyz-btn xyz-btn-primary">
+                <i class="fa fa-user-plus"></i> Get Started Free
+            </a>
+            <a href="@Url.Action("SmsPlan", "Home")" class="xyz-btn xyz-btn-outline">
+                <i class="fa fa-tags"></i> View Pricing
+            </a>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-5" style="margin:20px 10px 10px 40px;">
-            <div class="">
-                <h2 style="color:red;">How To Send SMS</h2>
-            </div>
-            <div>
-                <ul class="text-justify comment more" style="list-style-type:circle;">
-                    <li> Log on to your account <b style="color: #ff6a00;">www.xyzsms.com</b></li>
-                    <li>
-                        Click on <b style="color: #ff6a00;">“Compose SMS”</b> on the left hand side.
-                    </li>
-                    <li>
-                        When the Compose page opens up, type your Sender ID. This is the name that you want people to see as the sender, instead of number.
-                    </li>
-                    <li>
-                        Type the numbers you want to send the sms to. You can also upload it from a text file or excel file save in your system.
-                    </li>
-                    <li>
-                        In the message field, type the message you want to send. Remember that 1page is equal to 160 words. But you can send more than one page.
-                    </li>
-                    <li>
-                        The number you are typing can be in this format (234803xxxxxxx or just 0803xxxxxxx).
-                    </li>
-                    <li>
-                        If you want the message to save a copy as draft, you type in the name on this field.
-                    </li>
-                    <li>
-                        When through, just click “SEND” and wait for a confirmation message.
-                    </li>
-                </ul>
-            </div>
+</section>
+
+<!-- Detailed Feature Grid -->
+<section class="xyz-section">
+    <div class="xyz-container">
+        <div class="xyz-section-header">
+            <span class="xyz-section-tag">Core Capabilities</span>
+            <h2 class="xyz-section-title">Everything Needed for Modern Campaigns</h2>
+            <p class="xyz-section-desc">
+                From intelligent number filtering to instant webhook delivery notifications, explore our full feature ecosystem.
+            </p>
         </div>
-        @*<div class="col-md-5" style="margin:20px 10px 10px 40px;">
-            <div class="unitcost">
-                <h3 style="color:red;margin-top:5px !important;margin-bottom:3px !important;">SMS Unit Cost Per Sms</h3>
-                <h3 style="color:red;margin-top:5px !important;margin-bottom:3px !important;">and Per Page</h3>
-            </div>
-            <div class="content box style2">
-                <div class="alert" style="background-color: #ff6a00; color: white;">
-                    N1.00 for 1 Unit. Remember, all purchased units does not expire.
+
+        <div class="xyz-feature-grid">
+            <!-- Item 1 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-route"></i>
                 </div>
-
-                <table class="table table-bordered table-responsive">
-                    <tr>
-                        <td>
-                            Network
-                        </td>
-                        <td>
-                            Unit
-                        </td>
-                        <td>
-                            Per Sms
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Etisalat Nigeria
-                        </td>
-                        <td>
-                            2 unit
-                        </td>
-                        <td>
-                            1 sms
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Airtel Nigeria
-                        </td>
-                        <td>
-                            2 unit
-                        </td>
-                        <td>
-                            1 sms
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Mtn Nigeria
-                        </td>
-                        <td>
-                            2 unit
-                        </td>
-                        <td>
-                            1 sms
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            Glo Nigeria
-                        </td>
-                        <td>
-                            2 unit
-                        </td>
-                        <td>
-                            1 sms
-                        </td>
-                    </tr>
-                </table>
+                <h3 class="xyz-feature-title">Smart Direct Carrier Routing</h3>
+                <p class="xyz-feature-desc">
+                    Our platform automatically detects network congestion and routes messages through the fastest direct telco gateway interconnects with automatic failover.
+                </p>
             </div>
-        </div>*@
+
+            <!-- Item 2 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-signature"></i>
+                </div>
+                <h3 class="xyz-feature-title">Branded Alphanumeric Sender IDs</h3>
+                <p class="xyz-feature-desc">
+                    Register custom sender names (up to 11 characters) representing your company or brand name. Build immediate brand recognition with every SMS.
+                </p>
+            </div>
+
+            <!-- Item 3 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-file-excel"></i>
+                </div>
+                <h3 class="xyz-feature-title">CSV & Excel Contact Importer</h3>
+                <p class="xyz-feature-desc">
+                    Effortlessly upload contact lists with hundreds of thousands of phone numbers. Our engine automatically removes duplicates and formats national prefixes.
+                </p>
+            </div>
+
+            <!-- Item 4 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-calendar-check"></i>
+                </div>
+                <h3 class="xyz-feature-title">Scheduled & Recurring Broadcasts</h3>
+                <p class="xyz-feature-desc">
+                    Schedule messages for future dispatch — birthdays, meeting reminders, or festive greetings. Powered by reliable background job processors.
+                </p>
+            </div>
+
+            <!-- Item 5 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-chart-pie"></i>
+                </div>
+                <h3 class="xyz-feature-title">Live Delivery Receipts (DLR)</h3>
+                <p class="xyz-feature-desc">
+                    Track the exact delivery status of every phone number in real time. Download comprehensive delivery logs for reconciliation and reporting.
+                </p>
+            </div>
+
+            <!-- Item 6 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-shield-virus"></i>
+                </div>
+                <h3 class="xyz-feature-title">Anti-Spam & Blacklist Filter</h3>
+                <p class="xyz-feature-desc">
+                    Built-in content analysis proactively catches blacklisted phrases that could trigger telecom operator blocks, protecting your sender reputation.
+                </p>
+            </div>
+
+            <!-- Item 7 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-globe"></i>
+                </div>
+                <h3 class="xyz-feature-title">Global International Coverage</h3>
+                <p class="xyz-feature-desc">
+                    Reach recipients in over 200+ countries with automatic international dial code detection and transparent per-country unit pricing.
+                </p>
+            </div>
+
+            <!-- Item 8 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-ticket"></i>
+                </div>
+                <h3 class="xyz-feature-title">Scratch Voucher & Card Top-Up</h3>
+                <p class="xyz-feature-desc">
+                    In addition to instant online card payments, top up messaging credits using physical/digital scratch voucher PINs or bank wire transfers.
+                </p>
+            </div>
+
+            <!-- Item 9 -->
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon">
+                    <i class="fa fa-code"></i>
+                </div>
+                <h3 class="xyz-feature-title">Full-Featured REST API</h3>
+                <p class="xyz-feature-desc">
+                    Integrate seamlessly into mobile apps, CRM systems, websites, or billing platforms with standard JSON REST endpoints and API Key security.
+                </p>
+            </div>
+        </div>
     </div>
-</div>
-   
+</section>
+
+<!-- Comparison Matrix -->
+<section class="xyz-section" style="background:var(--xyz-gray-100);">
+    <div class="xyz-container">
+        <div class="xyz-section-header">
+            <span class="xyz-section-tag">Why Choose Us</span>
+            <h2 class="xyz-section-title">Exwhyzee vs. Generic SMS Aggregators</h2>
+            <p class="xyz-section-desc">
+                See why businesses and software engineers choose Exwhyzee Messaging for mission-critical notifications.
+            </p>
+        </div>
+
+        <div class="xyz-table-wrapper">
+            <table class="xyz-table">
+                <thead>
+                    <tr>
+                        <th>Platform Capability</th>
+                        <th style="color:var(--xyz-primary);"><i class="fa fa-shield"></i> Exwhyzee Messaging</th>
+                        <th>Generic SMS Platforms</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Direct Telco Interconnects</strong></td>
+                        <td style="color:var(--xyz-success); font-weight:700;"><i class="fa fa-check-circle"></i> Direct Tier-1 Routes</td>
+                        <td style="color:var(--xyz-gray-500);"><i class="fa fa-circle-xmark"></i> Shared / Multi-hop Hops</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Average Delivery Speed</strong></td>
+                        <td style="color:var(--xyz-success); font-weight:700;"><i class="fa fa-bolt"></i> &lt; 2.4 Seconds</td>
+                        <td style="color:var(--xyz-gray-500);">30 - 180 Seconds</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DND (Do-Not-Disturb) Auto-Bypass</strong></td>
+                        <td style="color:var(--xyz-success); font-weight:700;"><i class="fa fa-check-circle"></i> Supported</td>
+                        <td style="color:var(--xyz-gray-500);"><i class="fa fa-circle-xmark"></i> Frequently Dropped</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Credit Expiration Policy</strong></td>
+                        <td style="color:var(--xyz-success); font-weight:700;"><i class="fa fa-check-circle"></i> Never Expires</td>
+                        <td style="color:var(--xyz-gray-500);">Expires in 30–90 days</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Payment Methods</strong></td>
+                        <td style="color:var(--xyz-success); font-weight:700;"><i class="fa fa-check-circle"></i> Card, Transfer, Vouchers, USSD</td>
+                        <td style="color:var(--xyz-gray-500);">Card Only</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Developer REST API & Webhooks</strong></td>
+                        <td style="color:var(--xyz-success); font-weight:700;"><i class="fa fa-check-circle"></i> Full JSON REST API</td>
+                        <td style="color:var(--xyz-gray-500);">Legacy HTTP GET only</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- 3-Step Onboarding -->
+<section class="xyz-section">
+    <div class="xyz-container">
+        <div class="xyz-section-header">
+            <span class="xyz-section-tag">Easy Setup</span>
+            <h2 class="xyz-section-title">How It Works in 3 Simple Steps</h2>
+        </div>
+
+        <div class="xyz-feature-grid">
+            <div style="text-align:center; padding:20px;">
+                <div style="width:60px; height:60px; border-radius:50%; background:var(--xyz-primary); color:white; font-size:1.5rem; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">1</div>
+                <h3 style="font-size:1.2rem; font-weight:700; margin-bottom:10px;">Create Free Account</h3>
+                <p style="color:var(--xyz-gray-600); font-size:0.92rem;">Register in under 60 seconds with instant test messaging units loaded into your account.</p>
+            </div>
+            <div style="text-align:center; padding:20px;">
+                <div style="width:60px; height:60px; border-radius:50%; background:var(--xyz-dark-900); color:white; font-size:1.5rem; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">2</div>
+                <h3 style="font-size:1.2rem; font-weight:700; margin-bottom:10px;">Top-Up Units Online</h3>
+                <p style="color:var(--xyz-gray-600); font-size:0.92rem;">Purchase messaging credits using Paystack, scratch card vouchers, or direct bank transfer.</p>
+            </div>
+            <div style="text-align:center; padding:20px;">
+                <div style="width:60px; height:60px; border-radius:50%; background:var(--xyz-success); color:white; font-size:1.5rem; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">3</div>
+                <h3 style="font-size:1.2rem; font-weight:700; margin-bottom:10px;">Broadcast & Monitor</h3>
+                <p style="color:var(--xyz-gray-600); font-size:0.92rem;">Send campaigns via web dashboard or integrate our REST API to deliver at scale.</p>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,377 @@
+@{
+    ViewBag.Title = "Updated Platform Features & Gemini AI Engine";
+}
+
+<style>
+    .xyz-features-wrapper {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 40px 20px 80px;
+        font-family: var(--xyz-font-sans, system-ui, -apple-system, sans-serif);
+    }
+    .xyz-hero-card {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        border-radius: 20px;
+        padding: 48px 40px;
+        color: #FFFFFF;
+        margin-bottom: 36px;
+        box-shadow: 0 12px 36px rgba(15,23,42,0.18);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+    .xyz-hero-content {
+        flex: 1;
+        min-width: 300px;
+    }
+    .xyz-hero-graphic {
+        width: 110px;
+        height: 110px;
+        border-radius: 24px;
+        background: rgba(56, 189, 248, 0.1);
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3.5rem;
+        color: #38BDF8;
+        box-shadow: 0 0 40px rgba(56, 189, 248, 0.2);
+        flex-shrink: 0;
+    }
+    .xyz-flagship-card {
+        background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+        border: 1px solid #C7D2FE;
+        border-radius: 20px;
+        padding: 32px 36px;
+        margin-bottom: 32px;
+        box-shadow: 0 4px 20px rgba(79, 70, 229, 0.06);
+    }
+    .xyz-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-top: 20px;
+    }
+    .xyz-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+        margin-top: 24px;
+    }
+    .xyz-mini-card {
+        background: #FFFFFF;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #C7D2FE;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .xyz-mini-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(79, 70, 229, 0.1);
+    }
+    .xyz-feature-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 28px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .xyz-feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+        border-color: #CBD5E1;
+    }
+    .xyz-feature-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        margin-bottom: 20px;
+    }
+    .xyz-pill-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        background: #F1F5F9;
+        color: #475569;
+    }
+</style>
+
+<div class="xyz-features-wrapper">
+
+    <!-- HERO BANNER -->
+    <div class="xyz-hero-card">
+        <div class="xyz-hero-content">
+            <span class="badge" style="background:#0284C7; font-size:0.85rem; padding:6px 16px; border-radius:9999px; font-weight:800; margin-bottom:14px; display:inline-block; letter-spacing:0.5px;">
+                🚀 PLATFORM CAPABILITIES &amp; UPDATED FEATURES
+            </span>
+            <h1 style="font-weight:800; font-size:2.4rem; margin:0 0 14px; color:#FFFFFF; line-height:1.2;">
+                Supercharge Your SMS Communications
+            </h1>
+            <p style="font-size:1.05rem; color:#94A3B8; margin:0; line-height:1.6; max-width:720px;">
+                Explore all updated tools, client dashboard capabilities, and next-generation AI integrations built to make bulk messaging effortless, intelligent, and highly deliverable.
+            </p>
+        </div>
+        <div class="xyz-hero-graphic">
+            <i class="fa fa-wand-magic-sparkles"></i>
+        </div>
+    </div>
+
+    <!-- FLAGSHIP FEATURE 1: GOOGLE GEMINI AI ASSISTANT -->
+    <div class="xyz-flagship-card">
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px;">
+            <div style="width:44px; height:44px; border-radius:12px; background:#4F46E5; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-size:1.35rem; box-shadow:0 4px 12px rgba(79,70,229,0.3);">
+                <i class="fa fa-brain"></i>
+            </div>
+            <div>
+                <h3 style="margin:0; font-weight:800; font-size:1.45rem; color:#1E1B4B;">
+                    Google Gemini AI Assistant Suite (Flagship Feature)
+                </h3>
+                <p style="color:#4338CA; font-size:0.92rem; margin:2px 0 0;">
+                    Integrated directly into your composer and messaging workflow, Google Gemini AI acts as your personal marketing copilot.
+                </p>
+            </div>
+        </div>
+
+        <div class="xyz-grid-4">
+            <div class="xyz-mini-card">
+                <strong style="color:#1E1B4B; display:block; margin-bottom:6px; font-size:0.98rem;">
+                    <i class="fa fa-pen-nib" style="color:#4F46E5; margin-right:6px;"></i> AI Smart Composer
+                </strong>
+                <small style="color:#4338CA; font-size:0.85rem; line-height:1.5; display:block;">
+                    Generate high-converting marketing SMS copy in seconds from simple prompt ideas.
+                </small>
+            </div>
+
+            <div class="xyz-mini-card">
+                <strong style="color:#1E1B4B; display:block; margin-bottom:6px; font-size:0.98rem;">
+                    <i class="fa fa-sliders" style="color:#4F46E5; margin-right:6px;"></i> Tone &amp; Style Polish
+                </strong>
+                <small style="color:#4338CA; font-size:0.85rem; line-height:1.5; display:block;">
+                    Rephrase your text to fit Professional, Urgent, Friendly, or Promotional tones.
+                </small>
+            </div>
+
+            <div class="xyz-mini-card">
+                <strong style="color:#1E1B4B; display:block; margin-bottom:6px; font-size:0.98rem;">
+                    <i class="fa fa-shield-halved" style="color:#4F46E5; margin-right:6px;"></i> Spam Pre-Checker
+                </strong>
+                <small style="color:#4338CA; font-size:0.85rem; line-height:1.5; display:block;">
+                    Pre-checks outbound text against telecom spam filters before broadcasting.
+                </small>
+            </div>
+
+            <div class="xyz-mini-card">
+                <strong style="color:#1E1B4B; display:block; margin-bottom:6px; font-size:0.98rem;">
+                    <i class="fa fa-bolt" style="color:#4F46E5; margin-right:6px;"></i> Template Generator
+                </strong>
+                <small style="color:#4338CA; font-size:0.85rem; line-height:1.5; display:block;">
+                    Auto-generate transactional receipts, OTPs, and seasonal promotional templates.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLAGSHIP FEATURE 2: WHATSAPP & PHOTO OCR CONTACT EXTRACTOR -->
+    <div class="xyz-flagship-card" style="background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border-color:#6EE7B7;">
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px;">
+            <div style="width:44px; height:44px; border-radius:12px; background:#059669; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-size:1.35rem; box-shadow:0 4px 12px rgba(5,150,105,0.3);">
+                <i class="fa fa-camera-retro"></i>
+            </div>
+            <div>
+                <h3 style="margin:0; font-weight:800; font-size:1.45rem; color:#064E3B;">
+                    WhatsApp Group &amp; Image OCR Contact Extractor (New)
+                </h3>
+                <p style="color:#047857; font-size:0.92rem; margin:2px 0 0;">
+                    Never manually type phone numbers again! Upload screenshots of <strong>WhatsApp Group members</strong>, business cards, paper lists, or chat images, and let Google Gemini Vision extract all phone numbers directly into your phonebook.
+                </p>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-top:20px;">
+            <div style="background:#FFFFFF; border-radius:12px; padding:18px; border:1px solid #A7F3D0;">
+                <strong style="color:#064E3B; display:block; margin-bottom:4px; font-size:0.98rem;">
+                    <i class="fa fa-mobile-screen-button" style="color:#059669; margin-right:6px;"></i> WhatsApp Group Member Screenshots
+                </strong>
+                <small style="color:#047857; font-size:0.85rem; line-height:1.5; display:block;">
+                    Take a screenshot of WhatsApp group info or member list, upload it, and Gemini AI extracts every number instantly.
+                </small>
+            </div>
+
+            <div style="background:#FFFFFF; border-radius:12px; padding:18px; border:1px solid #A7F3D0;">
+                <strong style="color:#064E3B; display:block; margin-bottom:4px; font-size:0.98rem;">
+                    <i class="fa fa-key" style="color:#059669; margin-right:6px;"></i> Easy Gemini API Key Setup Guide
+                </strong>
+                <small style="color:#047857; font-size:0.85rem; line-height:1.5; display:block;">
+                    Includes a simple step-by-step dashboard guide showing clients how to generate their free Google Gemini API Key from Google AI Studio.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLIENT-SIDE PAGES FEATURE GRID -->
+    <div style="margin:40px 0 20px;">
+        <h3 style="font-weight:800; font-size:1.5rem; color:#0F172A; margin:0 0 6px; display:flex; align-items:center; gap:10px;">
+            <i class="fa fa-layer-group" style="color:#0284C7;"></i> Client Dashboard Workspace Features
+        </h3>
+        <p style="color:#64748B; margin:0; font-size:0.95rem;">Comprehensive overview of functions available across every page in your client panel.</p>
+    </div>
+
+    <div class="xyz-grid-3">
+        <!-- 1. DASHBOARD OVERVIEW -->
+        <div class="xyz-feature-card">
+            <div>
+                <div class="xyz-feature-icon" style="background:#E0F2FE; color:#0284C7;">
+                    <i class="fa fa-gauge-high"></i>
+                </div>
+                <h4 style="font-weight:800; font-size:1.2rem; color:#0F172A; margin-bottom:10px;">Dashboard Overview</h4>
+                <p style="color:#64748B; font-size:0.9rem; line-height:1.6; margin-bottom:16px;">
+                    Real-time SMS unit balance meter, low-unit reminder alerts, quick broadcast widget, and live delivery success charts.
+                </p>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; border-top:1px solid #F1F5F9; padding-top:14px;">
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#10B981; font-size:0.5rem;"></i> Balance Meter</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#0284C7; font-size:0.5rem;"></i> Low Unit Warnings</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#6366F1; font-size:0.5rem;"></i> Delivery Rate Graphs</span>
+            </div>
+        </div>
+
+        <!-- 2. COMPOSE SMS -->
+        <div class="xyz-feature-card">
+            <div>
+                <div class="xyz-feature-icon" style="background:#EEF2FF; color:#4F46E5;">
+                    <i class="fa fa-paper-plane"></i>
+                </div>
+                <h4 style="font-weight:800; font-size:1.2rem; color:#0F172A; margin-bottom:10px;">Compose &amp; Schedule SMS</h4>
+                <p style="color:#64748B; font-size:0.9rem; line-height:1.6; margin-bottom:16px;">
+                    Send instant or scheduled bulk messages to single recipients or contact groups with dynamic personalized tags.
+                </p>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; border-top:1px solid #F1F5F9; padding-top:14px;">
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#4F46E5; font-size:0.5rem;"></i> Personalization Tags</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#0284C7; font-size:0.5rem;"></i> Future Scheduling</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#10B981; font-size:0.5rem;"></i> Auto Deduplication</span>
+            </div>
+        </div>
+
+        <!-- 3. SENDER ID REGISTRY -->
+        <div class="xyz-feature-card">
+            <div>
+                <div class="xyz-feature-icon" style="background:#FEF3C7; color:#D97706;">
+                    <i class="fa fa-tag"></i>
+                </div>
+                <h4 style="font-weight:800; font-size:1.2rem; color:#0F172A; margin-bottom:10px;">Custom Sender ID Registry</h4>
+                <p style="color:#64748B; font-size:0.9rem; line-height:1.6; margin-bottom:16px;">
+                    Register branded sender names for network approval and monitor live status (Approved, Pending, Rejected) in real time.
+                </p>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; border-top:1px solid #F1F5F9; padding-top:14px;">
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#D97706; font-size:0.5rem;"></i> Brand Sender IDs</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#10B981; font-size:0.5rem;"></i> Approval Status Tracker</span>
+            </div>
+        </div>
+
+        <!-- 4. WALLET & TOP-UP -->
+        <div class="xyz-feature-card">
+            <div>
+                <div class="xyz-feature-icon" style="background:#DCFCE7; color:#166534;">
+                    <i class="fa fa-wallet"></i>
+                </div>
+                <h4 style="font-weight:800; font-size:1.2rem; color:#0F172A; margin-bottom:10px;">Wallet &amp; Payment Gateway</h4>
+                <p style="color:#64748B; font-size:0.9rem; line-height:1.6; margin-bottom:16px;">
+                    Instant online Paystack top-ups via Card, USSD, or Bank Transfer, unit transfers to sub-accounts, and downloadable receipts.
+                </p>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; border-top:1px solid #F1F5F9; padding-top:14px;">
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#10B981; font-size:0.5rem;"></i> Paystack Gateway</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#0284C7; font-size:0.5rem;"></i> Sub-Account Transfers</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#64748B; font-size:0.5rem;"></i> Receipts PDF</span>
+            </div>
+        </div>
+
+        <!-- 5. MESSAGE LOGS & DLR -->
+        <div class="xyz-feature-card">
+            <div>
+                <div class="xyz-feature-icon" style="background:#F3E8FF; color:#9333EA;">
+                    <i class="fa fa-clock-rotate-left"></i>
+                </div>
+                <h4 style="font-weight:800; font-size:1.2rem; color:#0F172A; margin-bottom:10px;">Delivery Reports &amp; Logs</h4>
+                <p style="color:#64748B; font-size:0.9rem; line-height:1.6; margin-bottom:16px;">
+                    Track real-time delivery receipts (DLR) from telecom operators with advanced date, status, and keyword filters.
+                </p>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; border-top:1px solid #F1F5F9; padding-top:14px;">
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#9333EA; font-size:0.5rem;"></i> Telecom DLR Status</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#0284C7; font-size:0.5rem;"></i> Keyword Filter Bar</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#10B981; font-size:0.5rem;"></i> CSV Export</span>
+            </div>
+        </div>
+
+        <!-- 6. PHONEBOOK & GROUP MANAGER -->
+        <div class="xyz-feature-card">
+            <div>
+                <div class="xyz-feature-icon" style="background:#ECFDF5; color:#059669;">
+                    <i class="fa fa-address-book"></i>
+                </div>
+                <h4 style="font-weight:800; font-size:1.2rem; color:#0F172A; margin-bottom:10px;">Phonebook &amp; Group Manager</h4>
+                <p style="color:#64748B; font-size:0.9rem; line-height:1.6; margin-bottom:16px;">
+                    Manage unlimited contact groups with bulk CSV/Excel import, WhatsApp screenshot OCR, and automatic duplicate filtering.
+                </p>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; border-top:1px solid #F1F5F9; padding-top:14px;">
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#059669; font-size:0.5rem;"></i> Contact Groups</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#10B981; font-size:0.5rem;"></i> Screenshot OCR</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#0284C7; font-size:0.5rem;"></i> Excel Import</span>
+            </div>
+        </div>
+
+        <!-- 7. DEVELOPER API STUDIO -->
+        <div class="xyz-feature-card">
+            <div>
+                <div class="xyz-feature-icon" style="background:#F1F5F9; color:#334155;">
+                    <i class="fa fa-code"></i>
+                </div>
+                <h4 style="font-weight:800; font-size:1.2rem; color:#0F172A; margin-bottom:10px;">Developer API &amp; Webhooks</h4>
+                <p style="color:#64748B; font-size:0.9rem; line-height:1.6; margin-bottom:16px;">
+                    Integrate SMS capabilities directly into your software applications using secure REST API keys, Postman docs, and webhooks.
+                </p>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; border-top:1px solid #F1F5F9; padding-top:14px;">
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#334155; font-size:0.5rem;"></i> REST API Keys</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#0284C7; font-size:0.5rem;"></i> Postman Collection</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#10B981; font-size:0.5rem;"></i> Webhooks</span>
+            </div>
+        </div>
+
+        <!-- 8. SECURITY & ACCOUNT CONTROL -->
+        <div class="xyz-feature-card">
+            <div>
+                <div class="xyz-feature-icon" style="background:#FEE2E2; color:#DC2626;">
+                    <i class="fa fa-shield-halved"></i>
+                </div>
+                <h4 style="font-weight:800; font-size:1.2rem; color:#0F172A; margin-bottom:10px;">Account Settings &amp; Security</h4>
+                <p style="color:#64748B; font-size:0.9rem; line-height:1.6; margin-bottom:16px;">
+                    Configure custom low-unit reminder thresholds, password verification security, and profile contact preferences.
+                </p>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; border-top:1px solid #F1F5F9; padding-top:14px;">
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#DC2626; font-size:0.5rem;"></i> Threshold Config</span>
+                <span class="xyz-pill-tag"><i class="fa fa-circle" style="color:#0284C7; font-size:0.5rem;"></i> Password Check</span>
+            </div>
+        </div>
+    </div>
+</div>

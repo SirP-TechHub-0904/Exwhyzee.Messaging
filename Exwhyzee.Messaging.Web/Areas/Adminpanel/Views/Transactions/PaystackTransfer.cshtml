@@ -1,0 +1,274 @@
+@model Exwhyzee.Messaging.Core.Models.AdminSetting
+@{
+    ViewBag.Title = "Paystack Transfer Studio";
+    decimal availableFund = ViewBag.AvailableFund ?? 0m;
+    int clearedCount = ViewBag.ClearedTxnCount ?? 0;
+    bool hasBankConfig = Model != null && !string.IsNullOrWhiteSpace(Model.PaystackRecipientCode);
+}
+
+<style>
+    .xyz-transfer-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    .xyz-bank-badge {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 800;
+        background: #F0FDF4;
+        color: #166534;
+        border: 1px solid #BBF7D0;
+        padding: 6px 14px;
+        border-radius: 8px;
+        display: inline-block;
+        font-size: 0.95rem;
+    }
+    .xyz-amount-hero {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #059669;
+        margin: 12px 0 6px;
+    }
+</style>
+
+@Html.Partial("_ResponseMessagePartial")
+
+<div class="xyz-panel-card" style="margin-bottom: 24px; padding: 24px; background:#ffffff; border-radius:12px; border:1px solid #E2E8F0; box-shadow:0 4px 20px rgba(0,0,0,0.04);">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h2 style="margin:0 0 4px; font-weight:800; font-size:1.4rem; color:#0F172A;">
+                <i class="fa fa-paper-plane" style="color:#059669;"></i> Paystack Transfer Studio
+            </h2>
+            <p style="margin:0; color:#64748B; font-size:0.9rem;">Setup corporate destination bank details, resolve account via Paystack, and execute 100% automated payout transfers.</p>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <a href="@Url.Action("PaystackOutflow", "Transactions", new { area = "Adminpanel" })" class="btn btn-sm btn-primary" style="font-weight:800; border-radius:8px; background:#0284C7; border:none;">
+                <i class="fa fa-credit-card"></i> Paystack Outflow Studio
+            </a>
+            <a href="@Url.Action("Index", "Transactions", new { area = "Adminpanel" })" class="btn btn-sm btn-default" style="font-weight:800; border-radius:8px;">
+                &larr; Transactions Ledger
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- CARD 1: DESTINATION BANK ACCOUNT MANAGER -->
+    <div class="col-md-6">
+        <div class="xyz-transfer-card" style="border-top: 4px solid #0284C7;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0; font-weight:800; font-size:1.1rem; color:#0F172A;">
+                    <i class="fa fa-building-columns" style="color:#0284C7;"></i> Destination Bank Account
+                </h3>
+                @if (hasBankConfig)
+                {
+                    <span class="label label-success" style="padding:4px 10px; border-radius:6px; font-weight:800;">VERIFIED &amp; ACTIVE</span>
+                }
+                else
+                {
+                    <span class="label label-danger" style="padding:4px 10px; border-radius:6px; font-weight:800;">NOT CONFIGURED</span>
+                }
+            </div>
+
+            @if (hasBankConfig)
+            {
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:18px; margin-bottom:16px;">
+                    <div style="margin-bottom:10px;">
+                        <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">Account Name</small>
+                        <strong style="font-size:1.1rem; color:#0F172A;">@Model.OutflowAccountName</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; gap:12px; margin-bottom:10px;">
+                        <div>
+                            <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">Bank Name</small>
+                            <strong style="color:#334155;">@Model.OutflowBankName</strong>
+                        </div>
+                        <div>
+                            <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">Account Number</small>
+                            <code style="font-size:1rem; color:#0284C7; font-weight:800;">@Model.OutflowAccountNumber</code>
+                        </div>
+                    </div>
+                    <div style="border-top:1px solid #E2E8F0; padding-top:10px; margin-top:10px;">
+                        <small style="color:#94A3B8; font-size:0.78rem; display:block;">
+                            <i class="fa fa-shield-halved" style="color:#10B981;"></i> Paystack Recipient Code: <code>@Model.PaystackRecipientCode</code>
+                        </small>
+                        <small style="color:#94A3B8; font-size:0.78rem; display:block;">
+                            <i class="fa fa-user-check"></i> Last updated by <strong>@(Model.OutflowBankLastUpdatedBy ?? "Admin")</strong> on @(Model.OutflowBankLastUpdatedDate.HasValue ? Model.OutflowBankLastUpdatedDate.Value.ToString("yyyy-MM-dd HH:mm") : "N/A")
+                        </small>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-sm btn-default" onclick="$('#xyzUpdateBankForm').slideToggle();" style="font-weight:700; border-radius:8px; width:100%; margin-bottom:16px;">
+                    <i class="fa fa-pen-to-square"></i> Update / Change Bank Details
+                </button>
+            }
+
+            <div id="xyzUpdateBankForm" style="@(hasBankConfig ? "display:none;" : "display:block;")">
+                @using (Html.BeginForm("SaveOutflowBankDetails", "Transactions", new { area = "Adminpanel" }, FormMethod.Post, null, new { id = "bankSetupForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label style="font-weight:700; font-size:0.85rem; color:#334155;">Select Destination Bank</label>
+                        <select name="bankCode" id="xyzBankCodeSelect" class="form-control" style="border-radius:8px; height:42px; font-weight:700; border:1px solid #CBD5E1;" required>
+                            <option value="">-- Choose Nigerian Bank --</option>
+                            <option value="058" data-bankname="Guaranty Trust Bank (GTB)">Guaranty Trust Bank (GTB)</option>
+                            <option value="057" data-bankname="Zenith Bank">Zenith Bank</option>
+                            <option value="044" data-bankname="Access Bank">Access Bank</option>
+                            <option value="011" data-bankname="First Bank of Nigeria">First Bank of Nigeria</option>
+                            <option value="033" data-bankname="United Bank for Africa (UBA)">United Bank for Africa (UBA)</option>
+                            <option value="50211" data-bankname="Kuda Microfinance Bank">Kuda Microfinance Bank</option>
+                            <option value="999992" data-bankname="OPay Digital Services">OPay Digital Services</option>
+                            <option value="50515" data-bankname="Moniepoint Microfinance Bank">Moniepoint Microfinance Bank</option>
+                            <option value="039" data-bankname="Stanbic IBTC Bank">Stanbic IBTC Bank</option>
+                            <option value="214" data-bankname="First City Monument Bank (FCMB)">First City Monument Bank (FCMB)</option>
+                            <option value="232" data-bankname="Sterling Bank">Sterling Bank</option>
+                            <option value="035" data-bankname="Wema Bank">Wema Bank</option>
+                            <option value="070" data-bankname="Fidelity Bank">Fidelity Bank</option>
+                            <option value="076" data-bankname="Polaris Bank">Polaris Bank</option>
+                        </select>
+                        <input type="hidden" name="bankName" id="xyzBankNameHidden" value="" />
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label style="font-weight:700; font-size:0.85rem; color:#334155;">NUBAN Account Number (10 Digits)</label>
+                        <div class="input-group" style="display:flex; width:100%;">
+                            <input type="text" name="accountNumber" id="xyzAccountNumberInput" class="form-control" placeholder="e.g. 0123456789" maxlength="10" style="border-top-left-radius:8px; border-bottom-left-radius:8px; border-top-right-radius:0; border-bottom-right-radius:0; height:42px; font-weight:600; border:1px solid #CBD5E1; border-right:none; flex:1;" required />
+                            <span class="input-group-btn" style="display:inline-flex; vertical-align:top;">
+                                <button type="button" id="xyzVerifyBankBtn" class="btn btn-info" style="font-weight:800; border-top-right-radius:8px; border-bottom-right-radius:8px; border-top-left-radius:0; border-bottom-left-radius:0; height:42px; padding:0 18px; background:#0284C7; border:1px solid #0284C7; display:inline-flex; align-items:center; gap:6px;">
+                                    <i class="fa fa-search"></i> Verify Account
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- RESOLVED ACCOUNT NAME BADGE -->
+                    <div id="xyzResolvedBadgeBox" style="display:none; margin-bottom:14px;">
+                        <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">Verified Account Name</small>
+                        <div class="xyz-bank-badge" id="xyzResolvedAccountNameText">
+                            <i class="fa fa-circle-check"></i> Account Name Here
+                        </div>
+                    </div>
+                    <input type="hidden" name="accountName" id="xyzAccountNameHidden" value="" />
+
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label style="font-weight:700; font-size:0.85rem; color:#991B1B;">Admin Password (Security Check)</label>
+                        <input type="password" name="adminPassword" class="form-control" placeholder="Enter your current password to save" style="border-radius:8px; height:42px; border:1px solid #FCA5A5;" required />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block" style="font-weight:800; border-radius:8px; background:#0284C7; border:none; height:44px; font-size:0.95rem;">
+                        <i class="fa fa-shield-check"></i> Verify &amp; Save Destination Bank Details
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD 2: LIVE PAYSTACK AUTOMATED PAYOUT EXECUTION -->
+    <div class="col-md-6">
+        <div class="xyz-transfer-card" style="border-top: 4px solid #059669; background:#F0FDF4;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="margin:0; font-weight:800; font-size:1.1rem; color:#065F46;">
+                    <i class="fa fa-bolt" style="color:#059669;"></i> Live Paystack Payout Execution
+                </h3>
+                <span class="label label-success" style="padding:4px 10px; border-radius:6px; font-weight:800; background:#059669;">AUTOMATED PAYOUT</span>
+            </div>
+
+            <p style="color:#047857; font-size:0.85rem; margin-bottom:12px;">
+                Executing this transfer calls Paystack's automated Transfer API to disburse <strong>100% of all cleared available funds</strong> directly out of your Paystack balance to your verified bank account.
+            </p>
+
+            <div style="background:#ffffff; border:1px solid #A7F3D0; border-radius:10px; padding:20px; text-align:center; margin-bottom:20px;">
+                <small style="color:#64748B; font-weight:800; text-transform:uppercase; font-size:0.75rem;">Total Available Balance (Cleared)</small>
+                <div class="xyz-amount-hero">&#x20A6;@availableFund.ToString("N2")</div>
+                <small style="color:#059669; font-weight:700; font-size:0.82rem;">
+                    <i class="fa fa-layer-group"></i> Covers @clearedCount cleared Paystack transaction(s)
+                </small>
+            </div>
+
+            @if (availableFund > 0 && hasBankConfig)
+            {
+                using (Html.BeginForm("ExecutePaystackTransfer", "Transactions", new { area = "Adminpanel" }, FormMethod.Post, null, new { id = "payoutForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label style="font-weight:700; font-size:0.85rem; color:#991B1B;">Admin Password (Security Authorization)</label>
+                        <input type="password" name="adminPassword" class="form-control" placeholder="Enter your password to authorize live transfer" style="border-radius:8px; border:1px solid #FCA5A5; background:#ffffff;" required />
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-block btn-lg" style="font-weight:800; border-radius:10px; background:#059669; border:none; padding:14px;" onclick="return confirm('AUTHORIZE LIVE TRANSFER?\n\nThis will transfer &#x20A6;@availableFund.ToString("N2") out of your Paystack balance directly to @Model.OutflowAccountName (@Model.OutflowBankName).\n\nProceed?');">
+                        <i class="fa fa-paper-plane"></i> Initiate Paystack Bank Transfer (&#x20A6;@availableFund.ToString("N2"))
+                    </button>
+                }
+            }
+            else if (!hasBankConfig)
+            {
+                <div style="background:#FEF2F2; border:1px solid #FCA5A5; border-radius:8px; padding:14px; text-align:center;">
+                    <strong style="color:#991B1B; font-size:0.9rem; display:block; margin-bottom:4px;">
+                        <i class="fa fa-triangle-exclamation"></i> Bank Account Not Configured
+                    </strong>
+                    <span style="color:#7F1D1D; font-size:0.82rem;">Please fill out and save your verified destination bank account details on the left first.</span>
+                </div>
+            }
+            else
+            {
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:14px; text-align:center;">
+                    <strong style="color:#64748B; font-size:0.9rem; display:block; margin-bottom:4px;">
+                        <i class="fa fa-lock"></i> No Available Cleared Funds
+                    </strong>
+                    <span style="color:#94A3B8; font-size:0.82rem;">Available balance is ₦0.00. Transactions processed today clear after 24h at 12:00 AM next day.</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#xyzBankCodeSelect').change(function () {
+            var selectedName = $(this).find('option:selected').data('bankname');
+            $('#xyzBankNameHidden').val(selectedName || '');
+        });
+
+        $('#xyzVerifyBankBtn').click(function () {
+            var accountNumber = $('#xyzAccountNumberInput').val().trim();
+            var bankCode = $('#xyzBankCodeSelect').val();
+
+            if (!bankCode) {
+                alert('Please select a bank first.');
+                return;
+            }
+            if (accountNumber.length !== 10) {
+                alert('Please enter a valid 10-digit account number.');
+                return;
+            }
+
+            var btn = $(this);
+            btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Resolving...');
+
+            $.ajax({
+                url: '@Url.Action("VerifyBankAccountAjax", "Transactions", new { area = "Adminpanel" })',
+                type: 'POST',
+                data: { accountNumber: accountNumber, bankCode: bankCode },
+                success: function (res) {
+                    btn.prop('disabled', false).html('<i class="fa fa-search"></i> Verify Account');
+                    if (res.success) {
+                        $('#xyzResolvedAccountNameText').html('<i class="fa fa-circle-check"></i> ' + res.accountName);
+                        $('#xyzAccountNameHidden').val(res.accountName);
+                        $('#xyzResolvedBadgeBox').slideDown();
+                    } else {
+                        alert('Account Resolution Error: ' + res.message);
+                        $('#xyzResolvedBadgeBox').slideUp();
+                    }
+                },
+                error: function () {
+                    btn.prop('disabled', false).html('<i class="fa fa-search"></i> Verify Account');
+                    alert('Network error verifying bank account with Paystack.');
+                }
+            });
+        });
+    });
+</script>

@@ -26,10 +26,9 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
         
 
-        public VouchersController(VoucherService voucherService, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager)
+        public VouchersController(IVoucherService voucherService)
         {
-            _voucherService = voucherService;
-            _userManager = userManager;
+            _voucherService = voucherService ?? new VoucherService();
         }
 
         public Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager

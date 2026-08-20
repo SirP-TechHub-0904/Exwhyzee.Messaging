@@ -1,0 +1,379 @@
+@model IEnumerable<Exwhyzee.Messaging.Core.Models.PriceSetting>
+@{
+    ViewBag.Title = "Network Coverage & SMS Pricing";
+    decimal pricePerUnit = ViewBag.PricePerUnit ?? 2.0m;
+    decimal flatUnits = ViewBag.FlatUnits ?? 2.0m;
+    var priceList = Model?.ToList() ?? new List<Exwhyzee.Messaging.Core.Models.PriceSetting>();
+
+    var mtn = priceList.FirstOrDefault(p => p.NetworkProvider != null && p.NetworkProvider.ToUpper().Contains("MTN"));
+    var airtel = priceList.FirstOrDefault(p => p.NetworkProvider != null && p.NetworkProvider.ToUpper().Contains("AIRTEL"));
+    var glo = priceList.FirstOrDefault(p => p.NetworkProvider != null && p.NetworkProvider.ToUpper().Contains("GLO"));
+    var nineMobile = priceList.FirstOrDefault(p => p.NetworkProvider != null && (p.NetworkProvider.ToUpper().Contains("9MOBILE") || p.NetworkProvider.ToUpper().Contains("ETISALAT")));
+}
+
+<style>
+    .xyz-pricing-hero {
+        background: linear-gradient(135deg, #0B0F19 0%, #1E1B4B 50%, #0B0F19 100%);
+        border-radius: 16px;
+        padding: 22px 28px;
+        margin-bottom: 20px;
+        color: #FFFFFF;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .xyz-pricing-hero h1 {
+        font-size: 1.45rem !important;
+        font-weight: 800 !important;
+        margin: 0 0 4px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #FFFFFF;
+    }
+
+    .xyz-network-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+        padding: 20px 22px;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .xyz-network-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    body.xyz-dark-theme .xyz-network-card {
+        background: #131B2E;
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .xyz-calc-card {
+        background: linear-gradient(135deg, #1E1B4B 0%, #0F172A 100%);
+        border-radius: 16px;
+        color: #FFFFFF;
+        padding: 24px 28px;
+        margin-bottom: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .xyz-prefix-badge {
+        background: #F1F5F9;
+        color: #334155;
+        border: 1px solid #CBD5E1;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 6px;
+        display: inline-block;
+        margin: 2px;
+    }
+
+    body.xyz-dark-theme .xyz-prefix-badge {
+        background: rgba(255, 255, 255, 0.08);
+        color: #E2E8F0;
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+</style>
+
+<!-- Hero Section -->
+<div class="xyz-pricing-hero">
+    <div>
+        <h1>
+            <i class="fa fa-table-list" style="color:#F59E0B;"></i> Network Coverage &amp; SMS Pricing
+        </h1>
+        <p>Transparent real-time rates per network provider, supported prefix directory, and instant cost calculator.</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:10px 18px; text-align:center;">
+            <small style="color:#94A3B8; font-size:0.75rem; font-weight:700; display:block; text-transform:uppercase;">Unit Price</small>
+            <strong style="font-size:1.35rem; color:#34D399;">&#8358;@pricePerUnit.ToString("N2")</strong>
+        </div>
+        <a href="@Url.Action("BuyUnit", "Dashboard", new { area = "ClientPanel" })" class="btn btn-primary" style="background:#E50914; border:none; font-weight:800; border-radius:10px; padding:10px 20px; font-size:0.95rem;">
+            <i class="fa fa-plus"></i> Top Up Units
+        </a>
+    </div>
+</div>
+
+@Html.Partial("_ResponseMessagePartial")
+
+<!-- TOP NIGERIA NETWORKS GRID -->
+<h3 style="font-weight:800; font-size:1.2rem; margin:0 0 16px; color:var(--xyz-dash-text); display:flex; align-items:center; gap:8px;">
+    <i class="fa fa-signal" style="color:#6366F1;"></i> Nigerian Telecom Networks (Direct Tier-1 Routes)
+</h3>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:18px; margin-bottom:28px;">
+    <!-- MTN -->
+    <div class="xyz-network-card" style="border-top:4px solid #FBBF24;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <strong style="font-size:1.15rem; color:#D97706; font-weight:800;">MTN Nigeria</strong>
+            <span class="badge" style="background:#FEF3C7; color:#92400E; font-weight:800;">High Delivery</span>
+        </div>
+        <div style="font-size:1.75rem; font-weight:900; color:#0F172A; margin-bottom:4px;">
+            @(mtn?.UnitsPerSms ?? flatUnits) <span style="font-size:0.9rem; font-weight:700; color:#64748B;">Units / SMS</span>
+        </div>
+        <div style="color:#10B981; font-weight:800; font-size:0.92rem; margin-bottom:14px;">
+            &#8358;@(((mtn?.UnitsPerSms ?? flatUnits) * pricePerUnit).ToString("N2")) per page
+        </div>
+        <div style="border-top:1px solid #E2E8F0; padding-top:10px;">
+            <small style="color:#64748B; font-weight:700; display:block; margin-bottom:4px;">Supported Prefixes:</small>
+            <div>
+                <span class="xyz-prefix-badge">0803</span>
+                <span class="xyz-prefix-badge">0806</span>
+                <span class="xyz-prefix-badge">0703</span>
+                <span class="xyz-prefix-badge">0706</span>
+                <span class="xyz-prefix-badge">0813</span>
+                <span class="xyz-prefix-badge">0816</span>
+                <span class="xyz-prefix-badge">0810</span>
+                <span class="xyz-prefix-badge">0814</span>
+                <span class="xyz-prefix-badge">0903</span>
+                <span class="xyz-prefix-badge">0906</span>
+                <span class="xyz-prefix-badge">0913</span>
+                <span class="xyz-prefix-badge">0916</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- AIRTEL -->
+    <div class="xyz-network-card" style="border-top:4px solid #EF4444;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <strong style="font-size:1.15rem; color:#DC2626; font-weight:800;">Airtel Nigeria</strong>
+            <span class="badge" style="background:#FEE2E2; color:#991B1B; font-weight:800;">Instant</span>
+        </div>
+        <div style="font-size:1.75rem; font-weight:900; color:#0F172A; margin-bottom:4px;">
+            @(airtel?.UnitsPerSms ?? flatUnits) <span style="font-size:0.9rem; font-weight:700; color:#64748B;">Units / SMS</span>
+        </div>
+        <div style="color:#10B981; font-weight:800; font-size:0.92rem; margin-bottom:14px;">
+            &#8358;@(((airtel?.UnitsPerSms ?? flatUnits) * pricePerUnit).ToString("N2")) per page
+        </div>
+        <div style="border-top:1px solid #E2E8F0; padding-top:10px;">
+            <small style="color:#64748B; font-weight:700; display:block; margin-bottom:4px;">Supported Prefixes:</small>
+            <div>
+                <span class="xyz-prefix-badge">0802</span>
+                <span class="xyz-prefix-badge">0808</span>
+                <span class="xyz-prefix-badge">0708</span>
+                <span class="xyz-prefix-badge">0701</span>
+                <span class="xyz-prefix-badge">0812</span>
+                <span class="xyz-prefix-badge">0901</span>
+                <span class="xyz-prefix-badge">0902</span>
+                <span class="xyz-prefix-badge">0904</span>
+                <span class="xyz-prefix-badge">0907</span>
+                <span class="xyz-prefix-badge">0912</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- GLO -->
+    <div class="xyz-network-card" style="border-top:4px solid #10B981;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <strong style="font-size:1.15rem; color:#059669; font-weight:800;">Glo Mobile</strong>
+            <span class="badge" style="background:#D1FAE5; color:#065F46; font-weight:800;">Active</span>
+        </div>
+        <div style="font-size:1.75rem; font-weight:900; color:#0F172A; margin-bottom:4px;">
+            @(glo?.UnitsPerSms ?? flatUnits) <span style="font-size:0.9rem; font-weight:700; color:#64748B;">Units / SMS</span>
+        </div>
+        <div style="color:#10B981; font-weight:800; font-size:0.92rem; margin-bottom:14px;">
+            &#8358;@(((glo?.UnitsPerSms ?? flatUnits) * pricePerUnit).ToString("N2")) per page
+        </div>
+        <div style="border-top:1px solid #E2E8F0; padding-top:10px;">
+            <small style="color:#64748B; font-weight:700; display:block; margin-bottom:4px;">Supported Prefixes:</small>
+            <div>
+                <span class="xyz-prefix-badge">0805</span>
+                <span class="xyz-prefix-badge">0807</span>
+                <span class="xyz-prefix-badge">0705</span>
+                <span class="xyz-prefix-badge">0815</span>
+                <span class="xyz-prefix-badge">0811</span>
+                <span class="xyz-prefix-badge">0905</span>
+                <span class="xyz-prefix-badge">0915</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9MOBILE -->
+    <div class="xyz-network-card" style="border-top:4px solid #065F46;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <strong style="font-size:1.15rem; color:#047857; font-weight:800;">9mobile</strong>
+            <span class="badge" style="background:#E0E7FF; color:#3730A3; font-weight:800;">Active</span>
+        </div>
+        <div style="font-size:1.75rem; font-weight:900; color:#0F172A; margin-bottom:4px;">
+            @(nineMobile?.UnitsPerSms ?? flatUnits) <span style="font-size:0.9rem; font-weight:700; color:#64748B;">Units / SMS</span>
+        </div>
+        <div style="color:#10B981; font-weight:800; font-size:0.92rem; margin-bottom:14px;">
+            &#8358;@(((nineMobile?.UnitsPerSms ?? flatUnits) * pricePerUnit).ToString("N2")) per page
+        </div>
+        <div style="border-top:1px solid #E2E8F0; padding-top:10px;">
+            <small style="color:#64748B; font-weight:700; display:block; margin-bottom:4px;">Supported Prefixes:</small>
+            <div>
+                <span class="xyz-prefix-badge">0809</span>
+                <span class="xyz-prefix-badge">0817</span>
+                <span class="xyz-prefix-badge">0818</span>
+                <span class="xyz-prefix-badge">0909</span>
+                <span class="xyz-prefix-badge">0908</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- INTERACTIVE RATE & COST ESTIMATOR -->
+<div class="xyz-calc-card">
+    <div class="row">
+        <div class="col-md-7">
+            <h4 style="font-weight:800; font-size:1.2rem; margin:0 0 6px; color:#FFFFFF; display:flex; align-items:center; gap:8px;">
+                <i class="fa fa-calculator" style="color:#34D399;"></i> Live Rate &amp; Cost Estimator
+            </h4>
+            <p style="color:#94A3B8; font-size:0.9rem; margin-bottom:18px;">
+                Enter test phone numbers and message characters to simulate your exact campaign units.
+            </p>
+
+            <div class="row">
+                <div class="col-sm-6 form-group">
+                    <label style="font-weight:700; font-size:0.85rem; color:#CBD5E1;">Test Recipient Numbers Count:</label>
+                    <input type="number" id="calcNumCount" value="100" min="1" class="form-control" style="background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.2); color:#fff; font-weight:800;" />
+                </div>
+                <div class="col-sm-6 form-group">
+                    <label style="font-weight:700; font-size:0.85rem; color:#CBD5E1;">Message Length (Characters):</label>
+                    <input type="number" id="calcCharCount" value="145" min="1" class="form-control" style="background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.2); color:#fff; font-weight:800;" />
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5" style="border-left:1px solid rgba(255,255,255,0.1); padding-left:24px;">
+            <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:16px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem;">
+                    <span style="color:#94A3B8;">Calculated Pages:</span>
+                    <strong id="calcPages" style="color:#60A5FA;">1 Page</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.9rem;">
+                    <span style="color:#94A3B8;">Units Required:</span>
+                    <strong id="calcUnits" style="color:#FBBF24; font-size:1.15rem;">200.00 Units</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
+                    <span style="color:#CBD5E1; font-weight:700;">Estimated Cost:</span>
+                    <strong id="calcNaira" style="color:#34D399; font-size:1.35rem;">&#8358;400.00</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FULL GLOBAL DIRECTORY TABLE -->
+<div class="xyz-network-card" style="padding:0;">
+    <div style="padding:16px 22px; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <h4 style="font-weight:800; font-size:1.05rem; margin:0; color:#1E293B;">
+            All Configured Networks &amp; International Rates
+        </h4>
+        <input type="text" id="filterNetworkInput" placeholder="Search country, network, or code..." class="form-control input-sm" style="width:240px; border-radius:8px;" />
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover" id="pricingTable" style="margin:0; vertical-align:middle;">
+            <thead style="background:#F8FAFC; font-weight:800; font-size:0.82rem; color:#475569; text-transform:uppercase;">
+                <tr>
+                    <th style="padding:12px 16px;">Country</th>
+                    <th>Network Provider</th>
+                    <th>Int'l Code</th>
+                    <th>Units / SMS</th>
+                    <th>Cost (NGN)</th>
+                    <th>Supported Prefixes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (priceList.Any())
+                {
+                    foreach (var item in priceList)
+                    {
+                        <tr>
+                            <td style="padding:14px 16px; font-weight:800; color:#0F172A;">
+                                <i class="fa fa-globe" style="color:#6366F1; margin-right:6px;"></i> @item.Country
+                            </td>
+                            <td>
+                                <strong>@item.NetworkProvider</strong>
+                            </td>
+                            <td>
+                                <code style="font-weight:700; color:#4338CA; background:#EEF2FF; padding:2px 6px; border-radius:4px;">+@item.InternationalDialCode</code>
+                            </td>
+                            <td>
+                                <strong style="color:#6366F1; font-size:0.95rem;">@item.UnitsPerSms.ToString("N2")</strong>
+                            </td>
+                            <td>
+                                <strong style="color:#10B981; font-size:0.95rem;">&#8358;@((item.UnitsPerSms * pricePerUnit).ToString("N2"))</strong>
+                            </td>
+                            <td>
+                                @if (item.DialCodes != null && item.DialCodes.Any())
+                                {
+                                    foreach (var dc in item.DialCodes.Take(8))
+                                    {
+                                        <span class="xyz-prefix-badge">@dc.NumberPrefix</span>
+                                    }
+                                    if (item.DialCodes.Count > 8)
+                                    {
+                                        <small style="color:#64748B;">+@(item.DialCodes.Count - 8) more</small>
+                                    }
+                                }
+                                else
+                                {
+                                    <span style="color:#94A3B8;">All Standard</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:30px; color:#64748B;">
+                            Standard flat rate of @flatUnits Units/SMS applies to all networks.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const unitNairaRate = @pricePerUnit;
+        const avgUnitsPerSms = @((mtn?.UnitsPerSms ?? flatUnits));
+
+        function runEstimate() {
+            const count = parseInt($('#calcNumCount').val()) || 0;
+            const chars = parseInt($('#calcCharCount').val()) || 0;
+
+            let pages = 1;
+            if (chars > 160) {
+                pages = Math.ceil(chars / 153);
+            }
+            if (chars === 0) pages = 0;
+
+            const totalUnits = count * pages * avgUnitsPerSms;
+            const totalNaira = totalUnits * unitNairaRate;
+
+            $('#calcPages').text(pages + ' Page' + (pages !== 1 ? 's' : ''));
+            $('#calcUnits').text(totalUnits.toFixed(2) + ' Units');
+            $('#calcNaira').html('&#8358;' + totalNaira.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+        }
+
+        $('#calcNumCount, #calcCharCount').on('input', runEstimate);
+        runEstimate();
+
+        // Search Filter Table
+        $('#filterNetworkInput').on('keyup', function () {
+            const val = $(this).val().toLowerCase();
+            $('#pricingTable tbody tr').filter(function () {
+                $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
+            });
+        });
+    </script>
+}

@@ -1,0 +1,285 @@
+@model X.PagedList.IPagedList<Exwhyzee.Messaging.Core.Models.Transaction>
+@using X.PagedList.Mvc.Core;
+<link href="~/Content/PagedList.css" rel="stylesheet" />
+@using Exwhyzee.Messaging.Core.Services
+
+@{
+    ViewBag.Title = "Paystack Outflow & Liquidity Management";
+    string activeTab = ViewBag.ActiveTab as string ?? "available";
+    decimal overallRevenue = ViewBag.OverallRevenue ?? 0m;
+    decimal totalUncleared = ViewBag.TotalUncleared ?? 0m;
+    decimal availableFund = ViewBag.AvailableFund ?? 0m;
+    decimal pending24h = ViewBag.Pending24hSettlement ?? 0m;
+    decimal totalTransferred = ViewBag.TotalTransferred ?? 0m;
+}
+
+<style>
+    .xyz-equal-cards {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .xyz-equal-cards > [class*='col-'] {
+        display: flex;
+        flex-direction: column;
+    }
+    .xyz-stat-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        min-height: 175px;
+    }
+    .xyz-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+    .xyz-stat-val {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.55rem;
+        font-weight: 800;
+        margin: 8px 0 4px;
+        color: #0F172A;
+    }
+    .xyz-stat-subnote {
+        font-size: 0.78rem;
+        color: #64748B;
+        margin: 0;
+        line-height: 1.4;
+    }
+    .xyz-tab-item {
+        padding: 10px 18px;
+        font-weight: 800;
+        font-size: 0.88rem;
+        border-radius: 8px;
+        color: #64748B;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s ease;
+    }
+    .xyz-tab-item.active {
+        background: #0284C7;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+    }
+    .xyz-badge {
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 6px;
+        display: inline-block;
+        text-transform: uppercase;
+    }
+    .xyz-badge-cleared { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+    .xyz-badge-pending-24h { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+    .xyz-badge-transferred { background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
+</style>
+
+@Html.Partial("_ResponseMessagePartial")
+
+<div class="xyz-panel-card" style="margin-bottom: 24px; padding: 24px; background:#ffffff; border-radius:12px; border:1px solid #E2E8F0; box-shadow:0 4px 20px rgba(0,0,0,0.04);">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h2 style="margin:0 0 4px; font-weight:800; font-size:1.4rem; color:#0F172A;">
+                <i class="fa fa-credit-card" style="color:#0284C7;"></i> Paystack Outflow &amp; Liquidity Studio
+            </h2>
+            <p style="margin:0; color:#64748B; font-size:0.9rem;">Track online gateway inflow, T+1 settlement cycles, and transfer funds out to purchase gateway SMS credits.</p>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <a href="@Url.Action("PaystackTransfer", "Transactions", new { area = "Adminpanel" })" class="btn btn-sm btn-success" style="font-weight:800; border-radius:8px; background:#059669; border:none;">
+                <i class="fa fa-paper-plane"></i> Transfer Funds &rarr;
+            </a>
+            <a href="@Url.Action("Index", "Transactions", new { area = "Adminpanel" })" class="btn btn-sm btn-default" style="font-weight:800; border-radius:8px;">
+                &larr; Transactions Ledger
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- MINI DASHBOARD STATS (EQUAL HEIGHT CARDS) -->
+<div class="row xyz-equal-cards" style="margin-bottom: 24px;">
+    <div class="col-md-3 col-sm-6" style="margin-bottom: 16px;">
+        <div class="xyz-stat-card" style="border-top: 4px solid #0284C7;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <small style="font-weight:800; text-transform:uppercase; color:#64748B; font-size:0.75rem;">Overall Revenue</small>
+                    <i class="fa fa-credit-card" style="color:#0284C7; font-size:1.2rem;"></i>
+                </div>
+                <div class="xyz-stat-val" style="color:#0284C7;">&#x20A6;@overallRevenue.ToString("N2")</div>
+            </div>
+            <p class="xyz-stat-subnote">Total online revenue processed via Paystack gateway</p>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6" style="margin-bottom: 16px;">
+        <div class="xyz-stat-card" style="border-top: 4px solid #EAB308;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <small style="font-weight:800; text-transform:uppercase; color:#64748B; font-size:0.75rem;">Total Uncleared</small>
+                    <i class="fa fa-hourglass-half" style="color:#EAB308; font-size:1.2rem;"></i>
+                </div>
+                <div class="xyz-stat-val" style="color:#CA8A04;">&#x20A6;@totalUncleared.ToString("N2")</div>
+            </div>
+            <p class="xyz-stat-subnote">(Total amount yet to be cleared/withdrawn from Paystack)</p>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6" style="margin-bottom: 16px;">
+        <div class="xyz-stat-card" style="border-top: 4px solid #10B981; background: #F0FDF4;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <small style="font-weight:800; text-transform:uppercase; color:#166534; font-size:0.75rem;">Available Fund for Transfer</small>
+                    <i class="fa fa-vault" style="color:#10B981; font-size:1.2rem;"></i>
+                </div>
+                <div class="xyz-stat-val" style="color:#059669;">&#x20A6;@availableFund.ToString("N2")</div>
+            </div>
+            <p class="xyz-stat-subnote">(Available fund available for transfer to purchase gateway SMS units)</p>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6" style="margin-bottom: 16px;">
+        <div class="xyz-stat-card" style="border-top: 4px solid #6366F1;">
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <small style="font-weight:800; text-transform:uppercase; color:#64748B; font-size:0.75rem;">Pending 24h Settlement</small>
+                    <i class="fa fa-clock" style="color:#6366F1; font-size:1.2rem;"></i>
+                </div>
+                <div class="xyz-stat-val" style="color:#4F46E5;">&#x20A6;@pending24h.ToString("N2")</div>
+            </div>
+            <p class="xyz-stat-subnote">(Processed today; clears after 24h at 12:00 AM next day)</p>
+        </div>
+    </div>
+</div>
+
+<!-- TABS & LEDGER TABLE -->
+<div class="box" style="border-radius:12px; border:1px solid #E2E8F0; box-shadow:0 4px 20px rgba(0,0,0,0.04);">
+    <div class="box-header" style="padding:16px 20px; border-bottom:1px solid #E2E8F0; background:#FAFAFA; border-top-left-radius:12px; border-top-right-radius:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <a href="@Url.Action("PaystackOutflow", "Transactions", new { area = "Adminpanel", tab = "available" })" class="xyz-tab-item @(activeTab == "available" ? "active" : "")">
+                <i class="fa fa-check-circle"></i> Available for Transfer (Cleared)
+            </a>
+            <a href="@Url.Action("PaystackOutflow", "Transactions", new { area = "Adminpanel", tab = "pending" })" class="xyz-tab-item @(activeTab == "pending" ? "active" : "")">
+                <i class="fa fa-clock"></i> Pending 24h Settlement
+            </a>
+            <a href="@Url.Action("PaystackOutflow", "Transactions", new { area = "Adminpanel", tab = "transferred" })" class="xyz-tab-item @(activeTab == "transferred" ? "active" : "")">
+                <i class="fa fa-history"></i> Transferred History
+            </a>
+            <a href="@Url.Action("PaystackOutflow", "Transactions", new { area = "Adminpanel", tab = "all" })" class="xyz-tab-item @(activeTab == "all" ? "active" : "")">
+                <i class="fa fa-list"></i> All Paystack Logs
+            </a>
+        </div>
+    </div>
+
+    <div class="box-body table-responsive" style="padding:20px;">
+        <table class="table table-hover" style="vertical-align:middle; font-size:0.88rem;">
+            <thead style="background:#F8FAFC; font-weight:800; font-size:0.75rem; color:#475569; text-transform:uppercase;">
+                <tr>
+                    <th style="padding:10px 14px;">Trans ID</th>
+                    <th>Client</th>
+                    <th>Paystack Reference</th>
+                    <th>Amount Paid</th>
+                    <th>Units Credited</th>
+                    <th>Date Approved</th>
+                    <th>Settlement Status</th>
+                    <th style="text-align:right; padding:10px 14px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="8" style="text-align:center; padding:40px; color:#94A3B8;">
+                            <i class="fa fa-inbox" style="font-size:2rem; display:block; margin-bottom:8px; color:#CBD5E1;"></i>
+                            No Paystack transactions found in this category.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var item in Model)
+                    {
+                        bool isToday = (item.DateApproved ?? item.DateCreated) >= DateTime.Today;
+
+                        <tr>
+                            <td style="padding:10px 14px;">
+                                <span style="font-family:'JetBrains Mono', monospace; font-weight:800; font-size:0.8rem; background:#F1F5F9; color:#334155; padding:2px 6px; border-radius:4px; border:1px solid #E2E8F0;">#@item.TransactionId</span>
+                            </td>
+                            <td>
+                                <strong style="color:#1E293B;">@GeneralServices.ClientName(item.ClientId)</strong>
+                                <small style="color:#64748B; display:block;">@GeneralServices.UserName(item.UserId)</small>
+                            </td>
+                            <td>
+                                <code style="color:#0284C7; font-size:0.78rem;">@(item.TransactionReference ?? "N/A")</code>
+                            </td>
+                            <td>
+                                <strong style="color:#10B981; font-family:'JetBrains Mono', monospace;">
+                                    &#x20A6;@((item.AmountPaid.HasValue && item.AmountPaid > 0 ? item.AmountPaid.Value : item.Amount).ToString("N2"))
+                                </strong>
+                            </td>
+                            <td>
+                                <span style="font-weight:700; color:#334155;">+@item.Units.ToString("N0") Units</span>
+                            </td>
+                            <td>
+                                <small style="color:#64748B;">@(item.DateApproved != null ? item.DateApproved.Value.ToString("yyyy-MM-dd HH:mm") : item.DateCreated.ToString("yyyy-MM-dd"))</small>
+                            </td>
+                            <td>
+                                @if (item.IsAdminTransferred)
+                                {
+                                    <span class="xyz-badge xyz-badge-transferred" title="Transferred by @item.TransferredBy on @item.DateTransferred">
+                                        <i class="fa fa-check-double"></i> Transferred Out (@item.TransferredBy)
+                                    </span>
+                                }
+                                else if (!isToday)
+                                {
+                                    <span class="xyz-badge xyz-badge-cleared">
+                                        <i class="fa fa-circle-check"></i> Cleared for Transfer
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="xyz-badge xyz-badge-pending-24h" title="Processed today; clears tomorrow at 12:00 AM">
+                                        <i class="fa fa-clock"></i> Clears Tomorrow 12:00 AM
+                                    </span>
+                                }
+                            </td>
+                            <td style="text-align:right; padding:10px 14px;">
+                                <div style="display:inline-flex; gap:6px; align-items:center;">
+                                    @if (!item.IsAdminTransferred && !isToday)
+                                    {
+                                        using (Html.BeginForm("MarkAsTransferred", "Transactions", new { area = "Adminpanel", id = item.TransactionId, returnTab = activeTab }, FormMethod.Post, null, new { style = "display:inline;" }))
+                                        {
+                                            <button type="submit" class="btn btn-xs btn-success" style="font-weight:800; border-radius:6px; background:#059669; border:none;" onclick="return confirm('Mark Paystack Transaction #@item.TransactionId (&#x20A6;@((item.AmountPaid ?? item.Amount).ToString("N2"))) as Transferred Out (Withdrawn by Admin)?');">
+                                                <i class="fa fa-arrow-up-right-from-square"></i> Mark Transferred
+                                            </button>
+                                        }
+                                    }
+                                    else if (!item.IsAdminTransferred && isToday)
+                                    {
+                                        <button type="button" class="btn btn-xs btn-default disabled" style="font-weight:700; border-radius:6px;" title="Funds processed today must complete 24h settlement before transfer.">
+                                            <i class="fa fa-lock"></i> Locked (24h)
+                                        </button>
+                                    }
+                                    @Html.ActionLink("Details", "Details", new { id = item.TransactionId }, new { @class = "btn btn-primary btn-xs", style = "font-weight:700; border-radius:6px;" })
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+
+        <div class="container text-center page" style="margin-top:20px;">
+            <p>Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount</p>
+            @Html.PagedListPager(Model, page => Url.Action("PaystackOutflow", new { tab = activeTab, page }))
+        </div>
+    </div>
+</div>

@@ -78,10 +78,6 @@ namespace Exwhyzee.Messaging.Core.Models
         [Display(Name = "Phone Number")]
         public string PhoneNumber { get; set; }
 
-        [Required]
-        //[DataType(DataType.Date)]
-        //[Display(Name = "Date of Birth")]
-        //[DisplayFormat(ApplyFormatInEditMode =true,DataFormatString = "{0:dd/MM/yyyy}")]
         public string DateOfBirth { get; set; }
 
         public DateTime DateRegitered { get; set; }
@@ -95,6 +91,39 @@ namespace Exwhyzee.Messaging.Core.Models
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; }
+    }
+
+    public class VerifyEmailViewModel
+    {
+        [Required]
+        public string Email { get; set; }
+
+        [Required]
+        [Display(Name = "6-Digit Verification Code")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Please enter a valid 6-digit code.")]
+        public string OtpCode { get; set; }
+    }
+
+    public class ResetPasswordOtpViewModel
+    {
+        [Required]
+        public string Email { get; set; }
+
+        [Required]
+        [Display(Name = "6-Digit Reset Code")]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Please enter the 6-digit code.")]
+        public string OtpCode { get; set; }
+
+        [Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        [Display(Name = "New Password")]
+        public string NewPassword { get; set; }
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm New Password")]
+        [Compare("NewPassword", ErrorMessage = "The password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; }
     }
 
