@@ -1,90 +1,179 @@
 @model IEnumerable<Exwhyzee.Messaging.Core.Models.Transaction>
-
 @{
-    ViewBag.Title = "User Transactions";
+    ViewBag.Title = "Client Transactions Studio";
+    var client = ViewBag.Client as Exwhyzee.Messaging.Core.Models.Client;
+    string clientName = client != null ? $"{client.FirstName} {client.Surname}".Trim() : "Client Profile";
+    if (string.IsNullOrWhiteSpace(clientName)) { clientName = client?.User?.UserName ?? "Client"; }
+
+    decimal totalUnitsBought = Model != null ? Model.Where(t => t.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Approved || t.DateApproved != null).Sum(t => t.Units) : 0m;
+    decimal totalAmountPaidSum = Model != null ? Model.Where(t => t.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Approved || t.DateApproved != null).Sum(t => (t.AmountPaid.HasValue && t.AmountPaid > 0 ? t.AmountPaid.Value : t.Amount)) : 0m;
+    int sn = 1;
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>Manage Users</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Manage users</a></li>
-        <li class="active">Transaction History</li>
-    </ol>
-</section>
-<section class="content">
-    <div class="box box-primary">
-        <div class="box-header">
-            <h3 class="box-title pull-left">Client's Transaction History </h3>
+<style>
+    .xyz-tranx-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+        background: linear-gradient(135deg, #0B0F19 0%, #1E293B 100%);
+        color: #FFFFFF;
+        border-radius: 14px;
+        padding: 24px;
+        box-shadow: 0 4px 16px rgba(11, 15, 25, 0.15);
+    }
+
+    .xyz-stat-pill {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 10px;
+        padding: 10px 16px;
+    }
+
+    .xyz-table-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+    }
+
+    .xyz-id-chip {
+        background: #F1F5F9;
+        color: #334155;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 800;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+    }
+
+    .xyz-badge-approved { background: #DEF7EC; color: #03543F; border: 1px solid #84E1BC; }
+    .xyz-badge-pending { background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; }
+    .xyz-badge-revoked { background: #FDE8E8; color: #9B1C1C; border: 1px solid #F8B4B4; }
+    .xyz-badge-cancelled { background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB; }
+
+    .xyz-badge-status {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 9999px;
+        font-weight: 800;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+    }
+</style>
+
+<div class="container-fluid" style="padding-top: 10px;">
+    @Html.Partial("_ResponseMessagePartial")
+
+    <!-- HEADER BANNER & STATS -->
+    <div class="xyz-tranx-header">
+        <div>
+            <h2 style="font-weight: 800; margin: 0; font-size: 1.5rem; letter-spacing: -0.5px;">
+                <i class="fa fa-receipt" style="color: #38BDF8; margin-right: 8px;"></i> Transaction Ledger: @clientName
+            </h2>
+            <p style="color: #94A3B8; margin: 4px 0 0 0; font-size: 0.9rem;">
+                Client ID: <strong style="color: #FFF;">#@(client?.ClientId ?? 0)</strong> &bull; Username: <strong style="color: #FFF;">@@@(client?.User?.UserName ?? "N/A")</strong>
+            </p>
         </div>
-        <div class="box-body">
-            <table class="table table-bordered table-striped">
-                <thead>
+
+        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <div class="xyz-stat-pill">
+                <small style="color: #94A3B8; display: block; font-weight: 700; text-transform: uppercase; font-size: 0.68rem;">Total Approved Units</small>
+                <strong style="color: #38BDF8; font-size: 1.1rem; font-family: 'JetBrains Mono', monospace;">@totalUnitsBought.ToString("N2") Units</strong>
+            </div>
+
+            <div class="xyz-stat-pill">
+                <small style="color: #94A3B8; display: block; font-weight: 700; text-transform: uppercase; font-size: 0.68rem;">Total Revenue Paid</small>
+                <strong style="color: #34D399; font-size: 1.1rem; font-family: 'JetBrains Mono', monospace;">&#8358;@totalAmountPaidSum.ToString("N2")</strong>
+            </div>
+
+            <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-default" style="font-weight: 800; border-radius: 8px; padding: 10px 16px; background: #FFF; color: #1E293B; border: none;">
+                <i class="fa fa-arrow-left"></i> Back to Users
+            </a>
+        </div>
+    </div>
+
+    <!-- TRANSACTIONS DATA TABLE -->
+    <div class="xyz-table-card">
+        <div class="table-responsive">
+            <table class="table table-hover" style="margin: 0; vertical-align: middle; font-size: 0.88rem;">
+                <thead style="background: #F8FAFC; font-weight: 800; font-size: 0.75rem; color: #475569; text-transform: uppercase; border-bottom: 2px solid #E2E8F0;">
                     <tr>
-                        <th>
-                            <b>Date Created</b>
-                        </th>
-
-                        <th>
-                            @Html.DisplayNameFor(model => model.Units)
-                        </th>
-
-                        <th>
-                            @Html.DisplayNameFor(model => model.Amount)
-                        </th>
-                        <th>
-                            <b>Amount Paid</b>
-                        </th>
-
-                        <th>
-                            <b>Transaction Type</b>
-                        </th>
-
-                        <th>
-                            <b>Date Approved</b>
-                        </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.Status)
-                        </th>
-
-                        <th></th>
+                        <th style="padding: 12px 16px; width: 60px;">S/N</th>
+                        <th style="padding: 12px 16px;">Trans ID</th>
+                        <th>Date Created</th>
+                        <th>Units Credited</th>
+                        <th>Amount Paid (₦)</th>
+                        <th>Payment Source &amp; Type</th>
+                        <th>Date Approved</th>
+                        <th>Status</th>
+                        <th style="text-align: right; padding: 12px 16px;">Action</th>
                     </tr>
                 </thead>
-
                 <tbody>
-                    @foreach (var item in Model)
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            decimal paidAmt = item.AmountPaid.HasValue && item.AmountPaid > 0 ? item.AmountPaid.Value : item.Amount;
+                            string badgeClass = "xyz-badge-pending";
+                            if (item.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Approved || item.DateApproved != null) { badgeClass = "xyz-badge-approved"; }
+                            else if (item.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Revoked) { badgeClass = "xyz-badge-revoked"; }
+                            else if (item.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Cancelled) { badgeClass = "xyz-badge-cancelled"; }
+
+                            <tr>
+                                <td style="padding: 12px 16px; font-weight: 700; color: #64748B;">@(sn++)</td>
+                                <td style="padding: 12px 16px;">
+                                    <span class="xyz-id-chip">#@item.TransactionId</span>
+                                </td>
+                                <td>
+                                    <small style="color: #475569; font-weight: 600;">@item.DateCreated</small>
+                                </td>
+                                <td>
+                                    <strong style="color: #1D4ED8; font-family: 'JetBrains Mono', monospace; font-size: 0.95rem;">@item.Units.ToString("N2") Units</strong>
+                                </td>
+                                <td>
+                                    <strong style="color: #059669; font-family: 'JetBrains Mono', monospace; font-size: 0.95rem;">&#8358;@paidAmt.ToString("N2")</strong>
+                                    @if (item.AmountPaid.HasValue && item.AmountPaid > 0 && item.AmountPaid != item.Amount)
+                                    {
+                                        <small style="color: #94A3B8; display: block; text-decoration: line-through;">&#8358;@item.Amount.ToString("N2")</small>
+                                    }
+                                </td>
+                                <td>
+                                    <div style="color: #0F172A; font-weight: 700;">@(string.IsNullOrEmpty(item.PaymentSource) ? "Paystack" : item.PaymentSource)</div>
+                                    <small style="color: #64748B;">@item.TransactionType</small>
+                                </td>
+                                <td>
+                                    @if (item.DateApproved.HasValue)
+                                    {
+                                        <small style="color: #475569; display: block;">@item.DateApproved.Value</small>
+                                        <small style="color: #64748B;">By: @(string.IsNullOrEmpty(item.ApprovedBy) ? "System" : item.ApprovedBy)</small>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: #94A3B8; font-style: italic;">Pending Approval</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="xyz-badge-status @badgeClass">@item.Status</span>
+                                </td>
+                                <td style="text-align: right; padding: 12px 16px;">
+                                    <a href="@Url.Action("Details", "Transactions", new { area = "Adminpanel", id = item.TransactionId })" class="btn btn-xs btn-default" style="font-weight: 700; border-radius: 6px; border-color: #CBD5E1;">
+                                        <i class="fa fa-eye"></i> Details
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
                     {
                         <tr>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.DateCreated)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.Units)
-                            </td>
-
-                            <td>
-                                @Html.DisplayFor(modelItem => item.Amount)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.AmountPaid)
-                            </td>
-
-                            <td>
-                                @Html.DisplayFor(modelItem => item.TransactionType)
-                            </td>
-
-                            <td>
-                                @Html.DisplayFor(modelItem => item.DateApproved)
-                            </td>
-                            <td>
-                                @Html.DisplayFor(modelItem => item.Status)
-                            </td>
-
-                            <td>
-
-                                @Html.ActionLink("Details", "Details", "Transactions", new { id = item.TransactionId }, null)
+                            <td colspan="9" style="text-align: center; padding: 36px; color: #94A3B8;">
+                                <i class="fa fa-receipt" style="font-size: 2rem; display: block; margin-bottom: 8px; color: #CBD5E1;"></i>
+                                No transaction history found for this client profile.
                             </td>
                         </tr>
                     }
@@ -92,4 +181,4 @@
             </table>
         </div>
     </div>
-</section>
+</div>

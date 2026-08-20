@@ -78,6 +78,88 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             return RedirectToAction("Index");
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> SaveGeminiKey(string geminiApiKey)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var client = await db.Clients.FirstOrDefaultAsync(c => c.UserId == userId);
+
+            if (client != null)
+            {
+                client.GeminiApiKey = geminiApiKey?.Trim();
+                db.Entry(client).State = EntityState.Modified;
+                await db.SaveChangesAsync();
+                TempData["Message"] = "Google Gemini API Key saved successfully!";
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> DeleteGeminiKey()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var client = await db.Clients.FirstOrDefaultAsync(c => c.UserId == userId);
+
+            if (client != null)
+            {
+                client.GeminiApiKey = null;
+                db.Entry(client).State = EntityState.Modified;
+                await db.SaveChangesAsync();
+                TempData["Message"] = "Google Gemini API Key removed successfully!";
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> TestGeminiKeyAjax(string geminiApiKey)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(geminiApiKey))
+                {
+                    return Json(new { success = false, message = "Please enter a Gemini API Key to test." });
+                }
+
+                string key = geminiApiKey.Trim();
+
+                using var http = new System.Net.Http.HttpClient();
+                http.Timeout = TimeSpan.FromSeconds(15);
+
+                // Check 1: List models via GET /v1beta/models?key=...
+                var checkUrl = $"https://generativelanguage.googleapis.com/v1beta/models?key={key}";
+                var response = await http.GetAsync(checkUrl);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return Json(new { success = true, message = "Google Gemini API Key is valid and verified!" });
+                }
+
+                // If GET returned error, parse Google's exact error message
+                string errorContent = await response.Content.ReadAsStringAsync();
+                string detailedError = $"Gemini returned ({response.StatusCode})";
+
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(errorContent);
+                    if (doc.RootElement.TryGetProperty("error", out var err) && err.TryGetProperty("message", out var msg))
+                    {
+                        detailedError = msg.GetString();
+                    }
+                }
+                catch { }
+
+                return Json(new { success = false, message = detailedError });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Connection error: " + ex.Message });
+            }
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)

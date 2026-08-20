@@ -1,91 +1,799 @@
 @model Exwhyzee.Messaging.Core.Models.Contact
 
 @{
-   ViewBag.Title = "Add Many Contact";
+    var group = ViewBag.Group as Exwhyzee.Messaging.Core.Models.Group;
+    int groupId = ViewBag.GroupId ?? (group?.GroupId ?? 0);
+    string groupName = group?.Name ?? "Address Book Group";
+    ViewBag.Title = "Add Contacts to " + groupName;
+    bool hasGeminiKey = ViewBag.HasGeminiKey ?? false;
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard(Client)
-        <small>Address Book</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Address Book</a></li>
-        <li class="active">Add Contacts</li>
-    </ol>
-</section>
+<style>
+    .xyz-ingest-hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
 
-<section class="content">
+    .xyz-ingest-hero h1 {
+        font-size: 2.35rem;
+        font-weight: 800;
+        margin: 0 0 6px;
+        color: var(--xyz-dash-text);
+        letter-spacing: -0.5px;
+    }
 
-    <div class="box box-info">
-        <div class="box-header">
-            <h3 class="box-title">Add Contacts</h3>
+    .xyz-ingest-hero p {
+        font-size: 1.2rem;
+        color: var(--xyz-dash-muted);
+        margin: 0;
+    }
 
-            <span class="pull-right">
-                <a href="@Url.Content(" ../../ClientPanel/AddressBook")" class="btn btn-lg btn-primary"><i class="fa fa-backward"></i><br />Back</a>
-            </span>
+    .xyz-card {
+        background: #FFFFFF;
+        border-radius: 18px;
+        border: 1px solid var(--xyz-dash-border);
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.03);
+        margin-bottom: 30px;
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-card {
+        background: #131B2E;
+    }
+
+    .xyz-card-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--xyz-dash-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .xyz-card-title {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--xyz-dash-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .xyz-card-body {
+        padding: 28px;
+    }
+
+    /* Tactile Button Tabs */
+    .xyz-pill-tabs {
+        display: flex;
+        gap: 12px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        flex-wrap: wrap;
+    }
+
+    .xyz-pill-tabs > li {
+        margin: 0;
+    }
+
+    .xyz-pill-tabs > li > a {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        font-size: 1.1rem;
+        padding: 12px 24px;
+        border-radius: 14px;
+        background: #F1F5F9;
+        border: 2px solid #CBD5E1;
+        color: #334155;
+        text-decoration: none;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    body.xyz-dark-theme .xyz-pill-tabs > li > a {
+        background: #1E293B;
+        border-color: #334155;
+        color: #E2E8F0;
+    }
+
+    .xyz-pill-tabs > li > a:hover {
+        background: #E2E8F0;
+        color: #0F172A;
+        border-color: #94A3B8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    body.xyz-dark-theme .xyz-pill-tabs > li > a:hover {
+        background: #334155;
+        color: #FFFFFF;
+    }
+
+    .xyz-pill-tabs > li.active > a,
+    .xyz-pill-tabs > li.active > a:focus,
+    .xyz-pill-tabs > li.active > a:hover {
+        background: #6366F1 !important;
+        color: #FFFFFF !important;
+        border-color: #4F46E5 !important;
+        box-shadow: 0 6px 18px rgba(99, 102, 241, 0.4) !important;
+        transform: translateY(-2px);
+    }
+
+    /* Paste / Upload Dropzone */
+    .xyz-dropzone {
+        display: block;
+        border: 2px dashed #6366F1;
+        background: rgba(99, 102, 241, 0.03);
+        border-radius: 16px;
+        padding: 36px 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-bottom: 16px;
+    }
+
+    .xyz-dropzone:hover,
+    .xyz-dropzone.dragover {
+        background: rgba(99, 102, 241, 0.09);
+        border-color: #4F46E5;
+        transform: scale(1.01);
+    }
+
+    .xyz-dropzone i.main-icon {
+        font-size: 3.2rem;
+        color: #6366F1;
+        margin-bottom: 12px;
+        display: block;
+    }
+</style>
+
+<!-- Hero Section -->
+<div class="xyz-ingest-hero">
+    <div>
+        <h1>
+            <i class="fa fa-user-plus" style="color:#6366F1; margin-right:8px;"></i> Add Contacts to: @groupName
+        </h1>
+        <p>Upload files, paste screenshots, or paste numbers directly into this contact group.</p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-default" data-toggle="modal" data-target="#formatGuideModal" style="font-weight:800; font-size:1.05rem; padding:10px 20px; border-radius:10px;">
+            <i class="fa fa-book-open" style="color:#6366F1; margin-right:6px;"></i> Format Guide
+        </button>
+        <a href="@Url.Action("Details", "AddressBook", new { area = "ClientPanel", id = groupId })" class="btn btn-default" style="font-weight:800; font-size:1.05rem; padding:10px 20px; border-radius:10px;">
+            &larr; Back to Group
+        </a>
+    </div>
+</div>
+
+<!-- Gemini AI Notice / Disclaimer Banner -->
+@if (!hasGeminiKey)
+{
+    <div class="alert alert-warning" style="border-radius:16px; font-size:1.05rem; line-height:1.6; margin-bottom:24px; background:rgba(245, 158, 11, 0.1); border-color:rgba(245, 158, 11, 0.35); color:#92400E; padding:18px 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+            <div>
+                <strong style="font-size:1.15rem; display:block; margin-bottom:4px;">
+                    <i class="fa fa-triangle-exclamation"></i> Google Gemini AI Not Configured (Raw Upload Mode)
+                </strong>
+                <span>
+                    Screenshot OCR requires a Gemini key. When uploading Excel, Word, or Text files, numbers will be uploaded directly as raw data without AI cleaning or error auto-correction.
+                </span>
+            </div>
+            <a href="@Url.Action("Index", "ApiSettings", new { area = "ClientPanel" })" target="_blank" class="btn btn-primary" style="background:#6366F1; border:none; font-weight:800; font-size:1rem; padding:10px 22px; border-radius:10px; box-shadow:0 4px 14px rgba(99,102,241,0.3);">
+                <i class="fa fa-key"></i> Add Gemini Key in API Settings &rarr;
+            </a>
         </div>
-        <div class="box-body">
-            <div class="col-md-6 col-md-offset-3">
-                <div>
-                    <h3>Enter Numbers in the format</h3>
-                    <p class="label-primary" style="padding:10px;">08165680904,009087789876,09177238384</p>
+    </div>
+}
+
+<div class="row">
+    <!-- Left Column: Upload / Paste Ingestion -->
+    <div class="col-md-7">
+        <div class="xyz-card">
+            <div class="xyz-card-header">
+                <!-- Tactile Button Tabs -->
+                <ul class="xyz-pill-tabs" id="ingestTabs">
+                    <li class="active">
+                        <a href="#tab-screenshot" data-toggle="tab">
+                            <i class="fa fa-camera"></i> Screenshot / Paste
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#tab-file" data-toggle="tab">
+                            <i class="fa fa-file-excel"></i> File Upload
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#tab-text" data-toggle="tab">
+                            <i class="fa fa-keyboard"></i> Raw Text
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="xyz-card-body">
+                <div class="tab-content" style="margin-bottom:24px;">
+                    <!-- TAB 1: Screenshot / Paste (Ctrl + V) -->
+                    <div class="tab-pane active" id="tab-screenshot">
+                        @if (!hasGeminiKey)
+                        {
+                            <div style="background:rgba(239, 68, 68, 0.06); border:1px solid rgba(239, 68, 68, 0.2); border-radius:12px; padding:16px; text-align:center; margin-bottom:16px;">
+                                <strong style="color:#EF4444; font-size:1.05rem; display:block; margin-bottom:4px;">
+                                    <i class="fa fa-lock"></i> Gemini API Key Required for Screenshot Vision
+                                </strong>
+                                <span style="font-size:0.95rem; color:var(--xyz-dash-text); display:block; margin-bottom:10px;">
+                                    Add your free Gemini key in API Settings to extract phone numbers from images.
+                                </span>
+                                <a href="@Url.Action("Index", "ApiSettings", new { area = "ClientPanel" })" target="_blank" class="btn btn-sm btn-danger" style="background:#E50914; font-weight:800; border-radius:8px;">
+                                    Add Key in API Settings &rarr;
+                                </a>
+                            </div>
+
+                            <!-- Disabled Dropzone with Hover Text -->
+                            <div style="cursor:not-allowed;" data-toggle="tooltip" data-placement="top" title="Please add your Gemini API Key in API Settings to enable Screenshot OCR">
+                                <div class="xyz-dropzone" style="opacity:0.45; pointer-events:none; background:#F8FAFC; border-color:#CBD5E1; cursor:not-allowed;">
+                                    <i class="fa fa-image main-icon" style="color:#94A3B8;"></i>
+                                    <h4 style="font-weight:800; font-size:1.25rem; margin:0 0 6px; color:#64748B;">
+                                        Screenshot OCR Disabled
+                                    </h4>
+                                    <p style="color:#94A3B8; font-size:1rem; margin:0 0 14px;">
+                                        Add your free Google Gemini key in API Settings to activate image OCR.
+                                    </p>
+                                    <span class="btn btn-default disabled" style="font-weight:800; border-radius:10px; padding:8px 20px; color:#94A3B8;">
+                                        <i class="fa fa-lock"></i> Requires Gemini Key
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Active Clickable Dropzone -->
+                            <label for="imageFileInput" class="xyz-dropzone" id="pasteZone">
+                                <i class="fa fa-image main-icon"></i>
+                                <h4 style="font-weight:800; font-size:1.25rem; margin:0 0 6px; color:var(--xyz-dash-text);">
+                                    Click here or Press <kbd style="font-size:1.1rem; padding:4px 10px; background:#0B0F19; color:#fff;">Ctrl + V</kbd> to Paste Screenshot
+                                </h4>
+                                <p style="color:var(--xyz-dash-muted); font-size:1rem; margin:0 0 14px;">
+                                    Or click anywhere inside this box to select an image file (.png, .jpg, .jpeg, .webp)
+                                </p>
+                                <span class="btn btn-default" style="font-weight:800; border-radius:10px; padding:8px 20px; pointer-events:none;">
+                                    <i class="fa fa-folder-open"></i> Browse Image File
+                                </span>
+                            </label>
+                            <input type="file" id="imageFileInput" accept="image/*" style="display:none;" />
+
+                            <div id="imagePreviewContainer" style="display:none; margin-top:16px; text-align:center;">
+                                <img id="imagePreview" src="" alt="Screenshot Preview" style="max-height:200px; border-radius:12px; border:1px solid #E2E8F0; box-shadow:0 4px 12px rgba(0,0,0,0.08);" />
+                                <button type="button" class="btn btn-sm btn-danger" onclick="clearPastedImage()" style="display:block; margin:10px auto 0; font-weight:700; border-radius:8px;">
+                                <i class="fa fa-times"></i> Remove Image
+                            </button>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- TAB 2: File Upload (.docx, .xlsx, .txt, .csv) -->
+                    <div class="tab-pane" id="tab-file">
+                        @if (!hasGeminiKey)
+                        {
+                            <div style="background:rgba(245, 158, 11, 0.08); border:1px solid rgba(245, 158, 11, 0.25); border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:0.95rem; color:#92400E;">
+                                <strong><i class="fa fa-info-circle"></i> Note:</strong> Your AI is not enabled. Numbers from this file will be parsed directly as raw data without AI error correction.
+                            </div>
+                        }
+
+                        <!-- Native Clickable File Dropzone -->
+                        <label for="docFileInput" class="xyz-dropzone" id="fileDropZone">
+                            <i class="fa fa-cloud-arrow-up main-icon" id="fileZoneIcon"></i>
+                            <h4 id="fileZoneTitle" style="font-weight:800; font-size:1.25rem; margin:0 0 6px; color:var(--xyz-dash-text);">
+                                Click to Upload Word, Excel, or Text Document
+                            </h4>
+                            <p id="fileZoneSub" style="color:var(--xyz-dash-muted); font-size:1rem; margin:0 0 14px;">
+                                Supports .xlsx, .xls, .docx, .txt, .csv
+                            </p>
+                            <span class="btn btn-default" id="fileZoneBtn" style="font-weight:800; border-radius:10px; padding:8px 20px; pointer-events:none;">
+                                <i class="fa fa-file-lines"></i> Select Document
+                            </span>
+                        </label>
+                        <input type="file" id="docFileInput" accept=".xlsx,.xls,.docx,.txt,.csv" style="display:none;" />
+                    </div>
+
+                    <!-- TAB 3: Raw Text -->
+                    <div class="tab-pane" id="tab-text">
+                        @if (!hasGeminiKey)
+                        {
+                            <div style="background:rgba(245, 158, 11, 0.08); border:1px solid rgba(245, 158, 11, 0.25); border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:0.95rem; color:#92400E;">
+                                <strong><i class="fa fa-info-circle"></i> Note:</strong> Your AI is not enabled. Numbers will be parsed using standard phone pattern matching.
+                            </div>
+                        }
+                        <textarea id="rawTextInput" rows="6" class="form-control" placeholder="08031234567, 08029876543, 09011223344, 2348055667788" style="border-radius:12px; font-size:1.1rem; padding:14px; font-family:'JetBrains Mono', monospace;"></textarea>
+                    </div>
                 </div>
-                @using (Html.BeginForm())
-                {
-                    @Html.AntiForgeryToken()
 
-                    if (TempData["cont"] != null)
-                    {
-                        <div class="alert alert-danger alert-dismissable">
-                            <button type="button" class="close" data-dismiss="alert">&times;</button>
-                           @TempData["cont"]
+                <div style="text-align:center; margin-bottom:20px;">
+                    <span id="extractBtnWrapper" style="display:inline-block;" data-toggle="tooltip" data-placement="top" title="">
+                        <button type="button" class="btn btn-primary btn-lg" id="btnExtractAi" onclick="startAiExtraction()" style="background:#6366F1; border:none; font-weight:800; font-size:1.15rem; padding:14px 36px; border-radius:12px; box-shadow:0 6px 20px rgba(99,102,241,0.35);">
+                            <i class="fa fa-wand-magic-sparkles"></i> Process & Extract Phone Numbers
+                        </button>
+                    </span>
+                </div>
+
+                <!-- Live Results Section (Hidden until extracted) -->
+                <div id="resultsSection" style="display:none; border-top:1px solid #E2E8F0; padding-top:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                        <h4 style="font-weight:800; font-size:1.2rem; margin:0;">
+                            <i class="fa fa-circle-check" style="color:#10B981; margin-right:6px;"></i>
+                            <span id="extractedCountBadge">0</span> Contacts Ready to Save
+                        </h4>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="btn btn-xs btn-primary" onclick="selectOnlyNew()" style="background:#6366F1; border:none; font-weight:700; border-radius:6px;"><i class="fa fa-filter"></i> Select Only New</button>
+                            <button type="button" class="btn btn-xs btn-default" onclick="selectAllExtracted(true)" style="font-weight:700; border-radius:6px;">Select All</button>
+                            <button type="button" class="btn btn-xs btn-default" onclick="selectAllExtracted(false)" style="font-weight:700; border-radius:6px;">Deselect All</button>
                         </div>
-                    }
-                        <div class="form-horizontal">
+                    </div>
 
-                            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-                            <div class="form-group">
-                                @Html.Label("Name", htmlAttributes: new { @class = "control-label col-md-2" })
-                                <div class="col-md-10">
-                                   <input name="Name" class="form-control" />
-                                </div>
-                            </div>
+                    <!-- Extracted Table Preview -->
+                    <div class="table-responsive" style="max-height:280px; overflow-y:auto; border:1px solid #E2E8F0; border-radius:12px; margin-bottom:20px;">
+                        <table class="table table-hover" id="extractedTable" style="margin-bottom:0;">
+                            <thead>
+                                <tr style="background:#F1F5F9; font-size:0.95rem;">
+                                    <th style="width:40px; text-align:center;"><input type="checkbox" id="checkAllMaster" checked onchange="toggleMasterCheck(this)" /></th>
+                                    <th>Contact Name</th>
+                                    <th>Phone Number</th>
+                                    <th>Note / Label</th>
+                                </tr>
+                            </thead>
+                            <tbody id="extractedTableBody">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
 
-                            <div class="form-group">
-                                @Html.Label("Description", htmlAttributes: new { @class = "control-label col-md-2" })
-                                <div class="col-md-10">
-                                    <textarea class="form-control" cols="6" id="Description" name="Description"></textarea>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                @Html.Label("Phone Numbers", htmlAttributes: new { @class = "control-label col-md-2" })
-
-                                <div class="col-md-10">
-
-                                    <textarea name="contact" cols="6" class="form-control"></textarea>
-
-                                </div>
-                            </div>
-
-
-                            <div class="form-group">
-                                <div></div>
-                                <div class="col-md-offset-2 col-md-10">
-                                    <input type="submit" value="Add Contacts" class="btn btn-primary" />
-                                </div>
-                            </div>
-                        </div>
-                }
+                    <button type="button" class="btn btn-primary btn-block btn-lg" id="btnSaveExtracted" onclick="saveExtractedContactsToDb()" style="background:#10B981; border:none; font-weight:800; font-size:1.15rem; padding:14px; border-radius:12px; box-shadow:0 6px 20px rgba(16,185,129,0.35);">
+                        <i class="fa fa-floppy-disk"></i> Save Numbers to @groupName
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</section>
 
-@section Scripts {
-    @Scripts.Render("~/bundles/jqueryval")
-    <script src="~/Scripts/moment.js"></script>
-  
+    <!-- Right Column: Format Guide & Template Downloads -->
+    <div class="col-md-5">
+        <div class="xyz-card" style="border-left:4px solid #6366F1;">
+            <div class="xyz-card-header">
+                <h3 class="xyz-card-title">
+                    <i class="fa fa-circle-question" style="color:#6366F1;"></i> File Format Guidelines
+                </h3>
+            </div>
+            <div class="xyz-card-body" style="font-size:1rem; color:var(--xyz-dash-text);">
+                <p style="color:var(--xyz-dash-muted); margin-bottom:16px;">
+                    When uploading or pasting numbers, follow these standard formats:
+                </p>
+
+                <!-- Excel -->
+                <div style="margin-bottom:18px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="color:#334155; font-size:1.05rem;">📊 Excel / CSV (.xlsx / .csv):</strong>
+                        <button type="button" class="btn btn-xs btn-success" onclick="downloadSampleCsv()" style="font-weight:800; border-radius:6px;">
+                            <i class="fa fa-download"></i> Sample CSV
+                        </button>
+                    </div>
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:10px 14px; margin-top:6px; font-family:'JetBrains Mono', monospace; font-size:0.88rem;">
+                        <strong>Col A:</strong> Phone (08031234567)<br />
+                        <strong>Col B:</strong> Name (John Doe)<br />
+                        <strong>Col C:</strong> Note (VIP Client)
+                    </div>
+                </div>
+
+                <!-- Word -->
+                <div style="margin-bottom:18px;">
+                    <strong style="color:#334155; font-size:1.05rem;">📄 Word Document (.docx):</strong>
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:10px 14px; margin-top:6px; font-family:'JetBrains Mono', monospace; font-size:0.88rem;">
+                        A single column list of phone numbers, or a 2-column table with Name and Phone.
+                    </div>
+                </div>
+
+                <!-- Text -->
+                <div style="margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="color:#334155; font-size:1.05rem;">📝 Plain Text (.txt):</strong>
+                        <button type="button" class="btn btn-xs btn-default" onclick="copySampleTxt()" style="font-weight:800; border-radius:6px;">
+                            <i class="fa fa-copy"></i> Copy Sample
+                        </button>
+                    </div>
+                    <textarea id="sampleTxtContent" class="form-control" rows="2" readonly style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; font-family:'JetBrains Mono', monospace; font-size:0.88rem; margin-top:6px;">08031234567, 08029876543, 09011223344</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Format Guide Modal Component -->
+<div class="modal fade" id="formatGuideModal" tabindex="-1" role="dialog" aria-labelledby="formatGuideModalLabel">
+    <div class="modal-dialog modal-lg" role="document" style="max-width:820px;">
+        <div class="modal-content" style="border-radius:20px; border:none; box-shadow:0 16px 50px rgba(0,0,0,0.25); overflow:hidden;">
+            <div class="modal-header" style="background:#0B0F19; color:#FFFFFF; padding:22px 28px;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#FFFFFF; opacity:0.8; font-size:1.5rem;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="formatGuideModalLabel" style="font-weight:800; font-size:1.4rem; display:flex; align-items:center; gap:10px;">
+                    <i class="fa fa-book-open" style="color:#6366F1;"></i> File Format Guidelines & Sample Templates
+                </h4>
+            </div>
+
+            <div class="modal-body" style="padding:28px;">
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:14px; padding:20px; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+                        <h5 style="font-weight:800; font-size:1.15rem; margin:0; color:#1E293B;">
+                            <i class="fa fa-file-excel" style="color:#10B981;"></i> Excel / CSV Template Format
+                        </h5>
+                        <button type="button" class="btn btn-sm btn-success" onclick="downloadSampleCsv()" style="font-weight:800; border-radius:8px; padding:6px 16px;">
+                            <i class="fa fa-download"></i> Download Sample CSV
+                        </button>
+                    </div>
+
+                    <table class="table table-bordered" style="background:#fff; margin-bottom:12px; font-family:'JetBrains Mono', monospace; font-size:0.92rem;">
+                        <thead>
+                            <tr style="background:#E2E8F0; font-weight:800;">
+                                <th style="width:35%;">Column A (Phone Number)</th>
+                                <th style="width:35%;">Column B (Contact Name)</th>
+                                <th style="width:30%;">Column C (Note / Label)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="color:#6366F1; font-weight:700;">08031234567</td>
+                                <td>John Doe</td>
+                                <td>VIP Client</td>
+                            </tr>
+                            <tr>
+                                <td style="color:#6366F1; font-weight:700;">2348029876543</td>
+                                <td>Mary Smith</td>
+                                <td>Lagos Branch</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="text-align:right;">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" style="font-weight:800; font-size:1.05rem; padding:10px 24px; border-radius:10px;">
+                        Close Guide
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        let currentPastedBase64 = null;
+        let currentUploadedFile = null;
+        let extractedContactsList = [];
+        const currentTargetGroupId = @groupId;
+        const hasGeminiKey = @(hasGeminiKey ? "true" : "false");
+
+        function updateExtractButtonState(targetTab) {
+            const btn = $('#btnExtractAi');
+            const wrapper = $('#extractBtnWrapper');
+            
+            if (targetTab === '#tab-screenshot' && !hasGeminiKey) {
+                btn.prop('disabled', true).addClass('disabled').css({'cursor': 'not-allowed', 'opacity': '0.45', 'filter': 'grayscale(80%)'});
+                wrapper.attr('data-original-title', 'Please add your Gemini API Key in API Settings to use Screenshot Vision')
+                       .attr('title', 'Please add your Gemini API Key in API Settings to use Screenshot Vision');
+                $('[data-toggle="tooltip"]').tooltip();
+            } else {
+                btn.prop('disabled', false).removeClass('disabled').css({'cursor': 'pointer', 'opacity': '1', 'filter': 'none'});
+                wrapper.removeAttr('data-original-title').removeAttr('title');
+                $('[data-toggle="tooltip"]').tooltip('destroy');
+            }
+        }
+
+        // On tab switch
+        $('#ingestTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            const target = $(e.target).attr('href');
+            updateExtractButtonState(target);
+        });
+
+        $(document).ready(function () {
+            const initialTab = $('#ingestTabs li.active a').attr('href') || '#tab-screenshot';
+            updateExtractButtonState(initialTab);
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+
+        // 1. Clipboard Paste (Ctrl + V) Handler
+        window.addEventListener('paste', function (e) {
+            if (!hasGeminiKey) return; // Ignore paste if key is missing
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const blob = items[i].getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = function (event) {
+                        currentPastedBase64 = event.target.result;
+                        $('#imagePreview').attr('src', currentPastedBase64);
+                        $('#imagePreviewContainer').show();
+                        $('#ingestTabs a[href="#tab-screenshot"]').tab('show');
+                        if (window.xyzToast) xyzToast.success('Screenshot pasted! Click "Process & Extract" to continue.', 'Image Ready');
+                    };
+                    reader.readAsDataURL(blob);
+                    break;
+                }
+            }
+        });
+
+        // Image file picker change event
+        $('#imageFileInput').on('change', function () {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    currentPastedBase64 = e.target.result;
+                    $('#imagePreview').attr('src', currentPastedBase64);
+                    $('#imagePreviewContainer').show();
+                    if (window.xyzToast) xyzToast.success('Image selected: ' + file.name, 'Image Ready');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function clearPastedImage() {
+            currentPastedBase64 = null;
+            $('#imageFileInput').val('');
+            $('#imagePreviewContainer').hide();
+        }
+
+        // Document File Picker change event
+        $('#docFileInput').on('change', function () {
+            if (this.files && this.files[0]) {
+                handleSelectedDocFile(this.files[0]);
+            }
+        });
+
+        function handleSelectedDocFile(file) {
+            currentUploadedFile = file;
+            const sizeInKb = (file.size / 1024).toFixed(1);
+            $('#fileZoneIcon').attr('class', 'fa fa-circle-check main-icon').css('color', '#10B981');
+            $('#fileZoneTitle').html('Selected: <span style="color:#10B981;">' + file.name + '</span>');
+            $('#fileZoneSub').text('File size: ' + sizeInKb + ' KB (Ready to process)');
+            $('#fileZoneBtn').html('<i class="fa fa-arrows-rotate"></i> Change File');
+            if (window.xyzToast) xyzToast.success('Document attached: ' + file.name, 'File Ready');
+        }
+
+        // Drag and drop for Document zone
+        const docDropZone = document.getElementById('fileDropZone');
+        if (docDropZone) {
+            ['dragenter', 'dragover'].forEach(eventName => {
+                docDropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    $(docDropZone).addClass('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                docDropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    $(docDropZone).removeClass('dragover');
+                }, false);
+            });
+
+            docDropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files && files.length > 0) {
+                    handleSelectedDocFile(files[0]);
+                }
+            }, false);
+        }
+
+        // 2. Start AI Extraction
+        function startAiExtraction() {
+            const activeTab = $('#ingestTabs li.active a').attr('href');
+            const formData = new FormData();
+            const btn = $('#btnExtractAi');
+
+            if (activeTab === '#tab-screenshot') {
+                if (!currentPastedBase64) {
+                    alert('Please paste a screenshot (Ctrl + V) or select an image file first.');
+                    return;
+                }
+                formData.append('pasteImageBase64', currentPastedBase64);
+            } else if (activeTab === '#tab-file') {
+                if (!currentUploadedFile) {
+                    alert('Please select a Word, Excel, or Text file first.');
+                    return;
+                }
+                formData.append('file', currentUploadedFile);
+            } else {
+                const rawText = $('#rawTextInput').val();
+                if (!rawText || !rawText.trim()) {
+                    alert('Please enter or paste text containing numbers.');
+                    return;
+                }
+                formData.append('rawText', rawText);
+            }
+
+            formData.append('groupId', currentTargetGroupId);
+            btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Processing & Extracting Numbers...');
+
+            $.ajax({
+                url: '@Url.Action("ExtractContactsAi", "AddressBook", new { area = "ClientPanel" })',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    btn.prop('disabled', false).html('<i class="fa fa-wand-magic-sparkles"></i> Process & Extract Phone Numbers');
+
+                    if (res && res.success) {
+                        extractedContactsList = res.contacts || [];
+                        renderExtractedTable(extractedContactsList);
+                        $('#resultsSection').slideDown();
+
+                        if (res.duplicateCount > 0) {
+                            $('#extractedCountBadge').html(
+                                '<span style="color:#10B981; font-weight:800;">' + res.newCount + ' New Numbers</span>, ' +
+                                '<span style="color:#D97706; font-weight:800;">' + res.duplicateCount + ' Already in Group (Auto-Skipped)</span>'
+                            );
+                            if (window.xyzToast) xyzToast.info(res.newCount + ' new numbers found, ' + res.duplicateCount + ' existing duplicates auto-skipped.', 'Duplicate Filter');
+                        } else {
+                            $('#extractedCountBadge').html('<span style="color:#10B981; font-weight:800;">' + res.totalCount + ' Contacts Ready to Save</span>');
+                            if (window.xyzToast) xyzToast.success(res.totalCount + ' phone numbers ready!', 'Extraction Complete');
+                        }
+                    } else if (res && res.keyMissing) {
+                        alert(res.message);
+                    } else {
+                        alert(res.message || 'Unable to extract contacts.');
+                    }
+                },
+                error: function () {
+                    btn.prop('disabled', false).html('<i class="fa fa-wand-magic-sparkles"></i> Process & Extract Phone Numbers');
+                    alert('Network error during extraction.');
+                }
+            });
+        }
+
+        // Render Table Rows with Duplicate Highlighting
+        function renderExtractedTable(list) {
+            const tbody = $('#extractedTableBody');
+            tbody.empty();
+
+            if (!list || list.length === 0) {
+                tbody.html('<tr><td colspan="4" class="text-center text-muted" style="padding:20px;">No valid phone numbers found.</td></tr>');
+                return;
+            }
+
+            list.forEach((item, index) => {
+                const isDup = item.isDuplicate === true;
+                const rowBg = isDup ? 'style="background:rgba(245, 158, 11, 0.06);"' : '';
+                const isChecked = isDup ? '' : 'checked';
+                const statusBadge = isDup 
+                    ? '<span class="badge" style="background:#FEF3C7; color:#92400E; font-weight:800; border:1px solid #FCD34D; font-size:0.82rem; margin-left:8px;"><i class="fa fa-triangle-exclamation"></i> In Group</span>'
+                    : '<span class="badge" style="background:#ECFDF5; color:#065F46; font-weight:800; border:1px solid #A7F3D0; font-size:0.82rem; margin-left:8px;"><i class="fa fa-check"></i> New</span>';
+
+                const row = `
+                    <tr ${rowBg}>
+                        <td style="text-align:center;">
+                            <input type="checkbox" class="contact-chk" data-idx="${index}" data-isdup="${isDup}" ${isChecked} />
+                        </td>
+                        <td>
+                            <input type="text" class="form-control input-sm input-name" data-idx="${index}" value="${item.name || 'Contact'}" style="font-weight:700; border-radius:6px;" />
+                        </td>
+                        <td>
+                            <div style="display:flex; align-items:center;">
+                                <input type="text" class="form-control input-sm input-phone" data-idx="${index}" value="${item.phone || ''}" style="font-weight:800; color:#6366F1; border-radius:6px;" />
+                                ${statusBadge}
+                            </div>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control input-sm input-note" data-idx="${index}" value="${item.note || 'Imported'}" style="border-radius:6px;" />
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function toggleMasterCheck(master) {
+            $('.contact-chk').prop('checked', master.checked);
+        }
+
+        function selectOnlyNew() {
+            $('.contact-chk').each(function () {
+                const isDup = $(this).attr('data-isdup') === 'true';
+                $(this).prop('checked', !isDup);
+            });
+            $('#checkAllMaster').prop('checked', false);
+        }
+
+        function selectAllExtracted(select) {
+            $('.contact-chk').prop('checked', select);
+            $('#checkAllMaster').prop('checked', select);
+        }
+
+        // 3. Save Extracted Contacts to DB
+        function saveExtractedContactsToDb() {
+            const selectedContacts = [];
+            $('.contact-chk:checked').each(function () {
+                const row = $(this).closest('tr');
+                const name = row.find('.input-name').val();
+                const phone = row.find('.input-phone').val();
+                const note = row.find('.input-note').val();
+
+                if (phone && phone.trim()) {
+                    selectedContacts.push({ name: name, phone: phone.trim(), note: note });
+                }
+            });
+
+            if (selectedContacts.length === 0) {
+                alert('Please select at least one contact to save.');
+                return;
+            }
+
+            const saveBtn = $('#btnSaveExtracted');
+            saveBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+
+            const payload = {
+                groupId: currentTargetGroupId,
+                contacts: selectedContacts
+            };
+
+            $.ajax({
+                url: '@Url.Action("SaveExtractedContacts", "AddressBook", new { area = "ClientPanel" })',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function (res) {
+                    saveBtn.prop('disabled', false).html('<i class="fa fa-floppy-disk"></i> Save Numbers to @groupName');
+                    if (res && res.success) {
+                        if (window.xyzToast) {
+                            xyzToast.success(res.count + ' contacts saved to @groupName!', 'Saved');
+                            setTimeout(() => { window.location.href = '@Url.Action("Details", "AddressBook", new { area = "ClientPanel", id = groupId })'; }, 1000);
+                        } else {
+                            window.location.href = '@Url.Action("Details", "AddressBook", new { area = "ClientPanel", id = groupId })';
+                        }
+                    } else {
+                        alert(res.message || 'Error saving contacts.');
+                    }
+                },
+                error: function () {
+                    saveBtn.prop('disabled', false).html('<i class="fa fa-floppy-disk"></i> Save Numbers to @groupName');
+                    alert('Network error saving contacts.');
+                }
+            });
+        }
+
+        // Download Sample CSV template
+        function downloadSampleCsv() {
+            const csvContent = "Phone Number,Contact Name,Note\n08031234567,John Doe,VIP Client\n2348029876543,Mary Smith,Lagos Branch\n+2349011223344,Emeka Okafor,Distributor\n07065432109,Chioma Adeleke,Retailer";
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "contacts_sample_template.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            if (window.xyzToast) xyzToast.success('Sample template downloaded!', 'Download Complete');
+        }
+
+        // Copy Sample Text
+        function copySampleTxt() {
+            const txt = document.getElementById("sampleTxtContent");
+            txt.select();
+            txt.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+            if (window.xyzToast) xyzToast.success('Sample numbers copied to clipboard!', 'Copied');
+            else alert('Sample numbers copied to clipboard!');
+        }
+    </script>
 }
-
-

@@ -1,48 +1,49 @@
 @model Exwhyzee.Messaging.Core.Models.ModalInfo
 
 @{
-    ViewBag.Title = "Delete";
+    ViewBag.Title = "Delete Announcement Modal";
 }
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>Manage Modal</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Manage Modal</a></li>
-        <li class="active">Information</li>
-    </ol>
-</section>
 
-<section class="content">
-    <div class="col-md-8 col-md-offset-2">
-        <div class="box box-danger">
-            <h2>Delete</h2>
+<style>
+    .xyz-danger-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid #FCA5A5;
+        box-shadow: 0 4px 20px rgba(229,9,20,0.06);
+        padding: 28px;
+        max-width: 600px;
+        margin: 0 auto 30px;
+    }
+</style>
 
-            <h3>Are you sure you want to delete this?</h3>
-            <div>
-                <h4>ModalInfo</h4>
-                <hr />
-                <dl class="dl-horizontal">
-                    <dt>
-                        @Html.DisplayNameFor(model => model.Modal)
-                    </dt>
+@Html.Partial("_ResponseMessagePartial")
 
-                    <dd>
-                        @Html.DisplayFor(model => model.Modal)
-                    </dd>
+<div class="xyz-danger-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #FEE2E2; padding-bottom:14px;">
+        <h3 style="margin:0; font-weight:800; font-size:1.25rem; color:#991B1B;">
+            <i class="fa fa-triangle-exclamation" style="color:#DC2626;"></i> Confirm Modal Deletion
+        </h3>
+        <a href="@Url.Action("Index", "ModalInfoes", new { area = "Adminpanel" })" class="btn btn-sm btn-default" style="font-weight:700; border-radius:8px;">
+            &larr; Cancel
+        </a>
+    </div>
 
-                </dl>
+    <div style="background:#FEF2F2; border:1px solid #FCA5A5; border-radius:10px; padding:16px; margin-bottom:20px; color:#991B1B; font-weight:700; font-size:0.92rem;">
+        Are you sure you want to permanently delete this announcement modal?
+    </div>
 
-                @using (Html.BeginForm())
-                {
-                    @Html.AntiForgeryToken()
-
-                    <div class="form-actions no-color">
-                        <input type="submit" value="Delete" class="btn btn-default" /> |
-                        @Html.ActionLink("Back to List", "Index")
-                    </div>
-                }
-            </div>
+    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:18px; margin-bottom:20px;">
+        <div style="margin-bottom:10px;">
+            <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">Title</small>
+            <strong style="font-size:1.05rem; color:#0F172A;">@(string.IsNullOrEmpty(Model.Title) ? "Untitled" : Model.Title)</strong>
         </div>
-    </div></section>
+    </div>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-danger btn-block" style="background:#DC2626; border:none; font-weight:800; font-size:1rem; padding:12px; border-radius:10px; box-shadow:0 4px 14px rgba(220,38,38,0.3);" onclick="return confirm('Permanently delete this modal?');">
+            <i class="fa fa-trash"></i> Delete Modal
+        </button>
+    }
+</div>

@@ -1,61 +1,135 @@
 @model Exwhyzee.Messaging.Core.Models.ModalInfo
 
 @{
-    ViewBag.Title = "Edit";
+    ViewBag.Title = "Edit Dashboard Announcement Modal";
 }
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>Manage Modal</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Manage Modal</a></li>
-        <li class="active">Information</li>
-    </ol>
-</section>
 
-<section class="content">
-    <div class="col-md-8 col-md-offset-2">
-        <div class="box box-danger" style="padding:30px;">
-            <h2>Edit</h2>
+<!-- Summernote WYSIWYG Editor Styles -->
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
 
+<style>
+    .xyz-form-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        padding: 28px;
+        width: 100%;
+        margin: 0 0 30px;
+    }
+    .note-editor.note-frame {
+        border-radius: 10px !important;
+        border-color: #CBD5E1 !important;
+        overflow: hidden;
+    }
+    .note-toolbar {
+        background: #F8FAFC !important;
+        border-bottom: 1px solid #E2E8F0 !important;
+    }
+</style>
 
-            @using (Html.BeginForm())
-            {
-                @Html.AntiForgeryToken()
+@Html.Partial("_ResponseMessagePartial")
 
-                <div class="form-horizontal">
-                    <h4>ModalInfo</h4>
-                    <hr />
-                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-                    @Html.HiddenFor(model => model.Id)
+<div class="xyz-form-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #E2E8F0; padding-bottom:16px;">
+        <h3 style="margin:0; font-weight:800; font-size:1.3rem; color:#0F172A;">
+            <i class="fa fa-pen-to-square" style="color:#0284C7;"></i> Edit Announcement Modal #@Model.Id
+        </h3>
+        <a href="@Url.Action("Index", "ModalInfoes", new { area = "Adminpanel" })" class="btn btn-sm btn-default" style="font-weight:700; border-radius:8px;">
+            &larr; Back to List
+        </a>
+    </div>
 
-                    <div class="form-group">
-                        @Html.LabelFor(model => model.Modal, htmlAttributes: new { @class = "control-label col-md-2" })
-                        <div class="col-md-10">
-                            <textarea class="form-control" name="Modal">@Model.Modal</textarea>                            @Html.ValidationMessageFor(model => model.Modal, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
+    @using (Html.BeginForm("Edit", "ModalInfoes", new { area = "Adminpanel" }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "text-danger", style = "margin-bottom:16px;" })
+        @Html.HiddenFor(model => model.Id)
+        @Html.HiddenFor(model => model.ImageUrl)
 
-                    <div class="form-group">
-                        <div class="col-md-offset-2 col-md-10">
-                            <input type="submit" value="Save" class="btn btn-default" />
-                        </div>
-                    </div>
+        <div class="form-group" style="margin-bottom:16px;">
+            <label style="font-weight:700; font-size:0.85rem; color:#334155;">Announcement Title</label>
+            @Html.EditorFor(model => model.Title, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:700;" } })
+            @Html.ValidationMessageFor(model => model.Title, "", new { @class = "text-danger" })
+        </div>
+
+        if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <div style="margin-bottom:14px; background:#F8FAFC; border:1px solid #E2E8F0; padding:12px; border-radius:10px; display:flex; align-items:center; gap:14px;">
+                <img src="@Model.ImageUrl" style="width:120px; height:70px; object-fit:cover; border-radius:8px; border:1px solid #CBD5E1;" />
+                <div>
+                    <strong style="color:#0F172A; font-size:0.9rem; display:block;">Current Banner Image</strong>
+                    <small style="color:#64748B;">Upload a new image below if you want to replace it.</small>
                 </div>
-            }
+            </div>
+        }
 
-            <div>
-                @Html.ActionLink("Back to List", "Index")
+        <div class="form-group" style="margin-bottom:16px;">
+            <label style="font-weight:700; font-size:0.85rem; color:#334155;">Change Banner Image (Optional)</label>
+            <input type="file" name="imageFile" class="form-control" accept="image/*" style="border-radius:8px; height:44px; padding:8px 12px;" />
+            <small style="color:#64748B; font-size:0.8rem; margin-top:4px; display:block;">Supported formats: PNG, JPG, WEBP.</small>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px;">
+            <label style="font-weight:700; font-size:0.85rem; color:#334155;">Announcement Write-Up Message (Summernote Rich Text)</label>
+            @Html.TextAreaFor(model => model.ContentHtml, new { id = "summernoteEditor", @class = "form-control", rows = 8 })
+            @Html.ValidationMessageFor(model => model.ContentHtml, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px; background:#F8FAFC; border:1px solid #E2E8F0; padding:14px 18px; border-radius:10px;">
+            <label style="font-weight:800; font-size:0.95rem; color:#0F172A; margin-bottom:10px; display:block;">
+                <i class="fa fa-sliders" style="color:#0284C7;"></i> Modal Display Elements (Choose at least one):
+            </label>
+            <div style="display:flex; gap:24px; flex-wrap:wrap;">
+                <label style="font-weight:700; font-size:0.9rem; color:#334155; cursor:pointer; margin:0;">
+                    @Html.CheckBoxFor(model => model.UseImage, new { style = "width:18px; height:18px; vertical-align:middle; margin-right:6px;" }) Display Image Banner
+                </label>
+                <label style="font-weight:700; font-size:0.9rem; color:#334155; cursor:pointer; margin:0;">
+                    @Html.CheckBoxFor(model => model.UseText, new { style = "width:18px; height:18px; vertical-align:middle; margin-right:6px;" }) Display Write-Up / Text
+                </label>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 form-group" style="margin-bottom:16px;">
+                <label style="font-weight:700; font-size:0.85rem; color:#334155;">Repeat Display Frequency (Days) <span style="color:#E50914;">*</span></label>
+                @Html.EditorFor(model => model.ShowFrequencyDays, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:700;", required = "required" } })
+                <small style="color:#64748B; font-size:0.8rem; margin-top:4px; display:block;">Show once every <strong>X</strong> days to returning users (e.g. 7 days).</small>
+                @Html.ValidationMessageFor(model => model.ShowFrequencyDays, "", new { @class = "text-danger" })
             </div>
 
-            @section Scripts {
-                @Scripts.Render("~/bundles/jqueryval")
-            }
-
+            <div class="col-md-6 form-group" style="margin-bottom:16px; margin-top:24px;">
+                <label style="font-weight:800; font-size:0.95rem; color:#0F172A; cursor:pointer;">
+                    @Html.CheckBoxFor(model => model.IsActive, new { style = "width:20px; height:20px; vertical-align:middle;" }) Set as Active Announcement
+                </label>
+            </div>
         </div>
-    
-    </div>
-</section>
 
+        <button type="submit" class="btn btn-success btn-block" style="background:#059669; border:none; font-weight:800; font-size:1rem; padding:12px; border-radius:10px; box-shadow:0 4px 14px rgba(5,150,105,0.3);">
+            <i class="fa fa-save"></i> Update Announcement Modal
+        </button>
+    }
+</div>
 
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#summernoteEditor').summernote({
+                placeholder: 'Type formatted announcement message...',
+                tabsize: 2,
+                height: 240,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'italic', 'underline', 'clear']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['table', ['table']],
+                    ['insert', ['link', 'picture']],
+                    ['view', ['fullscreen', 'codeview']]
+                ]
+            });
+        });
+    </script>
+}

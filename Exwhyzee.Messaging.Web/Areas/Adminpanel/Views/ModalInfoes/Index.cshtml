@@ -1,43 +1,200 @@
 @model IEnumerable<Exwhyzee.Messaging.Core.Models.ModalInfo>
 
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "Dashboard Announcement Settings";
+    var item = Model?.FirstOrDefault();
 }
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>Manage Modal</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Manage Modal</a></li>
-        <li class="active">Information</li>
-    </ol>
-</section>
 
-<section class="content">
-    <div class="col-md-8 col-md-offset-2">
-        <div class="box box-danger" style="padding:30px;">
-            <h2>Notice Board</h2>
+<style>
+    .xyz-single-modal-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.05);
+        padding: 28px;
+        margin-bottom: 24px;
+    }
+    .xyz-stat-card {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+    }
+    .xyz-stat-val {
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: #0F172A;
+        margin-top: 4px;
+    }
+    .xyz-stat-lbl {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .xyz-mockup-frame {
+        background: #0F172A;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+</style>
 
-            @*<p>
-                @Html.ActionLink("Create New", "Create")
-            </p>*@
-            <table class="table">
-                
+@Html.Partial("_ResponseMessagePartial")
 
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>
-                            @Html.Raw(item.Modal)
-                       <br /><br />
-                            @Html.ActionLink("Edit", "Edit", new { id = item.Id }) 
-                            
-                        </td>
-                    </tr>
-                }
-
-            </table>
+<div class="xyz-single-modal-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h2 style="margin:0 0 6px; font-weight:800; font-size:1.4rem; color:#0F172A;">
+                <i class="fa fa-bullhorn" style="color:#0284C7;"></i> Dashboard Announcement Settings
+            </h2>
+            <p style="margin:0; color:#64748B; font-size:0.9rem;">Configure the platform's single global announcement popup shown automatically to users upon dashboard login.</p>
+        </div>
+        <div>
+            @if (item != null)
+            {
+                <a href="@Url.Action("Edit", "ModalInfoes", new { area = "Adminpanel", id = item.Id })" class="btn btn-primary" style="background:#0284C7; border:none; font-weight:800; font-size:1rem; padding:12px 26px; border-radius:10px; box-shadow:0 4px 14px rgba(2,132,199,0.3);">
+                    <i class="fa fa-pen-to-square"></i> Edit Announcement
+                </a>
+            }
+            else
+            {
+                <a href="@Url.Action("Create", "ModalInfoes", new { area = "Adminpanel" })" class="btn btn-primary" style="background:#0284C7; border:none; font-weight:800; font-size:1rem; padding:12px 26px; border-radius:10px; box-shadow:0 4px 14px rgba(2,132,199,0.3);">
+                    <i class="fa fa-plus"></i> Create Announcement Modal
+                </a>
+            }
         </div>
     </div>
-</section>
+</div>
+
+@if (item == null)
+{
+    <div class="xyz-single-modal-card" style="text-align:center; padding:50px;">
+        <i class="fa fa-window-restore" style="font-size:3rem; color:#CBD5E1; margin-bottom:14px;"></i>
+        <h3 style="font-weight:800; color:#0F172A; margin-bottom:8px;">No Announcement Modal Configured</h3>
+        <p style="color:#64748B; max-width:450px; margin:0 auto 20px;">Click the button below to create your platform's dashboard announcement popup.</p>
+        <a href="@Url.Action("Create", "ModalInfoes", new { area = "Adminpanel" })" class="btn btn-primary" style="background:#0284C7; border:none; font-weight:800; padding:12px 28px; border-radius:10px;">
+            <i class="fa fa-plus"></i> Create Modal Announcement
+        </a>
+    </div>
+}
+else
+{
+    <!-- METRICS GRID -->
+    <div class="row" style="margin-bottom:24px;">
+        <div class="col-md-3 col-sm-6" style="margin-bottom:12px;">
+            <div class="xyz-stat-card">
+                <div class="xyz-stat-lbl">Publication Status</div>
+                <div class="xyz-stat-val">
+                    @if (item.IsActive)
+                    {
+                        <span class="label label-success" style="background:#DCFCE7; color:#166534; border:1px solid #BBF7D0; font-size:0.85rem; padding:4px 14px; border-radius:9999px; font-weight:800;">✅ Active</span>
+                    }
+                    else
+                    {
+                        <span class="label label-default" style="background:#F1F5F9; color:#64748B; font-size:0.85rem; padding:4px 14px; border-radius:9999px;">⏸️ Inactive</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6" style="margin-bottom:12px;">
+            <div class="xyz-stat-card">
+                <div class="xyz-stat-lbl">Repeat Frequency</div>
+                <div class="xyz-stat-val" style="color:#4F46E5;">
+                    <i class="fa fa-clock"></i> Every @(item.ShowFrequencyDays > 0 ? item.ShowFrequencyDays : 7) Days
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6" style="margin-bottom:12px;">
+            <div class="xyz-stat-card">
+                <div class="xyz-stat-lbl">Enabled Elements</div>
+                <div class="xyz-stat-val">
+                    @if (item.UseImage && item.UseText)
+                    {
+                        <span class="label label-primary" style="background:#0284C7; font-size:0.8rem; padding:4px 10px; border-radius:6px;">Image + Write-Up</span>
+                    }
+                    else if (item.UseImage)
+                    {
+                        <span class="label label-info" style="background:#0EA5E9; font-size:0.8rem; padding:4px 10px; border-radius:6px;">Image Only</span>
+                    }
+                    else
+                    {
+                        <span class="label label-default" style="background:#64748B; font-size:0.8rem; padding:4px 10px; border-radius:6px;">Write-Up Only</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6" style="margin-bottom:12px;">
+            <div class="xyz-stat-card">
+                <div class="xyz-stat-lbl">Banner Image</div>
+                <div class="xyz-stat-val">
+                    @if (item.UseImage && !string.IsNullOrEmpty(item.ImageUrl))
+                    {
+                        <span style="color:#10B981; font-size:0.88rem;"><i class="fa fa-image"></i> Uploaded</span>
+                    }
+                    else
+                    {
+                        <span style="color:#94A3B8; font-size:0.88rem;">No Image</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE MODAL PREVIEW SHOWCASE -->
+    <div class="xyz-single-modal-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #E2E8F0; padding-bottom:12px;">
+            <h4 style="margin:0; font-weight:800; font-size:1.1rem; color:#0F172A;">
+                <i class="fa fa-eye" style="color:#10B981;"></i> Live Dashboard Client Preview
+            </h4>
+            <span style="color:#64748B; font-size:0.85rem;">This is exactly how clients see the popup upon logging in.</span>
+        </div>
+
+        <!-- MOCKUP CONTAINER -->
+        <div class="xyz-mockup-frame">
+            <div style="background:#ffffff; border-radius:14px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+                <!-- Mockup Header Banner -->
+                @if (item.UseImage && !string.IsNullOrEmpty(item.ImageUrl))
+                {
+                    <div style="width:100%; max-height:220px; overflow:hidden; background:#0F172A;">
+                        <img src="@item.ImageUrl" style="width:100%; height:100%; object-fit:cover;" />
+                    </div>
+                }
+
+                <div style="background:#0F172A; color:#FFFFFF; padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
+                    <h5 style="margin:0; font-weight:800; font-size:1.15rem; color:#FFFFFF; display:flex; align-items:center; gap:8px;">
+                        <i class="fa fa-bullhorn" style="color:#0284C7;"></i> @(string.IsNullOrEmpty(item.Title) ? "System Announcement" : item.Title)
+                    </h5>
+                    <span style="color:rgba(255,255,255,0.6); font-size:1.2rem;">&times;</span>
+                </div>
+
+                @if (item.UseText)
+                {
+                    <div style="padding:22px; color:#334155; font-size:0.92rem; line-height:1.6; max-height:300px; overflow-y:auto;">
+                        @Html.Raw(item.ContentHtml ?? item.Modal ?? "No text message configured.")
+                    </div>
+                }
+
+                <div style="background:#F8FAFC; border-top:1px solid #E2E8F0; padding:12px 20px; display:flex; justify-content:space-between; align-items:center;">
+                    <small style="color:#64748B; font-size:0.78rem;">Displays once every @(item.ShowFrequencyDays > 0 ? item.ShowFrequencyDays : 7) days</small>
+                    <button type="button" class="btn btn-sm btn-primary" style="background:#0284C7; border:none; font-weight:800; border-radius:8px; padding:6px 16px;">
+                        <i class="fa fa-check"></i> Got It &amp; Dismiss
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top:28px;">
+            <a href="@Url.Action("Edit", "ModalInfoes", new { area = "Adminpanel", id = item.Id })" class="btn btn-primary btn-block" style="background:#0284C7; border:none; font-weight:800; font-size:1rem; padding:14px; border-radius:10px; box-shadow:0 4px 14px rgba(2,132,199,0.3);">
+                <i class="fa fa-pen-to-square"></i> Edit Dashboard Announcement Settings
+            </a>
+        </div>
+    </div>
+}

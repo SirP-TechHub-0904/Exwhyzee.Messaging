@@ -26,9 +26,9 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
         
 
-        public AdminSettingsController(AdminSettings adminSettings)
+        public AdminSettingsController(IAdminSettings adminSettings)
         {
-            _adminSettings = adminSettings;
+            _adminSettings = adminSettings ?? new AdminSettings();
         }
 
         // GET: Adminpanel/AdminSettings/Edit/5

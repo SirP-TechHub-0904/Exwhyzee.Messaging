@@ -55,5 +55,18 @@ namespace Exwhyzee.Messaging.Core.Data.IServices
         Task<ApiBalanceFirstDto> ApiBalanceFirstDto();
 
         Task<ApiBalanceSecondDto> ApiBalanceSecondDto();
+
+        // Advanced Executive Analytics
+        Task<List<TopUserUsageDto>> GetTopUsersUsageAsync(DateTime? startDate, DateTime? endDate, int count = 20);
+
+        Task<List<TopFunderDto>> GetTopFundersAsync(int count = 10);
+
+        Task<List<TopUserUsageDto>> GetTopUnitBurnersAsync(int count = 10);
+
+        Task<List<HeavyBlastSenderDto>> GetHeavyBlastSendersAsync(int count = 10);
+
+        Task<PaystackLiquidityDto> GetPaystackLiquidityAsync();
+
+        Task<int> GetLiveActiveUsersCountAsync(int minutesThreshold = 15);
     }
 }

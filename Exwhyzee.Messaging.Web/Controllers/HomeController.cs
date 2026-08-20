@@ -1,40 +1,63 @@
 using Microsoft.Extensions.DependencyInjection;
 using Exwhyzee.Messaging.Core.Models;
-// removed using
 using Exwhyzee.Messaging.Core.Services;
 using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
-
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using static Exwhyzee.Messaging.Core.Services.GeneralServices;
+using Microsoft.AspNetCore.Http;
 
 namespace Exwhyzee.Messaging.Web.Controllers
 {
     public class HomeController : Controller
     {
         private ApplicationDbContext db => HttpContext.RequestServices.GetService<ApplicationDbContext>();
+
         [HttpGet]
-        public async Task<ActionResult> Index() {
-            ViewBag.slides = System.IO.Directory.EnumerateFiles(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "SliderImage")).Select(fn => "~/SliderImage/" + System.IO.Path.GetFileName(fn));
+        public async Task<ActionResult> Index()
+        {
+            var adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
+            ViewBag.AdminSetting = adminSetting;
+            ViewBag.slides = Directory.EnumerateFiles(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "SliderImage"))
+                                      .Select(fn => "~/SliderImage/" + Path.GetFileName(fn));
             return View();
         }
+
         public async Task<ActionResult> SmsFeatures()
+        {
+            return View("Features");
+        }
+
+        public async Task<ActionResult> Features()
         {
             return View();
         }
 
+        public async Task<ActionResult> UpdatedFeatures()
+        {
+            return View("Features");
+        }
+
+        public async Task<ActionResult> SmsPlan()
+        {
+            var priceSettings = await db.PriceSettings.Include(p => p.DialCodes).ToListAsync();
+            var adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
+            ViewBag.AdminSetting = adminSetting;
+            return View(priceSettings);
+        }
+
+        public ActionResult Developers()
+        {
+            return View();
+        }
 
         public ActionResult _slider()
         {
-            ViewBag.slides = Directory.EnumerateFiles(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "SliderImage"))
+            ViewBag.slides = Directory.EnumerateFiles(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "SliderImage"))
                                      .Select(fn => "~/SliderImage/" + Path.GetFileName(fn));
             return PartialView();
         }
@@ -52,7 +75,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult AddSlider(Slider slider)
         {
-            System.Random randomInteger = new System.Random();
+            Random randomInteger = new Random();
             int genNumber = randomInteger.Next(1000000);
 
             if (ModelState.IsValid)
@@ -60,10 +83,10 @@ namespace Exwhyzee.Messaging.Web.Controllers
                 if (Request.Form.Files.Count > 0)
                 {
                     IFormFile file = Request.Form.Files[0];
-                    if (file.Length > 0 && file.ContentType.ToUpper().Contains("JPEG") || file.ContentType.ToUpper().Contains("PNG") || file.ContentType.ToUpper().Contains("JPG"))
+                    if (file.Length > 0 && (file.ContentType.ToUpper().Contains("JPEG") || file.ContentType.ToUpper().Contains("PNG") || file.ContentType.ToUpper().Contains("JPG")))
                     {
-                        string fileName = Path.Combine(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "SliderImage"), Path.GetFileName(genNumber + file.FileName));
-                        using (var stream = new System.IO.FileStream(fileName, System.IO.FileMode.Create)) { file.CopyTo(stream); }
+                        string fileName = Path.Combine(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "SliderImage"), Path.GetFileName(genNumber + file.FileName));
+                        using (var stream = new FileStream(fileName, FileMode.Create)) { file.CopyTo(stream); }
                         slider.ImageUrl = Path.GetFileName(genNumber + file.FileName);
                     }
                 }
@@ -98,50 +121,100 @@ namespace Exwhyzee.Messaging.Web.Controllers
         public async Task<ActionResult> DeleteSlider(int id)
         {
             Slider slide = await db.Sliders.FindAsync(id);
-            var slidename = slide.ImageUrl;
-
-            var delName = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "SliderImage", slidename);
-            if ((System.IO.File.Exists(delName)))
+            if (slide != null)
             {
-                System.IO.File.Delete(delName);
+                var slidename = slide.ImageUrl;
+                var delName = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "SliderImage", slidename ?? "");
+                if (System.IO.File.Exists(delName))
+                {
+                    System.IO.File.Delete(delName);
+                }
+                db.Sliders.Remove(slide);
+                await db.SaveChangesAsync();
+                TempData["Success"] = " Slide Successfully Deleted.";
             }
-            db.Sliders.Remove(slide);
-            await db.SaveChangesAsync();
-            TempData["Success"] = " Slide Successfully Deleted.";
             return RedirectToAction("Slider");
         }
-        public async Task<ActionResult> Nui()
-        {
-            string lnum = "";
-            IQueryable<Message> homp = from s in db.Messages
-                                           select s;
-            var f = homp.Count();
-            foreach (var input in homp)
-            {
-                lnum = lnum + "\r\n" + input;
-            }
-            string op = lnum.Replace("\r\n", ",");
-            IList<string> numbers = op.Split(new string[] { ",", " " }, StringSplitOptions.RemoveEmptyEntries);
-            IList<string> dnum = numbers.Distinct().ToList();
+
+        [HttpGet]
+        public async Task<ActionResult> Contact()
+        { 
             return View();
         }
-        public ActionResult Contact()
-        {
-            ViewBag.Message = "Your contact page.";
 
-            return View();
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Contact(string FullName, string Email, string PhoneNumber, string Message)
+        {
+            if (string.IsNullOrWhiteSpace(FullName) || string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Message))
+            {
+                TempData["Error"] = "Please fill in all required fields (Name, Email, and Message).";
+                return View();
+            }
+
+            try
+            {
+                var recaptchaService = HttpContext.RequestServices.GetService<Exwhyzee.Messaging.Core.Services.IGoogleReCaptchaService>();
+                if (recaptchaService != null)
+                {
+                    var recaptchaToken = Request.Form["g-recaptcha-response"].ToString();
+                    var isHuman = await recaptchaService.VerifyTokenAsync(recaptchaToken);
+                    if (!isHuman)
+                    {
+                        TempData["Error"] = "Please check the reCAPTCHA box to confirm you are not a robot.";
+                        return View();
+                    }
+                }
+
+                var zeptoService = HttpContext.RequestServices.GetService<IZeptoMailService>();
+                if (zeptoService != null)
+                {
+                    var sent = await zeptoService.SendContactInquiryAsync(FullName, Email, PhoneNumber ?? "N/A", Message);
+                    if (sent)
+                    {
+                        TempData["Success"] = "Thank you! Your message has been sent successfully. Our support team will follow up with you shortly.";
+                    }
+                    else
+                    {
+                        TempData["Success"] = "Thank you! Your message has been received. Our team will contact you shortly.";
+                    }
+                }
+                else
+                {
+                    TempData["Success"] = "Thank you! Your message has been received.";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "An error occurred while sending your message. Please reach out directly via WhatsApp or phone.";
+            }
+
+            return RedirectToAction("Contact");
         }
 
         public ActionResult About()
         {
-            ViewBag.Message = "Your app description page.";
+            return View();
+        }
 
+        public ActionResult Privacy()
+        {
+            return View();
+        }
+
+        public ActionResult Terms()
+        {
+            return View();
+        }
+
+        public ActionResult Faq()
+        {
+            return View();
+        }
+
+        public ActionResult Sitemap()
+        {
             return View();
         }
     }
 }
-
-
-
-
-

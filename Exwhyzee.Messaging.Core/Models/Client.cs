@@ -19,9 +19,13 @@ namespace Exwhyzee.Messaging.Core.Models
         public string Surname { get; set; }
         public string FirstName { get; set; }
         public string ApiKey { get; set; }
+        public string GeminiApiKey { get; set; }
         public string OtherNames { get; set; }
         public decimal Discount { get; set; }
         public AllowNotifications AllowNotifications { get; set; }
+
+        public decimal LowUnitReminderThreshold { get; set; } = 50.0m;
+        public DateTime? LastLowUnitAlertDate { get; set; }
 
         [System.ComponentModel.DataAnnotations.Schema.ForeignKey("UserId")]
         public ApplicationUser User { get; set; }

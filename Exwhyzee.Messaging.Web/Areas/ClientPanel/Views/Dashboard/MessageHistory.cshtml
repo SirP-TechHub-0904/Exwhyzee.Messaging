@@ -1,129 +1,423 @@
 @model X.PagedList.IPagedList<Exwhyzee.Messaging.Core.Models.Message>
 @using X.PagedList.Mvc.Core;
-<link href="~/Content/PagedList.css" rel="stylesheet" />
-
 @{
-    ViewBag.Title = "Message History";
+    ViewBag.Title = "Message Broadcast History";
+    int totalMessages = ViewBag.TotalMessages ?? 0;
+    decimal totalUnits = ViewBag.TotalUnitsUsed ?? 0;
+    int deliveredCount = ViewBag.DeliveredCount ?? 0;
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard(Client)
-        <small>Message History</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Message History</a></li>
-        <li class="active">Messages</li>
-    </ol>
-</section>
-<section class="content">
+<style>
+    .xyz-history-hero {
+        background: linear-gradient(135deg, #0B0F19 0%, #1E1B4B 50%, #0B0F19 100%);
+        border-radius: 16px;
+        padding: 22px 28px;
+        margin-bottom: 20px;
+        color: #FFFFFF;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
 
-    <div class="box box-info">
-        <div class="box-header">
-            <h3 class="box-title">Message History </h3>
+    .xyz-history-hero h1 {
+        font-size: 1.45rem !important;
+        font-weight: 800 !important;
+        margin: 0 0 4px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #FFFFFF;
+    }
 
-            @*<span class="pull-right">
-                    <a href="@Url.Content(" ../../apisettings/Create")" class="btn btn-app"><i class="fa fa-plus-circle"></i>Add API Setting</a>
-                </span>*@
+    .xyz-stat-mini-card {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 10px 16px;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    .xyz-stat-mini-card small {
+        color: #94A3B8;
+        font-size: 0.72rem;
+        font-weight: 700;
+        display: block;
+        text-transform: uppercase;
+    }
+
+    .xyz-stat-mini-card strong {
+        color: #FFFFFF;
+        font-size: 1.15rem;
+    }
+
+    .xyz-history-card {
+        background: #FFFFFF;
+        border-radius: 14px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-history-card {
+        background: #131B2E;
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .xyz-sender-tag {
+        background: #EEF2FF;
+        color: #4338CA;
+        border: 1px solid #C7D2FE;
+        font-weight: 800;
+        font-size: 0.85rem;
+        padding: 3px 8px;
+        border-radius: 6px;
+        display: inline-block;
+    }
+
+    body.xyz-dark-theme .xyz-sender-tag {
+        background: rgba(99, 102, 241, 0.15);
+        color: #A5B4FC;
+        border-color: rgba(99, 102, 241, 0.3);
+    }
+</style>
+
+<!-- Hero Section with Broadcast Metrics -->
+<div class="xyz-history-hero">
+    <div>
+        <h1>
+            <i class="fa fa-clock-rotate-left" style="color:#6366F1;"></i> Message Broadcast History
+        </h1>
+        <p>Monitor real-time gateway delivery logs, recipient reports, and cost breakdowns.</p>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div class="xyz-stat-mini-card">
+            <small>Total Dispatches</small>
+            <strong>@totalMessages</strong>
         </div>
-        <div class="box-body table-responsive">
-            @using (Html.BeginForm())
-            {
-                <p>
-                    Find by Sender Id: @Html.TextBox("SearchString")
-                    <input type="submit" value="Search" placeholder="Sender Id" />
-                </p>
-            }
-            <table class="table table-bordered table-striped" id="example1">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>
-                            <b>Sender Id</b>
-                            @*@Html.DisplayNameFor(model => model.SenderId)*@
-                        </th>
-                        <th>
-                            <b>Units Used</b>
-                            @*@Html.DisplayNameFor(model => model.UnitsUsed)*@
-                        </th>
-                        <th>
-                            <b>Scheduled Date</b>
-                            @*@Html.DisplayNameFor(model => model.Scheduleddate)*@
-                        </th>
-                        <th>
-                            <b>Delivered Date</b>
-                            @*@Html.DisplayNameFor(model => model.DeliveredDate)*@
-                        </th>
-                        <th>
-                            <b>Resent</b>
-                            @*@Html.DisplayNameFor(model => model.DeliveredDate)*@
-                        </th>
-                        <th>
-                            <b>Status</b>
-                            @*@Html.DisplayNameFor(model => model.Status)*@
-                        </th>
+        <div class="xyz-stat-mini-card">
+            <small>Total Units Used</small>
+            <strong style="color:#10B981;">@totalUnits.ToString("N2")</strong>
+        </div>
+        <div class="xyz-stat-mini-card">
+            <small>Delivered</small>
+            <strong style="color:#3B82F6;">@deliveredCount</strong>
+        </div>
+        <a href="@Url.Action("Compose", "Dashboard", new { area = "ClientPanel" })" class="btn btn-primary" style="background:#E50914; border:none; font-weight:800; border-radius:10px; padding:10px 18px; font-size:0.92rem;">
+            <i class="fa fa-paper-plane"></i> Compose SMS
+        </a>
+    </div>
+</div>
 
+@Html.Partial("_ResponseMessagePartial")
+
+<div class="xyz-history-card">
+    <div style="padding:16px 20px; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <!-- Search Filter Form with Clean Alignment -->
+        <form method="get" action="@Url.Action("MessageHistory", "Dashboard", new { area = "ClientPanel" })" style="margin:0; display:flex; align-items:center; gap:8px;">
+            <div style="display:flex; align-items:stretch; width:300px;">
+                <input type="text" name="searchString" value="@ViewBag.CurrentFilter" class="form-control" placeholder="Search by Sender, text, numbers..." style="height:36px; border-radius:8px 0 0 8px; border-right:none; font-size:0.88rem;" />
+                <button type="submit" class="btn btn-default" style="height:36px; border-radius:0 8px 8px 0; border-left:1px solid #CBD5E1; padding:0 14px; display:flex; align-items:center; justify-content:center;">
+                    <i class="fa fa-search"></i>
+                </button>
+            </div>
+            @if (!string.IsNullOrEmpty(ViewBag.CurrentFilter as string))
+            {
+                <a href="@Url.Action("MessageHistory", "Dashboard", new { area = "ClientPanel" })" class="btn btn-xs btn-default" style="font-weight:700; border-radius:6px; height:36px; display:flex; align-items:center; padding:0 10px;">
+                    <i class="fa fa-times" style="margin-right:4px;"></i> Clear
+                </a>
+            }
+        </form>
+        <div>
+            <a href="@Url.Action("ScheduledMessages", "Dashboard", new { area = "ClientPanel" })" class="btn btn-xs btn-default" style="font-weight:700; border-radius:6px;">
+                <i class="fa fa-clock" style="color:#F59E0B;"></i> View Scheduled Queue &rarr;
+            </a>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover" style="margin:0; vertical-align:middle;">
+                <thead style="background:#F8FAFC; font-weight:800; font-size:0.82rem; color:#475569; text-transform:uppercase;">
+                    <tr>
+                        <th style="padding:12px 16px;">Sender ID</th>
+                        <th>Recipients</th>
+                        <th style="min-width:240px;">Message Content</th>
+                        <th>Units</th>
+                        <th>Date Dispatched</th>
+                        <th>Status</th>
+                        <th style="text-align:right; padding:12px 16px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-
                     @foreach (var item in Model)
                     {
-                    <tr>
-                        <td>
-                            @Html.ActionLink("Details", "MessageDetails", new { id = item.MessageId }, new { @class = "btn btn-primary btn-xs" })
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.SenderId)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.UnitsUsed)
-                        </td>
-                        <td>
-                            @if (item.Scheduleddate == null)
-                            {
-                                <span>None</span>
-                            }
-                            else
-                            {@Html.DisplayFor(modelItem => item.Scheduleddate)}
-                        </td>
-                        <td>
-                            @if (item.DeliveredDate != null)
-                            {
-                                @item.DeliveredDate.Value.ToString("ddd dd MMM, yyyy hh:mm")
+                        var rawRecipients = (item.Recipients ?? "").Split(new[] { ',', ' ', '\n', '\r', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        var uniqueRecipients = rawRecipients.Distinct().ToList();
+                        var charCount = (item.MessageContent ?? "").Length;
+                        var pageCount = Exwhyzee.Messaging.Core.Services.SmsServices.CountPage(item.MessageContent ?? "");
 
-                            }
-                        </td>
+                        <tr>
+                            <td style="padding:14px 16px;">
+                                <span class="xyz-sender-tag">
+                                    <i class="fa fa-tag"></i> @item.SenderId
+                                </span>
+                            </td>
+                            <td>
+                                <strong style="font-size:0.92rem; color:#0F172A;">@uniqueRecipients.Count</strong>
+                                <small style="color:#64748B; display:block; font-size:0.75rem;">contacts</small>
+                            </td>
+                            <td>
+                                <div style="font-size:0.88rem; line-height:1.45; color:var(--xyz-dash-text); word-break:break-word;">
+                                    @(item.MessageContent?.Length > 100 ? item.MessageContent.Substring(0, 100) + "..." : item.MessageContent)
+                                </div>
+                                <div style="margin-top:4px; display:flex; gap:6px; align-items:center;">
+                                    <span class="badge" style="background:#334155; font-size:0.7rem; font-weight:700;">@charCount Chars</span>
+                                    <span class="badge" style="background:#6366F1; font-size:0.7rem; font-weight:700;">@pageCount Page@(pageCount > 1 ? "s" : "")</span>
+                                </div>
+                            </td>
+                            <td>
+                                <strong style="color:#10B981; font-size:0.92rem;">@item.UnitsUsed.ToString("N2")</strong>
+                            </td>
+                            <td>
+                                @if (item.DeliveredDate != null)
+                                {
+                                    <div style="font-weight:700; color:var(--xyz-dash-text); font-size:0.88rem;">
+                                        @item.DeliveredDate.Value.ToString("dd MMM yyyy, hh:mm tt")
+                                    </div>
+                                }
+                                else if (item.Scheduleddate != null)
+                                {
+                                    <div style="font-weight:700; color:#F59E0B; font-size:0.88rem;">
+                                        Sched: @item.Scheduleddate.Value.ToString("dd MMM yyyy, hh:mm tt")
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span style="color:#94A3B8;">Pending</span>
+                                }
+                            </td>
+                            <td>
+                                @if (item.Status == Exwhyzee.Messaging.Core.Models.MessageStatus.Sent)
+                                {
+                                    <span class="badge" style="background:#10B981; font-weight:800; font-size:0.78rem; padding:4px 8px;">
+                                        <i class="fa fa-check-circle"></i> Delivered
+                                    </span>
+                                }
+                                else if (item.Status == Exwhyzee.Messaging.Core.Models.MessageStatus.Scheduled)
+                                {
+                                    <span class="badge" style="background:#F59E0B; font-weight:800; font-size:0.78rem; padding:4px 8px;">
+                                        <i class="fa fa-clock"></i> Scheduled
+                                    </span>
+                                }
+                                else if (item.Status == Exwhyzee.Messaging.Core.Models.MessageStatus.Failed)
+                                {
+                                    <span class="badge" style="background:#EF4444; font-weight:800; font-size:0.78rem; padding:4px 8px;">
+                                        <i class="fa fa-circle-xmark"></i> Failed
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge" style="background:#64748B; font-weight:800; font-size:0.78rem; padding:4px 8px;">
+                                        @item.Status
+                                    </span>
+                                }
+                            </td>
+                            <td style="text-align:right; padding:14px 16px;">
+                                <div style="display:flex; justify-content:flex-end; gap:6px; align-items:center;">
+                                    <!-- Instant In-Place Details Modal Button -->
+                                    <button type="button" class="btn btn-xs btn-primary" onclick="openMessageDetailsModal(@item.MessageId)" title="View Full Broadcast Details" style="background:#6366F1; border:none; font-weight:700; border-radius:6px; padding:4px 9px;">
+                                        <i class="fa fa-eye"></i> Details
+                                    </button>
 
-                        <td>
-                            @if (string.IsNullOrEmpty(item.Resent))
-                            {
-                                <span>None</span>
-                            }
-                            else
-                            {@Html.DisplayFor(model => item.Resent)}
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.Status)
-                        </td>
-
-                    </tr>
+                                    <!-- Quick Resend Button -->
+                                    <a href="@Url.Action("Resend", "Dashboard", new { area = "ClientPanel", messegeId = item.MessageId })" class="btn btn-xs btn-default" onclick="return confirm('Resend this broadcast to all recipients now?');" title="Resend Broadcast" style="font-weight:700; border-radius:6px; padding:4px 8px;">
+                                        <i class="fa fa-repeat"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
                     }
                 </tbody>
             </table>
-            <div class="container text-center page" style="margin-left:auto;margin-right:auto;">
+        </div>
 
-                <p>Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount</p>
+        <div style="padding:16px 20px; border-top:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <span style="font-size:0.85rem; color:var(--xyz-dash-muted);">
+                Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount (@Model.TotalItemCount Total Records)
+            </span>
+            <div>
+                @Html.PagedListPager(Model, page => Url.Action("MessageHistory", new { page, searchString = ViewBag.CurrentFilter }))
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Empty State -->
+        <div style="padding:60px 20px; text-align:center;">
+            <div style="width:70px; height:70px; background:#F1F5F9; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px;">
+                <i class="fa fa-inbox" style="color:#64748B; font-size:2rem;"></i>
+            </div>
+            <h3 style="font-weight:800; font-size:1.25rem; margin:0 0 6px; color:#1E293B;">No Message History Found</h3>
+            <p style="color:#64748B; max-width:420px; margin:0 auto 20px; font-size:0.92rem;">
+                No dispatched broadcasts match your current query. Click Compose SMS below to send your broadcast.
+            </p>
+            <a href="@Url.Action("Compose", "Dashboard", new { area = "ClientPanel" })" class="btn btn-primary" style="background:#E50914; border:none; font-weight:800; border-radius:10px; padding:10px 22px; font-size:0.95rem;">
+                <i class="fa fa-paper-plane"></i> Compose SMS Broadcast
+            </a>
+        </div>
+    }
+</div>
 
-                @Html.PagedListPager(Model, page => Url.Action("MessageHistory",
-    new { page }))
+<!-- ========================================================
+     INTERACTIVE MESSAGE DETAILS MODAL (POPUP IN-PLACE)
+     ======================================================== -->
+<div class="modal fade" id="modalMessageDetails" tabindex="-1" role="dialog" aria-labelledby="modalMessageDetailsLabel">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" style="border-radius:16px; overflow:hidden; border:none; box-shadow:0 25px 60px rgba(0,0,0,0.3);">
+            <div class="modal-header" style="background:linear-gradient(135deg, #0B0F19 0%, #1E1B4B 100%); color:#fff; padding:18px 24px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h4 class="modal-title" id="modalMessageDetailsLabel" style="font-weight:800; font-size:1.15rem; margin:0; display:flex; align-items:center; gap:8px;">
+                        <i class="fa fa-message" style="color:#6366F1;"></i> Broadcast Report (<span id="modalMsgId">#0</span>)
+                    </h4>
+                    <span id="modalMsgDate" style="color:#94A3B8; font-size:0.8rem;">Dispatched on ...</span>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#fff; opacity:0.8; font-size:1.5rem; text-shadow:none;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="padding:24px;">
+
+                <!-- 4-Stat Metrics Grid -->
+                <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:20px;">
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:10px; text-align:center;">
+                        <small style="color:#64748B; font-size:0.72rem; font-weight:700; display:block;">SENDER ID</small>
+                        <strong id="modalSenderId" style="font-size:1.05rem; color:#4338CA;">...</strong>
+                    </div>
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:10px; text-align:center;">
+                        <small style="color:#64748B; font-size:0.72rem; font-weight:700; display:block;">RECIPIENTS</small>
+                        <strong id="modalRecipientCount" style="font-size:1.05rem; color:#0F172A;">0</strong>
+                    </div>
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:10px; text-align:center;">
+                        <small style="color:#64748B; font-size:0.72rem; font-weight:700; display:block;">UNITS USED</small>
+                        <strong id="modalUnitsUsed" style="font-size:1.05rem; color:#10B981;">0.00</strong>
+                    </div>
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:10px; text-align:center;">
+                        <small style="color:#64748B; font-size:0.72rem; font-weight:700; display:block;">STATUS</small>
+                        <span id="modalStatusBadge" class="badge" style="background:#10B981; font-weight:800; font-size:0.8rem; margin-top:2px;">Sent</span>
+                    </div>
+                </div>
+
+                <!-- Message Content Box -->
+                <div style="margin-bottom:18px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <label style="font-weight:700; font-size:0.88rem; margin:0;">
+                            <i class="fa fa-align-left" style="color:#6366F1;"></i> Message Content (<span id="modalCharPageCount">0 chars &bull; 1 page</span>):
+                        </label>
+                        <button type="button" class="btn btn-xs btn-default" onclick="copyModalMessageText()" style="font-weight:700; border-radius:6px;">
+                            <i class="fa fa-copy"></i> Copy Text
+                        </button>
+                    </div>
+                    <div id="modalMessageContentBox" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:10px; padding:14px; font-size:0.92rem; line-height:1.5; color:#1E293B; word-break:break-word; max-height:160px; overflow-y:auto;">
+                        ...
+                    </div>
+                </div>
+
+                <!-- Recipients List Box -->
+                <div style="margin-bottom:18px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <label style="font-weight:700; font-size:0.88rem; margin:0;">
+                            <i class="fa fa-phone" style="color:#10B981;"></i> Recipients List:
+                        </label>
+                        <button type="button" class="btn btn-xs btn-default" onclick="copyModalRecipients()" style="font-weight:700; border-radius:6px;">
+                            <i class="fa fa-copy"></i> Copy All Numbers
+                        </button>
+                    </div>
+                    <div id="modalRecipientsBox" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:10px; padding:12px; font-family:'JetBrains Mono', monospace; font-size:0.85rem; color:#334155; max-height:130px; overflow-y:auto; word-break:break-word;">
+                        ...
+                    </div>
+                </div>
+
+                <!-- Gateway Response Summary -->
+                <div style="background:rgba(99,102,241,0.06); border:1px solid rgba(99,102,241,0.2); border-radius:10px; padding:12px 16px; font-size:0.82rem; color:#475569; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong>Gateway Response:</strong> <span id="modalGatewayMsg">Success</span>
+                    </div>
+                    <div>
+                        <strong>Cost / Page:</strong> <span id="modalCostPage">0</span>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer" style="background:#F8FAFC; border-top:1px solid #E2E8F0; padding:14px 24px; display:flex; justify-content:space-between;">
+                <button type="button" class="btn btn-default" data-dismiss="modal" style="font-weight:700; border-radius:8px;">
+                    Close
+                </button>
+                <a id="modalBtnResend" href="#" class="btn btn-primary" style="background:#E50914; border:none; font-weight:800; border-radius:8px; padding:8px 18px;" onclick="return confirm('Resend this broadcast to all recipients now?');">
+                    <i class="fa fa-repeat"></i> Resend Broadcast
+                </a>
             </div>
         </div>
     </div>
-</section>
+</div>
 
-@section scripts{
+@section scripts {
+    <script>
+        function openMessageDetailsModal(msgId) {
+            $('#modalMessageDetails').modal('show');
+            $('#modalMsgId').text('#' + msgId);
+            $('#modalMessageContentBox').html('<i class="fa fa-spinner fa-spin"></i> Loading broadcast details...');
+            $('#modalRecipientsBox').html('<i class="fa fa-spinner fa-spin"></i> Fetching recipients...');
 
-    
+            $.get('@Url.Action("GetMessageDetailsAjax", "Dashboard", new { area = "ClientPanel" })', { id: msgId }, function (res) {
+                if (res && res.success) {
+                    $('#modalSenderId').text(res.senderId);
+                    $('#modalRecipientCount').text(res.recipientCount + ' numbers');
+                    $('#modalUnitsUsed').text(parseFloat(res.unitsUsed).toFixed(2) + ' Units');
+                    $('#modalMsgDate').text('Dispatched on ' + res.deliveredDate);
+                    $('#modalMessageContentBox').text(res.messageContent);
+                    $('#modalRecipientsBox').text(res.recipients);
+                    $('#modalGatewayMsg').text(res.responseMsg);
+                    $('#modalCostPage').text(res.responseCost + ' (Page: ' + res.pageCount + ')');
+                    $('#modalCharPageCount').text(res.charCount + ' chars \u2022 ' + res.pageCount + ' Page' + (res.pageCount > 1 ? 's' : ''));
+
+                    $('#modalStatusBadge').text(res.status);
+                    if (res.status === 'Sent') {
+                        $('#modalStatusBadge').css('background', '#10B981');
+                    } else if (res.status === 'Scheduled') {
+                        $('#modalStatusBadge').css('background', '#F59E0B');
+                    } else {
+                        $('#modalStatusBadge').css('background', '#EF4444');
+                    }
+
+                    $('#modalBtnResend').attr('href', '@Url.Action("Resend", "Dashboard", new { area = "ClientPanel" })?messegeId=' + res.messageId);
+                } else {
+                    $('#modalMessageContentBox').text('Unable to load message details.');
+                }
+            }).fail(function () {
+                $('#modalMessageContentBox').text('Error fetching broadcast details.');
+            });
+        }
+
+        function copyModalMessageText() {
+            const text = $('#modalMessageContentBox').text();
+            navigator.clipboard.writeText(text).then(function () {
+                if (window.xyzToast) xyzToast.success('Message content copied to clipboard!', 'Copied');
+                else alert('Message content copied!');
+            });
+        }
+
+        function copyModalRecipients() {
+            const text = $('#modalRecipientsBox').text();
+            navigator.clipboard.writeText(text).then(function () {
+                if (window.xyzToast) xyzToast.success('All recipient numbers copied to clipboard!', 'Copied');
+                else alert('Recipients copied!');
+            });
+        }
+    </script>
 }
-

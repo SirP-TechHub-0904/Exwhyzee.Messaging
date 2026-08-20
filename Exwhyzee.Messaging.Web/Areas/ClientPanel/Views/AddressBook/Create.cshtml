@@ -1,83 +1,194 @@
 @model Exwhyzee.Messaging.Core.Models.Group
 
 @{
-    ViewBag.Title = "Create Group";
+    ViewBag.Title = "Create Contact Group";
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard(Client)
-        <small>Address Book</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Address Book</a></li>
-        <li class="active">Create Group</li>
-    </ol>
-</section>
+<style>
+    .xyz-create-hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 28px;
+    }
 
-<section class="content">
+    .xyz-create-hero h1 {
+        font-size: 2.35rem;
+        font-weight: 800;
+        margin: 0 0 6px;
+        color: var(--xyz-dash-text);
+        letter-spacing: -0.5px;
+    }
 
-    <div class="box box-info">
-        <div class="box-header">
-            <h3 class="box-title">Create Group</h3>
+    .xyz-create-hero p {
+        font-size: 1.2rem;
+        color: var(--xyz-dash-muted);
+        margin: 0;
+    }
 
-            <span class="pull-right">
-                <a href="@Url.Content(" ../../ClientPanel/AddressBook")" class="btn btn-app"><i class="fa fa-backward"></i>Back</a>
-            </span>
-        </div>
-        <div class="box-body">
-            <div class="col-md-8 col-md-offset-2">
+    .xyz-card {
+        background: #FFFFFF;
+        border-radius: 18px;
+        border: 1px solid var(--xyz-dash-border);
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.03);
+        margin-bottom: 30px;
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-card {
+        background: #131B2E;
+    }
+
+    .xyz-card-header {
+        padding: 22px 28px;
+        border-bottom: 1px solid var(--xyz-dash-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .xyz-card-title {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--xyz-dash-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .xyz-card-body {
+        padding: 32px 36px;
+    }
+
+    .xyz-input {
+        height: 52px;
+        border-radius: 12px;
+        border: 1px solid var(--xyz-dash-border);
+        background: var(--xyz-dash-bg);
+        color: var(--xyz-dash-text);
+        font-size: 1.15rem;
+        padding: 0 18px;
+        font-weight: 600;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+
+    .xyz-input:focus {
+        border-color: #6366F1;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+    }
+
+    .xyz-textarea {
+        border-radius: 12px;
+        border: 1px solid var(--xyz-dash-border);
+        background: var(--xyz-dash-bg);
+        color: var(--xyz-dash-text);
+        font-size: 1.15rem;
+        padding: 16px 18px;
+        font-weight: 500;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+
+    .xyz-textarea:focus {
+        border-color: #6366F1;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+    }
+
+    .xyz-form-label {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: var(--xyz-dash-text);
+        margin-bottom: 8px;
+        display: block;
+    }
+</style>
+
+<!-- Hero Section -->
+<div class="xyz-create-hero">
+    <div>
+        <h1><i class="fa fa-folder-plus" style="color:#6366F1; margin-right:8px;"></i> Create Contact Group</h1>
+        <p>Set up a new address book category for organizing customers, team members, or campaign leads.</p>
+    </div>
+    <div>
+        <a href="@Url.Action("Index", "AddressBook", new { area = "ClientPanel" })" class="btn btn-default" style="font-weight:800; font-size:1.1rem; padding:12px 24px; border-radius:12px;">
+            &larr; Back to Groups
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 col-md-offset-2">
+        <div class="xyz-card">
+            <div class="xyz-card-header">
+                <h3 class="xyz-card-title">
+                    <i class="fa fa-layer-group" style="color:#6366F1;"></i> Group Details
+                </h3>
+            </div>
+            <div class="xyz-card-body">
                 @using (Html.BeginForm())
-            {
+                {
                     @Html.AntiForgeryToken()
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger", style = "font-weight:700; font-size:1.1rem; margin-bottom:20px;" })
 
-                    <div class="form-horizontal">
+                    <!-- Group Name -->
+                    <div class="form-group" style="margin-bottom:24px;">
+                        <label class="xyz-form-label">
+                            Group Name <span style="color:#E50914;">*</span>
+                        </label>
+                        @Html.TextBoxFor(model => model.Name, new { @class = "xyz-input", placeholder = "e.g. VIP Customers, Marketing Leads, Church Members", required = "required", autofocus = "autofocus" })
+                        @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger", style = "font-weight:700; margin-top:6px; display:block;" })
+                    </div>
 
-                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                    <!-- Group Description -->
+                    <div class="form-group" style="margin-bottom:24px;">
+                        <label class="xyz-form-label">
+                            Description / Purpose (Optional)
+                        </label>
+                        @Html.TextAreaFor(model => model.Description, 3, 20, new { @class = "xyz-textarea", placeholder = "Brief description of who belongs to this contact group..." })
+                        @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger", style = "font-weight:700; margin-top:6px; display:block;" })
+                    </div>
 
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
-                            </div>
+                    <!-- Birthday Automation Panel -->
+                    <div style="background:rgba(99, 102, 241, 0.05); border:1px solid rgba(99, 102, 241, 0.15); border-radius:14px; padding:22px 24px; margin-bottom:28px;">
+                        <div class="form-group" style="margin-bottom:16px;">
+                            <label class="xyz-form-label" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                                @Html.CheckBox("SendBirthDayMessages", Model?.SendBirthDayMessages ?? false, new { style = "width:20px; height:20px; accent-color:#6366F1;" })
+                                <span><i class="fa fa-cake-candles" style="color:#F59E0B; margin-right:4px;"></i> Enable Automated Birthday Messages for this group</span>
+                            </label>
+                            <small style="color:var(--xyz-dash-muted); font-size:0.95rem; margin-left:30px; display:block;">
+                                Automatically send personalized birthday greetings to contacts on their special day.
+                            </small>
                         </div>
 
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                <textarea class="form-control" cols="6" id="Description" name="Description"></textarea>
-                                @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
-                            </div>
+                        <!-- Birthday Message Template -->
+                        <div class="form-group" id="birthdayMessageGroup" style="margin-bottom:0; margin-left:30px;">
+                            <label class="xyz-form-label" style="font-size:1.05rem;">
+                                Birthday Message Template
+                            </label>
+                            @Html.TextAreaFor(model => model.Message, 3, 20, new { @class = "xyz-textarea", placeholder = "Happy Birthday {Name}! We wish you joy, health and success. From all of us at [Company Name]." })
+                            <small style="color:var(--xyz-dash-muted); font-size:0.9rem; margin-top:6px; display:block;">
+                                Tip: Use <code>{Name}</code> to automatically insert the contact's name.
+                            </small>
                         </div>
-                        <div class="form-group">
-                            @Html.Label("Send Birth Day Messages ", htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                @Html.EditorFor(model => model.SendBirthDayMessages, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.SendBirthDayMessages, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.Message, htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                <textarea class="form-control" cols="6" id="Description" name="Description"></textarea>
-                                @Html.ValidationMessageFor(model => model.Message, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
+                    </div>
 
-                        <div class="form-group">
-                            <div class="col-md-offset-2 col-md-8">
-                                <input type="submit" value="Create" class="btn btn-primary" />
-                            </div>
-                        </div>
+                    <!-- Actions -->
+                    <div style="display:flex; gap:14px; align-items:center;">
+                        <button type="submit" class="btn btn-primary btn-lg" style="background:#E50914; border:none; font-weight:800; font-size:1.15rem; padding:14px 36px; border-radius:12px; box-shadow:0 6px 20px rgba(229,9,20,0.35);">
+                            <i class="fa fa-plus-circle"></i> Create Group
+                        </button>
+                        <a href="@Url.Action("Index", "AddressBook", new { area = "ClientPanel" })" class="btn btn-default btn-lg" style="font-weight:700; font-size:1.1rem; padding:14px 28px; border-radius:12px;">
+                            Cancel
+                        </a>
                     </div>
                 }
             </div>
         </div>
     </div>
-</section>
-@section Scripts {
-    @Scripts.Render("~/bundles/jqueryval")
-}
-
-
+</div>

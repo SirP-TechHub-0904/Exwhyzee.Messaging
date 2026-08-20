@@ -1,0 +1,254 @@
+@model X.PagedList.IPagedList<Exwhyzee.Messaging.Core.Models.EmailLog>
+@using X.PagedList.Mvc.Core;
+
+@{
+    ViewData["Title"] = "Outbound Email Audit Logs";
+}
+
+<div class="content-header" style="padding: 15px 15px 0;">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div>
+            <h1 style="font-weight:800; font-size:1.8rem; margin:0; color:#0F172A;">
+                <i class="fa fa-envelope-open-text" style="color:#0284C7;"></i> Outbound Email Audit Studio
+            </h1>
+            <p style="color:#64748B; margin:4px 0 0; font-size:0.9rem;">
+                Track every system email (OTPs, Welcome notices, Password resets, Support notifications) dispatched via ZeptoMail.
+            </p>
+        </div>
+
+        <!-- Purge Actions Dropdown -->
+        <div class="dropdown">
+            <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" style="font-weight:700; border-radius:8px;">
+                <i class="fa fa-trash-can" style="color:#DC2626; margin-right:6px;"></i> Purge Old Logs <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-right">
+                <li>
+                    <form asp-action="PurgeOlderThan" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="days" value="7" />
+                        <button type="submit" class="btn btn-link" style="color:#334155;" onclick="return confirm('Purge all email logs older than 7 days?');">
+                            Purge Older Than 7 Days
+                        </button>
+                    </form>
+                </li>
+                <li>
+                    <form asp-action="PurgeOlderThan" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="days" value="30" />
+                        <button type="submit" class="btn btn-link" style="color:#334155;" onclick="return confirm('Purge all email logs older than 30 days?');">
+                            Purge Older Than 30 Days
+                        </button>
+                    </form>
+                </li>
+                <li>
+                    <form asp-action="PurgeOlderThan" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="days" value="90" />
+                        <button type="submit" class="btn btn-link" style="color:#334155;" onclick="return confirm('Purge all email logs older than 90 days?');">
+                            Purge Older Than 90 Days
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="content" style="padding:20px 15px;">
+    <!-- METRIC CARDS -->
+    <div class="row" style="margin-bottom:20px;">
+        <div class="col-md-4 col-sm-6" style="margin-bottom:12px;">
+            <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:18px; box-shadow:0 2px 10px rgba(0,0,0,0.03); display:flex; align-items:center; gap:16px;">
+                <div style="width:46px; height:46px; border-radius:12px; background:#E0F2FE; color:#0284C7; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                    <i class="fa fa-envelope-circle-check"></i>
+                </div>
+                <div>
+                    <span style="color:#64748B; font-size:0.8rem; font-weight:700; text-transform:uppercase;">Total System Emails</span>
+                    <h3 style="margin:2px 0 0; font-weight:800; color:#0F172A; font-size:1.6rem;">@ViewBag.TotalCount</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-sm-6" style="margin-bottom:12px;">
+            <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:18px; box-shadow:0 2px 10px rgba(0,0,0,0.03); display:flex; align-items:center; gap:16px;">
+                <div style="width:46px; height:46px; border-radius:12px; background:#DCFCE7; color:#166534; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                    <i class="fa fa-circle-check"></i>
+                </div>
+                <div>
+                    <span style="color:#64748B; font-size:0.8rem; font-weight:700; text-transform:uppercase;">Successfully Delivered</span>
+                    <h3 style="margin:2px 0 0; font-weight:800; color:#166534; font-size:1.6rem;">@ViewBag.SuccessCount</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-sm-6" style="margin-bottom:12px;">
+            <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:18px; box-shadow:0 2px 10px rgba(0,0,0,0.03); display:flex; align-items:center; gap:16px;">
+                <div style="width:46px; height:46px; border-radius:12px; background:#FEE2E2; color:#DC2626; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                    <i class="fa fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <span style="color:#64748B; font-size:0.8rem; font-weight:700; text-transform:uppercase;">Dispatch Failures</span>
+                    <h3 style="margin:2px 0 0; font-weight:800; color:#DC2626; font-size:1.6rem;">@ViewBag.FailedCount</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER & BATCH DELETE FORM -->
+    <form asp-action="BatchDelete" method="post" id="batchForm">
+        @Html.AntiForgeryToken()
+
+        <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:14px; padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <!-- Filter Bar -->
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1;">
+                <input type="text" name="searchString" value="@ViewBag.SearchString" class="form-control" placeholder="Search recipient email, subject..." style="max-width:280px; border-radius:8px;" />
+                <select name="statusFilter" class="form-control" style="max-width:160px; border-radius:8px;">
+                    <option value="">All Statuses</option>
+                    <option value="Success" selected="@(ViewBag.StatusFilter == "Success")">Delivered</option>
+                    <option value="Failed" selected="@(ViewBag.StatusFilter == "Failed")">Failed</option>
+                </select>
+                <button type="submit" formmethod="get" class="btn btn-primary" style="border-radius:8px; font-weight:700; background:#0284C7; border:none;">
+                    <i class="fa fa-search"></i> Filter
+                </button>
+            </div>
+
+            <!-- Batch Action Button -->
+            <button type="submit" class="btn btn-danger" style="border-radius:8px; font-weight:700;" onclick="return confirm('Delete all selected email log items?');">
+                <i class="fa fa-trash"></i> Delete Selected
+            </button>
+        </div>
+
+        <!-- TABLE SHOWCASE -->
+        <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:14px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.03);">
+            <div class="table-responsive">
+                <table class="table table-hover" style="margin:0;">
+                    <thead style="background:#F8FAFC; border-bottom:2px solid #E2E8F0;">
+                        <tr>
+                            <th style="width:40px; text-align:center; padding:14px;">
+                                <input type="checkbox" id="selectAll" />
+                            </th>
+                            <th style="padding:14px; font-weight:700; color:#475569;">Date &amp; Time (UTC)</th>
+                            <th style="padding:14px; font-weight:700; color:#475569;">Recipient</th>
+                            <th style="padding:14px; font-weight:700; color:#475569;">Subject</th>
+                            <th style="padding:14px; font-weight:700; color:#475569;">Delivery Status</th>
+                            <th style="padding:14px; text-align:right; font-weight:700; color:#475569;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td style="text-align:center; vertical-align:middle; padding:14px;">
+                                        <input type="checkbox" name="selectedIds" value="@item.Id" class="logCheckbox" />
+                                    </td>
+                                    <td style="vertical-align:middle; padding:14px; font-size:0.88rem; color:#64748B;">
+                                        @item.DateSent.ToString("yyyy-MM-dd HH:mm:ss")
+                                    </td>
+                                    <td style="vertical-align:middle; padding:14px; font-weight:700; color:#0F172A;">
+                                        @item.RecipientEmail
+                                    </td>
+                                    <td style="vertical-align:middle; padding:14px; color:#334155; max-width:300px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">
+                                        @item.Subject
+                                    </td>
+                                    <td style="vertical-align:middle; padding:14px;">
+                                        @if (item.IsSuccess)
+                                        {
+                                            <span class="label label-success" style="padding:5px 10px; border-radius:9999px; font-size:0.75rem; font-weight:700; background:#10B981;">
+                                                <i class="fa fa-check-circle"></i> Sent &amp; Delivered
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="label label-danger" style="padding:5px 10px; border-radius:9999px; font-size:0.75rem; font-weight:700; background:#EF4444;" title="@item.ErrorMessage">
+                                                <i class="fa fa-circle-xmark"></i> Failed
+                                            </span>
+                                        }
+                                    </td>
+                                    <td style="text-align:right; vertical-align:middle; padding:14px;">
+                                        <button type="button" class="btn btn-xs btn-info" onclick="previewEmail(@item.Id)" style="border-radius:6px; font-weight:700;">
+                                            <i class="fa fa-eye"></i> View Email Body
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" style="text-align:center; padding:40px; color:#94A3B8;">
+                                    <i class="fa fa-envelope-open" style="font-size:2.5rem; margin-bottom:10px; display:block; opacity:0.5;"></i>
+                                    No email log records found.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PAGINATION FOOTER -->
+            <div style="padding:16px 20px; background:#F8FAFC; border-top:1px solid #E2E8F0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+                <div style="font-size:0.88rem; color:#64748B;">
+                    Showing page <strong>@Model.PageNumber</strong> of <strong>@Model.PageCount</strong> (Total @Model.TotalItemCount logs)
+                </div>
+                <div>
+                    @Html.PagedListPager(Model, page => Url.Action("Index", new { page, searchString = ViewBag.SearchString, statusFilter = ViewBag.StatusFilter }), new PagedListRenderOptions
+                    {
+                        LiElementClasses = new string[] { "page-item" },
+                        PageClasses = new string[] { "page-link" }
+                    })
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- PREVIEW MODAL -->
+<div class="modal fade" id="emailPreviewModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" style="border-radius:16px; overflow:hidden;">
+            <div class="modal-header" style="background:#0F172A; color:#FFFFFF; padding:16px 24px;">
+                <button type="button" class="close" data-dismiss="modal" style="color:#FFFFFF; opacity:0.8;">&times;</button>
+                <h4 class="modal-title" style="font-weight:800; font-size:1.1rem;" id="modalSubject">Email Preview</h4>
+            </div>
+            <div class="modal-body" style="padding:24px;">
+                <div style="background:#F8FAFC; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:0.88rem;">
+                    <div><strong>To:</strong> <span id="modalRecipient"></span></div>
+                    <div><strong>Date Sent:</strong> <span id="modalDate"></span></div>
+                </div>
+                <iframe id="emailFrame" style="width:100%; height:450px; border:1px solid #E2E8F0; border-radius:8px;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('selectAll').addEventListener('change', function () {
+        var checkboxes = document.querySelectorAll('.logCheckbox');
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].checked = this.checked;
+        }
+    });
+
+    function previewEmail(id) {
+        $.get('/Adminpanel/EmailLogs/GetBody/' + id, function (data) {
+            if (data.success) {
+                $('#modalSubject').text(data.subject);
+                $('#modalRecipient').text(data.recipient);
+                $('#modalDate').text(data.date);
+
+                var doc = document.getElementById('emailFrame').contentWindow.document;
+                doc.open();
+                doc.write(data.html);
+                doc.close();
+
+                $('#emailPreviewModal').modal('show');
+            } else {
+                alert('Error: ' + (data.error || 'Could not load email body.'));
+            }
+        }).fail(function() {
+            alert('Network error: Could not load email body. Please try again.');
+        });
+    }
+</script>

@@ -1,0 +1,139 @@
+@model IEnumerable<Exwhyzee.Messaging.Core.Models.SupportTicket>
+@using Exwhyzee.Messaging.Core.Models
+
+@{
+    ViewBag.Title = "My Support Tickets";
+}
+
+<style>
+    .xyz-ticket-header {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        color: #FFFFFF;
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .xyz-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .xyz-table th {
+        background: #F8FAFC;
+        color: #475569;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        padding: 12px 16px;
+        border-bottom: 2px solid #E2E8F0;
+    }
+
+    .xyz-table td {
+        padding: 14px 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid #F1F5F9;
+    }
+
+    .xyz-badge-open { background: #DBEAFE; color: #1E40AF; }
+    .xyz-badge-progress { background: #FEF3C7; color: #92400E; }
+    .xyz-badge-resolved { background: #D1FAE5; color: #065F46; }
+    .xyz-badge-closed { background: #F3F4F6; color: #374151; }
+</style>
+
+<div class="container-fluid" style="padding-top: 10px;">
+    @Html.Partial("_ResponseMessagePartial")
+
+    <!-- HEADER BANNER -->
+    <div class="xyz-ticket-header">
+        <div>
+            <h2 style="font-weight: 800; margin: 0 0 4px 0; font-size: 1.5rem; letter-spacing: -0.5px;">
+                <i class="fa fa-headset" style="color: #38BDF8; margin-right: 8px;"></i> Support Desk &amp; Help Tickets
+            </h2>
+            <p style="color: #94A3B8; margin: 0; font-size: 0.9rem;">
+                Need help with API integrations, SMS delivery, or billing? Submit a ticket below.
+            </p>
+        </div>
+
+        <div>
+            <a href="@Url.Action("Create", "Tickets", new { area = "ClientPanel" })" class="btn btn-primary" style="font-weight: 800; border-radius: 8px; padding: 10px 20px; background: #2563EB; border: none;">
+                <i class="fa fa-plus-circle"></i> Create New Support Ticket
+            </a>
+        </div>
+    </div>
+
+    <!-- MY TICKETS TABLE -->
+    <div class="xyz-card" style="padding: 0; overflow: hidden;">
+        <div class="table-responsive">
+            <table class="table xyz-table" style="margin: 0;">
+                <thead>
+                    <tr>
+                        <th>Ticket Code</th>
+                        <th>Category</th>
+                        <th>Subject</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Last Activity</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var ticket in Model)
+                        {
+                            string statusClass = ticket.Status == TicketStatus.Open ? "xyz-badge-open"
+                                : ticket.Status == TicketStatus.InProgress ? "xyz-badge-progress"
+                                : ticket.Status == TicketStatus.Resolved ? "xyz-badge-resolved" : "xyz-badge-closed";
+
+                            <tr>
+                                <td>
+                                    <strong style="font-family: 'JetBrains Mono', monospace; color: #2563EB;">#@ticket.TicketNumber</strong>
+                                </td>
+                                <td>
+                                    <span class="badge" style="background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1;">@ticket.Category</span>
+                                </td>
+                                <td>
+                                    <strong style="color: #0F172A; font-size: 0.95rem;">@ticket.Subject</strong>
+                                </td>
+                                <td>
+                                    <span class="badge" style="background: #EFF6FF; color: #1D4ED8;">@ticket.Priority</span>
+                                </td>
+                                <td>
+                                    <span class="badge @statusClass" style="font-size: 0.75rem; padding: 4px 10px; font-weight: 800;">@ticket.Status</span>
+                                </td>
+                                <td>
+                                    <small style="color: #64748B;">@ticket.DateUpdated.ToString("dd MMM yyyy HH:mm")</small>
+                                </td>
+                                <td style="text-align: right;">
+                                    <a href="@Url.Action("Details", "Tickets", new { area = "ClientPanel", id = ticket.TicketId })" class="btn btn-default btn-sm" style="font-weight: 800; border-radius: 6px; border-color: #CBD5E1;">
+                                        <i class="fa fa-comments"></i> View Thread
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 36px; color: #94A3B8;">
+                                <i class="fa fa-headset" style="font-size: 2rem; display: block; margin-bottom: 8px; color: #CBD5E1;"></i>
+                                You currently have no support tickets. Click <strong>Create New Support Ticket</strong> to ask for assistance.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

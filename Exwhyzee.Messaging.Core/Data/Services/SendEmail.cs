@@ -1,48 +1,27 @@
-using Exwhyzee.Messaging.Core.Data.IServices;
-using System.Net.Mail;
-using System.Net;
 using System;
 using System.Threading.Tasks;
-using System.Xml.Linq;
+using Exwhyzee.Messaging.Core.Data.IServices;
+using Exwhyzee.Messaging.Core.Services;
 
 namespace Exwhyzee.Messaging.Core.Data.Services
 {
     public class SendEmail : ISendEmail
     {
-        Task<bool> ISendEmail.SendEmailAsync(string message, string recipient, string subject)
+        private readonly IZeptoMailService _zeptoMailService;
+
+        public SendEmail()
         {
-            try
-            {
+            _zeptoMailService = new ZeptoMailService();
+        }
 
-                MailMessage mail = new MailMessage();
- 
-                mail.Body = message;
-                //set the addresses 
-                mail.From = new MailAddress("support@xyzsms.com", "XYZ BULK SMS");
-                mail.To.Add(recipient);
+        public SendEmail(IZeptoMailService zeptoMailService)
+        {
+            _zeptoMailService = zeptoMailService ?? new ZeptoMailService();
+        }
 
-                //set the content 
-                mail.Subject = subject;
-
-                mail.IsBodyHtml = true;
-                //send the message 
-                SmtpClient smtp = new SmtpClient("mail.xyzsms.com");
-
-                //IMPORANT:  Your smtp login email MUST be same as your FROM address. 
-                NetworkCredential Credentials = new NetworkCredential("support@xyzsms.com", "ASD@1k123");
-                smtp.UseDefaultCredentials = false;
-                smtp.Credentials = Credentials;
-                smtp.Port = 25;    //alternative port number is 8889
-                smtp.EnableSsl = false;
-                smtp.Send(mail);
-
-                return Task.FromResult(true);
-            }
-            catch (Exception ex)
-            {
-
-                return Task.FromResult(false);
-            }
-         }
+        public Task<bool> SendEmailAsync(string message, string recipient, string subject)
+        {
+            return _zeptoMailService.SendEmailAsync(message, recipient, subject);
+        }
     }
 }

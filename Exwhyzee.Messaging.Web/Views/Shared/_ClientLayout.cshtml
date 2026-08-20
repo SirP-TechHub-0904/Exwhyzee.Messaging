@@ -1,297 +1,1060 @@
+@using Microsoft.AspNetCore.Identity
+@using Exwhyzee.Messaging.Core.Services
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - Exwhyzee Bulk SMS Portal</title>
     <link href="/Content/image/xyzico.png" rel="shortcut icon" type="image/x-icon" />
-    <title>@ViewBag.Title - XYZSMS | Bulk Sms</title>
-    <link rel="stylesheet" href="/Content/Dashboard/bootstrap/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/font-awesome/css/font-awesome.min.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/ionicons/css/ionicons.min.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/dist/css/AdminLTE.min.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/dist/css/site.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/dist/css/skins/_all-skins.min.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/plugins/iCheck/flat/blue.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/plugins/datepicker/datepicker3.css" />
-    <link rel="stylesheet" href="/Content/Dashboard/plugins/bootstrap-wysihtml5/bootstrap3-wysihtml5.min.css" />
-    <script src="/Scripts/modernizr-2.6.2.js"></script>
-    @RenderSection("Styles", required: false)
 
-    <!--Start of Tawk.to Script-->
-    <!--Start of Tawk.to Script-->
-    <script type="text/javascript">
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/5a5705274b401e45400bfcfd/default';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
-})();
-    </script>
-    <!--End of Tawk.to Script-->
-    <!--End of Tawk.to Script-->
-   <style>
-    .example-modal .modal {
-      position: relative;
-      top: auto;
-      bottom: auto;
-      right: auto;
-      left: auto;
-      display: block;
-      z-index: 1;
+    <!-- Google Fonts & Font Awesome 6 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Core Layout Stylesheets -->
+    <link rel="stylesheet" href="/Content/Dashboard/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/dist/css/AdminLTE.min.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/dist/css/skins/_all-skins.min.css" />
+    <link rel="stylesheet" href="/Content/Dashboard/plugins/datepicker/datepicker3.css" />
+    <link href="/Content/css/modern-theme.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Web App Manifest for iOS/Android Push Notifications -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- OneSignal Web Push SDK (Auto-initializes when AppId is configured in appsettings.json) -->
+    @if (!string.IsNullOrEmpty(Configuration["OneSignal:AppId"]) && !Configuration["OneSignal:AppId"].Contains("YOUR_ONESIGNAL"))
+    {
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+        <script>
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async function(OneSignal) {
+                await OneSignal.init({
+                    appId: "@Configuration["OneSignal:AppId"]",
+                    allowLocalhostAsSecureOrigin: true,
+                    notifyButton: {
+                        enable: false
+                    }
+                });
+                @if (User.Identity.IsAuthenticated)
+                {
+                    <text>
+                    await OneSignal.login("@User.Identity.Name");
+                    </text>
+                }
+            });
+        </script>
     }
 
-       .example-modal .modal {
-           background: transparent !important;
-       }
-  </style>
+    <style>
+        :root {
+            --xyz-dash-header-h: 76px;
+            --xyz-dash-sidebar-w: 290px;
+            --xyz-dash-bg: #F8FAFC;
+            --xyz-dash-card-bg: #FFFFFF;
+            --xyz-dash-text: #0F172A;
+            --xyz-dash-muted: #64748B;
+            --xyz-dash-border: #E2E8F0;
+        }
+
+        /* ========================================================
+           GLOBAL COMPACT TYPOGRAPHY SCALE FOR CLIENT PANEL (-40%)
+           ======================================================== */
+        html {
+            font-size: 13px !important;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            font-size: 1rem !important;
+            line-height: 1.45 !important;
+            color: var(--xyz-dash-text);
+            background-color: var(--xyz-dash-bg) !important;
+        }
+
+        h1, .h1 { font-size: 1.35rem !important; font-weight: 700 !important; letter-spacing: -0.2px !important; }
+        h2, .h2 { font-size: 1.2rem !important; font-weight: 700 !important; }
+        h3, .h3 { font-size: 1.08rem !important; font-weight: 700 !important; }
+        h4, .h4 { font-size: 0.98rem !important; font-weight: 600 !important; }
+        h5, .h5 { font-size: 0.9rem !important; font-weight: 600 !important; }
+        h6, .h6 { font-size: 0.82rem !important; font-weight: 600 !important; }
+
+        p, span, div, li, td, th {
+            font-size: 0.96rem;
+        }
+
+        small, .small {
+            font-size: 0.78rem !important;
+        }
+
+        label, .control-label {
+            font-size: 0.88rem !important;
+            font-weight: 600 !important;
+            margin-bottom: 3px !important;
+            color: var(--xyz-dash-text) !important;
+        }
+
+        .form-control,
+        .xyz-key-input,
+        .xyz-input,
+        .xyz-textarea,
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        input[type="number"],
+        input[type="date"],
+        select,
+        textarea {
+            font-size: 0.92rem !important;
+            min-height: 34px !important;
+            padding: 6px 10px !important;
+            border-radius: 6px !important;
+            color: var(--xyz-dash-text) !important;
+        }
+
+        .btn {
+            font-size: 0.88rem !important;
+            font-weight: 600 !important;
+            padding: 6px 14px !important;
+            border-radius: 6px !important;
+        }
+
+        .btn-lg {
+            font-size: 0.96rem !important;
+            padding: 8px 20px !important;
+            border-radius: 8px !important;
+        }
+
+        .btn-sm {
+            font-size: 0.8rem !important;
+            padding: 4px 8px !important;
+            border-radius: 5px !important;
+        }
+
+        .btn-xs {
+            font-size: 0.72rem !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+        }
+
+        .badge {
+            font-size: 0.75rem !important;
+            padding: 3px 7px !important;
+            border-radius: 4px !important;
+        }
+
+        .table th,
+        .table td {
+            font-size: 0.88rem !important;
+            padding: 7px 9px !important;
+            vertical-align: middle !important;
+        }
+
+        .alert {
+            font-size: 0.88rem !important;
+            padding: 9px 14px !important;
+            border-radius: 6px !important;
+        }
+
+        .alert strong {
+            font-size: 0.95rem !important;
+        }
+
+        .modal-title {
+            font-size: 1.05rem !important;
+            font-weight: 700 !important;
+        }
+
+        .modal-body {
+            font-size: 0.88rem !important;
+        }
+
+        code, kbd, pre {
+            font-size: 0.82rem !important;
+        }
+
+        body.xyz-dark-theme {
+            --xyz-dash-bg: #0B0F19;
+            --xyz-dash-card-bg: #131B2E;
+            --xyz-dash-text: #F8FAFC;
+            --xyz-dash-muted: #94A3B8;
+            --xyz-dash-border: rgba(255, 255, 255, 0.08);
+            background-color: #0B0F19 !important;
+            color: #F8FAFC !important;
+        }
+
+        body.xyz-dark-theme .content-wrapper,
+        body.xyz-dark-theme .main-footer {
+            background-color: #0B0F19 !important;
+            color: #F8FAFC !important;
+            border-color: var(--xyz-dash-border) !important;
+        }
+
+        body.xyz-dark-theme .xyz-panel-card,
+        body.xyz-dark-theme .box {
+            background: #131B2E !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+            color: #F8FAFC !important;
+        }
+
+        body.xyz-dark-theme .table {
+            color: #E2E8F0 !important;
+        }
+
+        body.xyz-dark-theme .table-striped > tbody > tr:nth-of-type(odd) {
+            background-color: rgba(255, 255, 255, 0.02) !important;
+        }
+
+        body.xyz-dark-theme .table-bordered,
+        body.xyz-dark-theme .table-bordered > tbody > tr > td,
+        body.xyz-dark-theme .table-bordered > thead > tr > th {
+            border-color: rgba(255, 255, 255, 0.06) !important;
+        }
+
+        /* Unified Modern Header */
+        .main-header {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: var(--xyz-dash-header-h) !important;
+            max-height: var(--xyz-dash-header-h) !important;
+            background: #0B0F19 !important;
+            z-index: 1030 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 0 24px !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .main-header .sidebar-toggle:before {
+            display: none !important;
+            content: "" !important;
+        }
+
+        /* Topbar Controls */
+        .xyz-topbar-controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .xyz-wallet-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            padding: 8px 20px;
+            border-radius: 9999px;
+            color: #FFFFFF;
+            font-size: 1.1rem;
+            font-weight: 800;
+        }
+
+        .xyz-wallet-pill .xyz-topup-btn {
+            background: #E50914;
+            color: #FFFFFF;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 9999px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            text-decoration: none;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .xyz-wallet-pill .xyz-topup-btn:hover {
+            background: #B80710;
+            transform: scale(1.05);
+            color: #FFFFFF;
+        }
+
+        .xyz-icon-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #FFFFFF;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            font-size: 1.25rem;
+            text-decoration: none !important;
+        }
+
+        .xyz-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #FFFFFF;
+        }
+
+        .xyz-badge-dot {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 9px;
+            height: 9px;
+            background: #E50914;
+            border-radius: 50%;
+            border: 2px solid #0B0F19;
+        }
+
+        /* Modern Sidebar */
+        .main-sidebar {
+            position: fixed !important;
+            top: var(--xyz-dash-header-h) !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            height: calc(100vh - var(--xyz-dash-header-h)) !important;
+            overflow-y: auto !important;
+            background: #0B0F19 !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+            width: var(--xyz-dash-sidebar-w) !important;
+            padding-top: 0 !important;
+            z-index: 1020 !important;
+            transition: transform 0.3s ease, width 0.3s ease !important;
+        }
+
+        .sidebar-user-card {
+            padding: 18px 20px;
+            margin: 18px 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .sidebar-user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #E50914;
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.35rem;
+            box-shadow: 0 4px 12px rgba(229,9,20,0.35);
+            flex-shrink: 0;
+        }
+
+        .sidebar-user-name {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #FFFFFF;
+            margin: 0 0 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-user-status {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #10B981;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sidebar-menu {
+            padding-bottom: 140px !important;
+        }
+
+        .sidebar-menu > li.header {
+            color: #64748B !important;
+            background: transparent !important;
+            font-size: 0.92rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.8px !important;
+            padding: 20px 22px 10px !important;
+        }
+
+        .sidebar-menu > li > a {
+            color: #94A3B8 !important;
+            border-left: 3px solid transparent !important;
+            padding: 14px 22px !important;
+            font-size: 1.15rem !important;
+            font-weight: 600 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 14px !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .sidebar-menu > li > a i {
+            font-size: 1.35rem !important;
+            width: 24px !important;
+            text-align: center !important;
+            color: #64748B !important;
+            transition: color 0.2s ease !important;
+        }
+
+        .sidebar-menu > li:hover > a,
+        .sidebar-menu > li.active > a {
+            color: #FFFFFF !important;
+            background: rgba(229, 9, 20, 0.1) !important;
+            border-left-color: #E50914 !important;
+        }
+
+        .sidebar-menu > li:hover > a i,
+        .sidebar-menu > li.active > a i {
+            color: #E50914 !important;
+        }
+
+        .sidebar-menu .treeview-menu {
+            background: rgba(0, 0, 0, 0.25) !important;
+            padding: 8px 0 !important;
+        }
+
+        .sidebar-menu .treeview-menu > li > a {
+            color: #94A3B8 !important;
+            padding: 10px 22px 10px 48px !important;
+            font-size: 1.05rem !important;
+            font-weight: 500 !important;
+        }
+
+        .sidebar-menu .treeview-menu > li > a:hover {
+            color: #FFFFFF !important;
+        }
+
+        /* Content Wrapper */
+        .content-wrapper {
+            margin-top: var(--xyz-dash-header-h) !important;
+            margin-left: var(--xyz-dash-sidebar-w) !important;
+            min-height: calc(100vh - var(--xyz-dash-header-h) - 50px) !important;
+            background: var(--xyz-dash-bg) !important;
+            padding: 32px 40px !important;
+            transition: margin-left 0.3s ease, background 0.3s ease !important;
+        }
+
+        /* Desktop Mini-Sidebar Collapse Behavior (Show Only Icons) */
+        @@media (min-width: 992px) {
+            body.sidebar-collapse .main-sidebar {
+                width: 78px !important;
+                transform: none !important;
+            }
+
+            body.sidebar-collapse .content-wrapper,
+            body.sidebar-collapse .main-footer {
+                margin-left: 78px !important;
+            }
+
+            body.sidebar-collapse .sidebar-user-card {
+                padding: 10px 0 !important;
+                margin: 12px 6px !important;
+                justify-content: center !important;
+                border: none !important;
+                background: transparent !important;
+            }
+
+            body.sidebar-collapse .sidebar-user-card > div:last-child {
+                display: none !important;
+            }
+
+            body.sidebar-collapse .sidebar-user-avatar {
+                width: 44px !important;
+                height: 44px !important;
+                font-size: 1.2rem !important;
+                margin: 0 auto !important;
+            }
+
+            body.sidebar-collapse .sidebar-menu > li.header {
+                display: none !important;
+            }
+
+            body.sidebar-collapse .sidebar-menu > li > a {
+                padding: 16px 0 !important;
+                justify-content: center !important;
+                text-align: center !important;
+                gap: 0 !important;
+            }
+
+            body.sidebar-collapse .sidebar-menu > li > a span {
+                display: none !important;
+            }
+
+            body.sidebar-collapse .sidebar-menu > li > a .pull-right-container {
+                display: none !important;
+            }
+
+            body.sidebar-collapse .sidebar-menu > li > a i {
+                font-size: 1.5rem !important;
+                width: 100% !important;
+                margin: 0 !important;
+            }
+        }
+
+        /* Notifications Dropdown */
+        .xyz-notification-dropdown {
+            width: 360px;
+            padding: 0;
+            border-radius: 14px;
+            border: 1px solid var(--xyz-gray-200);
+            box-shadow: 0 12px 36px rgba(0,0,0,0.18);
+            background: #FFFFFF;
+            overflow: hidden;
+        }
+
+        body.xyz-dark-theme .xyz-notification-dropdown {
+            background: #131B2E;
+            border-color: rgba(255,255,255,0.08);
+            color: #FFFFFF;
+        }
+
+        .xyz-notif-header {
+            padding: 16px 20px;
+            background: #0B0F19;
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 800;
+            font-size: 1.05rem;
+        }
+
+        .xyz-notif-item {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--xyz-gray-100);
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            text-decoration: none !important;
+            color: inherit;
+            transition: background 0.2s ease;
+        }
+
+        body.xyz-dark-theme .xyz-notif-item {
+            border-color: rgba(255,255,255,0.05);
+        }
+
+        .xyz-notif-item:hover {
+            background: var(--xyz-gray-50);
+        }
+
+        body.xyz-dark-theme .xyz-notif-item:hover {
+            background: rgba(255,255,255,0.04);
+        }
+
+        /* Footer */
+        .main-footer {
+            margin-left: var(--xyz-dash-sidebar-w) !important;
+            background: #FFFFFF;
+            border-top: 1px solid #E2E8F0;
+            padding: 18px 40px;
+            font-size: 1rem;
+            color: var(--xyz-dash-muted);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: margin-left 0.3s ease !important;
+        }
+
+        /* Responsive Mobile Behavior: Keep only Logo, Toggle & Profile on Topbar */
+        @@media (max-width: 991px) {
+            .xyz-desktop-only {
+                display: none !important;
+            }
+            .main-sidebar {
+                transform: translateX(-100%) !important;
+            }
+            body.sidebar-open .main-sidebar {
+                transform: translateX(0) !important;
+            }
+            .content-wrapper, .main-footer {
+                margin-left: 0 !important;
+                padding: 20px 16px !important;
+            }
+        }
+    </style>
+    @RenderSection("Styles", required: false)
 </head>
 <body class="hold-transition skin-blue sidebar-mini">
     <div class="wrapper">
 
-        <div class="modal fade" id="modal-default">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                        <h4 class="modal-title" style="color:#3c8dbc;">IMPORTANT NOTIFICATION</h4>
-                    </div>
-                    <div class="modal-body">
-                        <p>Make sure that your <strong>SENDER ID</strong> is Registered Before Sending any message or you can use our Default Sender ID. or <strong> Contact Administrator</strong></p>
-
-                        <p>Thanks XYZSMS</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-warning pull-left" data-toggle="modal" data-target="#modal-senderid">Submit Sender ID</button>
-                        @Html.ActionLink("Default Sender ID", "DefaultSenderId", "Dashboard", null, new { @class = "btn btn-primary" })
-                       
-                    </div>
-                </div>
-                <!-- /.modal-content -->
-            </div>
-            <!-- /.modal-dialog -->
-        </div>
-
-         <div class="modal fade" id="modal-senderid">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                        <h4 class="modal-title" style="color:#3c8dbc;">Submit Sender Id</h4>
-                        <p>You seperate the with comma <strong>eg. senderId 1, seenderId 2</strong></p>
-                    </div>
-
-                    @using (Html.BeginForm("SenderIdApply", "Dashboard", FormMethod.Post, new { enctype = "" }))
-                    {
-                        @Html.AntiForgeryToken()
-
-                        <div class="modal-body">
-
-
-                            <div class="">
-
-                                <div class="form-group">
-                                    @Html.Label("Sender Id(s)", htmlAttributes: new { @class = "control-label" })
-                                    <div class="">
-                                        <input type="text" name="text" class="form-control" />
-                                        
-                                    </div>
-                                </div>
-                            </div>
-                            
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-default pull-left" data-dismiss="modal">Close</button>
-                            <input type="submit" value="Submit" class="btn btn-primary" />
-
-                        </div>
-                    }
-                    </div>
-                <!-- /.modal-content -->
-            </div>
-            <!-- /.modal-dialog -->
-        </div>
-        <!--comment-->
-
+        <!-- Unified Modern Header -->
         <header class="main-header">
-            <a href="#" class="logo">
-                <!-- mini logo for sidebar mini 50x50 pixels -->
-                <span class="logo-mini"><b>XYZ </b>SMS</span>
-                <!-- logo for regular state and mobile devices -->
-                <span class="logo-lg">
-                    <img class="logo img-responsive" src="/Content/image/SMS LOGO.png" alt="xyzsms" />
-                </span>
-            </a>
+            <!-- Left Side: Logo + Divider + Sidebar Toggle -->
+            <div style="display:flex; align-items:center; gap:14px;">
+                <a href="@Url.Action("Index", "Dashboard", new { area = "ClientPanel" })" style="display:inline-flex; align-items:center; text-decoration:none;">
+                    <div style="background:#FFFFFF; padding:6px 14px; border-radius:8px; display:inline-flex; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+                        <img src="/Content/image/SMS-LOGO.png" alt="Exwhyzee Bulk SMS" style="height:32px; width:auto; display:block;" />
+                    </div>
+                </a>
 
-            <nav class="navbar navbar-static-top">
-                <!-- Sidebar toggle button-->
-                <a href="#" class="sidebar-toggle" data-toggle="offcanvas" role="button">
+                <div style="width:1px; height:26px; background:rgba(255,255,255,0.12);" class="hidden-xs"></div>
+
+                <!-- Single Clean Sidebar Toggle Button -->
+                <a href="#" class="sidebar-toggle xyz-icon-btn" data-toggle="offcanvas" role="button" title="Toggle Sidebar">
+                    <i class="fa fa-bars"></i>
                     <span class="sr-only">Toggle navigation</span>
                 </a>
-                <div class="navbar-custom-menu">
-                    <ul class="nav navbar-nav">
-                        <!-- Messages: style can be found in dropdown.less-->
-                        <!-- Notifications: style can be found in dropdown.less -->
-                        <!-- Tasks: style can be found in dropdown.less -->
-                        <!-- User Account: style can be found in dropdown.less -->
-                        @Html.Partial("_AccountPartialView")
-                         
-                        <!-- Control Sidebar Toggle Button -->
+            </div>
+
+            <!-- Right Side: Controls (Desktop) & User Profile Icon (Desktop & Mobile) -->
+            <div class="xyz-topbar-controls">
+                <!-- Desktop Live Wallet Balance -->
+                <div class="xyz-wallet-pill xyz-desktop-only">
+                    <span><i class="fa fa-wallet" style="color:#10B981; margin-right:6px;"></i> @Html.Partial("_UnitsPartial") Units</span>
+                    <a href="@Url.Content("~/clientpanel/dashboard/buyunit")" class="xyz-topup-btn">
+                        <i class="fa fa-plus"></i> Top Up
+                    </a>
+                </div>
+
+                <!-- Desktop Notification Bell Dropdown -->
+                <div class="dropdown xyz-desktop-only" style="display:inline-block;">
+                    <button class="xyz-icon-btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="Notifications">
+                        <i class="fa fa-bell"></i>
+                        <span class="xyz-badge-dot"></span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right xyz-notification-dropdown" style="right:0; left:auto;">
+                        <div class="xyz-notif-header">
+                            <span><i class="fa fa-bell" style="color:#E50914; margin-right:8px;"></i> Notifications</span>
+                            <span class="badge" style="background:#E50914;">Active</span>
+                        </div>
+                        <div style="max-height: 280px; overflow-y: auto;">
+                            <a href="@Url.Action("Notifications", "Dashboard", new { area = "ClientPanel" })" class="xyz-notif-item">
+                                <div style="background:rgba(16,185,129,0.1); color:#10B981; width:38px; height:38px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                    <i class="fa fa-gift" style="font-size:1.15rem;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:800; font-size:1rem;">Welcome Bonus Credited</div>
+                                    <div style="font-size:0.9rem; color:#64748B;">20 free test messaging units active.</div>
+                                </div>
+                            </a>
+                            <a href="@Url.Action("Notifications", "Dashboard", new { area = "ClientPanel" })" class="xyz-notif-item">
+                                <div style="background:rgba(99,102,241,0.1); color:#6366F1; width:38px; height:38px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                    <i class="fa fa-tag" style="font-size:1.15rem;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:800; font-size:1rem;">Sender ID Registry</div>
+                                    <div style="font-size:0.9rem; color:#64748B;">Submit alphanumeric sender IDs for instant approval.</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div style="padding: 12px; text-align: center; background: rgba(0,0,0,0.02); border-top: 1px solid rgba(0,0,0,0.05);">
+                            <a href="@Url.Action("Notifications", "Dashboard", new { area = "ClientPanel" })" style="color:#E50914; font-weight:800; font-size:0.95rem; text-decoration:none;">
+                                View All Notifications &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desktop Dark / Light Switcher -->
+                <button type="button" class="xyz-icon-btn xyz-desktop-only" id="xyzThemeToggleBtn" title="Toggle Dark/Light Mode">
+                    <i class="fa fa-moon" id="xyzThemeIcon"></i>
+                </button>
+
+                <!-- Desktop Fullscreen Toggle -->
+                <button type="button" class="xyz-icon-btn xyz-desktop-only" id="xyzFullscreenToggleBtn" title="Toggle Fullscreen">
+                    <i class="fa fa-expand" id="xyzFullscreenIcon"></i>
+                </button>
+
+                <!-- User Account Dropdown (Visible on Desktop & Mobile) -->
+                <div class="dropdown" style="display:inline-block;">
+                    <button class="dropdown-toggle" data-toggle="dropdown" style="background:transparent; border:none; display:flex; align-items:center; gap:10px; padding:0; cursor:pointer;">
+                        <div class="sidebar-user-avatar" style="width:42px; height:42px; font-size:1.15rem;">
+                            @(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "U")
+                        </div>
+                        <span class="hidden-xs" style="color:#FFFFFF; font-weight:800; font-size:1.05rem;">
+                            @User.Identity.Name
+                            <i class="fa fa-angle-down" style="margin-left:4px; font-size:0.9rem; color:#94A3B8;"></i>
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-right" style="right:0; left:auto; min-width:260px; border-radius:14px; padding:0; box-shadow:0 10px 30px rgba(0,0,0,0.18); overflow:hidden;">
+                        <!-- User Header & Mobile Wallet Details -->
+                        <li style="padding:16px 20px; background:#0B0F19; color:#FFFFFF;">
+                            <div style="font-weight:800; font-size:1.1rem;">@User.Identity.Name</div>
+                            <div style="font-size:0.9rem; color:#94A3B8; margin-bottom:12px;">Client Member</div>
+                            
+                            <!-- Mobile Balance Box inside Dropdown -->
+                            <div style="background:rgba(255,255,255,0.08); padding:10px 14px; border-radius:8px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                <div>
+                                    <div style="font-size:0.8rem; color:#94A3B8; text-transform:uppercase; font-weight:700;">Balance</div>
+                                    <div style="font-weight:800; font-size:1.05rem; color:#10B981;">@Html.Partial("_UnitsPartial") Units</div>
+                                </div>
+                                <a href="@Url.Content("~/clientpanel/dashboard/buyunit")" class="btn btn-xs btn-danger" style="font-weight:800; font-size:0.85rem; border-radius:999px; padding:5px 12px;">
+                                    + Top Up
+                                </a>
+                            </div>
+                        </li>
+
+                        <!-- Dropdown Links -->
+                        <li style="padding:8px 0;">
+                            <a href="@Url.Action("Notifications", "Dashboard", new { area = "ClientPanel" })" style="padding:11px 20px; display:flex; align-items:center; justify-content:space-between; font-size:1rem; color:#334155;">
+                                <span><i class="fa fa-bell" style="color:#E50914; margin-right:8px;"></i> Notifications</span>
+                                <span class="badge" style="background:#E50914; font-size:0.82rem;">Active</span>
+                            </a>
+                            <a href="@Url.Content("~/clientpanel/dashboard/Details")" style="padding:11px 20px; display:flex; align-items:center; gap:10px; font-size:1rem; color:#334155;">
+                                <i class="fa fa-user" style="color:#64748B; width:18px;"></i> My Profile
+                            </a>
+                            <a href="@Url.Action("TwoFactor", "Dashboard", new { area = "ClientPanel" })" style="padding:11px 20px; display:flex; align-items:center; gap:10px; font-size:1rem; color:#334155;">
+                                <i class="fa fa-shield-halved" style="color:#2563EB; width:18px;"></i> 2FA Security Settings
+                            </a>
+                            <a href="@Url.Content("~/clientpanel/ApiSettings")" style="padding:11px 20px; display:flex; align-items:center; gap:10px; font-size:1rem; color:#334155;">
+                                <i class="fa fa-key" style="color:#64748B; width:18px;"></i> API Settings
+                            </a>
+                            <a href="@Url.Action("ChangePassword", "Account", new { area = "" })" style="padding:11px 20px; display:flex; align-items:center; gap:10px; font-size:1rem; color:#334155;">
+                                <i class="fa fa-lock" style="color:#64748B; width:18px;"></i> Change Password
+                            </a>
+                            
+                            <!-- Mobile Theme Toggle option in dropdown -->
+                            <a href="javascript:void(0)" id="xyzMobileThemeToggle" style="padding:11px 20px; display:flex; align-items:center; gap:10px; font-size:1rem; color:#334155;">
+                                <i class="fa fa-moon" style="color:#64748B; width:18px;"></i> Toggle Theme
+                            </a>
+                        </li>
+
+                        <li role="separator" class="divider" style="margin:4px 0;"></li>
+
+                        <!-- Log Off -->
+                        <li style="padding:4px 0 10px;">
+                            @using (Html.BeginForm("LogOff", "Account", new { area = "" }, FormMethod.Post, new { id = "logoutForm" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <a href="javascript:document.getElementById('logoutForm').submit()" style="padding:11px 20px; color:#E50914; font-weight:800; display:flex; align-items:center; gap:10px; font-size:1rem;">
+                                    <i class="fa fa-right-from-bracket"></i> Log Off
+                                </a>
+                            }
+                        </li>
                     </ul>
                 </div>
-            </nav>
+            </div>
         </header>
-        <!-- Left side column. contains the logo and sidebar -->
+
+        <!-- Left Sidebar Navigation -->
         <aside class="main-sidebar">
-            <!-- sidebar: style can be found in sidebar.less -->
             <section class="sidebar">
-                <!-- Sidebar user panel -->
-                <div class="user-panel">
-                    <div class="pull-left image">
-                        <img src="/Uploads/user.png" class="img-circle" alt="User Image">
+                <!-- User Profile Mini-Card -->
+                <div class="sidebar-user-card">
+                    <div class="sidebar-user-avatar">
+                        @(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "U")
                     </div>
-                    <div class="pull-left info">
-                        <p>@User.Identity.Name </p>
-                        <a href="#"><i class="fa fa-circle text-success"></i> Online</a>
-                        <a href="#"><i class="text-success">&#x20A6;</i> @Html.Partial("_UnitsPartial") </a>
+                    <div style="overflow:hidden;">
+                        <div class="sidebar-user-name">@User.Identity.Name</div>
+                        <div class="sidebar-user-status">
+                            <span style="width:9px; height:9px; background:#10B981; border-radius:50%; display:inline-block;"></span> Online
+                        </div>
                     </div>
                 </div>
-                <!-- search form -->
-                @*<form action="#" method="get" class="sidebar-form">
-                    <div class="input-group">
-                        <input type="text" name="q" class="form-control" placeholder="Search...">
-                        <span class="input-group-btn">
-                            <button type="submit" name="search" id="search-btn" class="btn btn-flat">
-                                <i class="fa fa-search"></i>
-                            </button>
-                        </span>
-                    </div>
-                </form>*@
-                <!-- /.search form -->
-                <!-- sidebar menu: : style can be found in sidebar.less -->
-            <ul class="sidebar-menu">
-                <li class="header">MAIN NAVIGATION</li>
-                <li>
-                    <a href="@Url.Content("~/clientpanel/Dashboard")">
-                        <i class="fa fa-dashboard"></i> <span>Dashboard</span>
-                    </a>
-                </li>
-                @if (User.IsInRole("Admin"))
-                {
-                    <li>
-                        <a href="@Url.Content("~/adminpanel/main")">
-                            <i class="fa fa-dashboard"></i> <span>Admin Dashboard</span>
+
+                <!-- Categorized Navigation Menu -->
+                <ul class="sidebar-menu">
+                    <li class="header">MAIN MESSAGING</li>
+                    <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                        <a href="@Url.Content("~/clientpanel/Dashboard")">
+                            <i class="fa fa-gauge-high"></i> <span>Dashboard</span>
                         </a>
                     </li>
-                }
-                <li>
-                    <a href="@Url.Content("~/clientpanel/Dashboard/SenderByUser")">
+                    <li>
+                        <a href="@Url.Content("~/clientpanel/Dashboard/compose")">
+                            <i class="fa fa-paper-plane"></i> <span>Compose SMS</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Content("~/clientpanel/Dashboard/SenderByUser")">
+                            <i class="fa fa-tag"></i> <span>Sender IDs</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Content("~/clientpanel/addressbook/")">
+                            <i class="fa fa-address-book"></i> <span>Address Book</span>
+                        </a>
+                    </li>
 
-                        <i class="fa fa-envelope-o"></i> <span>Sender IDs</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="@Url.Content("~/clientpanel/Dashboard/compose")">
+                    <li class="header">REPORTS &amp; LOGS</li>
+                    <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "MessageHistory" ? "active" : "")">
+                        <a href="@Url.Content("~/clientpanel/Dashboard/MessageHistory")">
+                            <i class="fa fa-clock-rotate-left"></i> <span>Message History</span>
+                        </a>
+                    </li>
+                    <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "ScheduledMessages" ? "active" : "")">
+                        <a href="@Url.Content("~/clientpanel/Dashboard/ScheduledMessages")">
+                            <i class="fa fa-clock" style="color:#F59E0B;"></i> <span>Scheduled Messages</span>
+                        </a>
+                    </li>
+                    <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "draftmessages" ? "active" : "")">
+                        <a href="@Url.Content("~/clientpanel/Dashboard/draftmessages")">
+                            <i class="fa fa-file-lines"></i> <span>Draft Messages</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("Notifications", "Dashboard", new { area = "ClientPanel" })">
+                            <i class="fa fa-bell"></i> <span>Notifications Center</span>
+                        </a>
+                    </li>
 
-                        <i class="fa fa-envelope-o"></i> <span>Compose SMS</span>
-                    </a>
-                </li>
+                    <li class="header">BILLING &amp; WALLET</li>
+                    <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "BuyUnit" ? "active" : "")">
+                        <a href="@Url.Content("~/clientpanel/dashboard/buyunit")">
+                            <i class="fa fa-wallet"></i> <span>Top Up Units</span>
+                        </a>
+                    </li>
+                    <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "TransactionHistory" ? "active" : "")">
+                        <a href="@Url.Content("~/clientpanel/Dashboard/transactionhistory")">
+                            <i class="fa fa-receipt"></i> <span>Transaction History</span>
+                        </a>
+                    </li>
+                    <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "NetworkPricing" ? "active" : "")">
+                        <a href="@Url.Action("NetworkPricing", "Dashboard", new { area = "ClientPanel" })">
+                            <i class="fa fa-table-list"></i> <span>Network Pricing</span>
+                        </a>
+                    </li>
 
-                <li>
-                    <a href="@Url.Content("~/clientpanel/Dashboard/MessageHistory")">
-                        <i class="fa fa-envelope-o"></i> <span>Message History</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="@Url.Content("~/clientpanel/Dashboard/draftmessages")">
-                        <i class="fa fa-envelope-o"></i> <span>Draft Messages</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="@Url.Content("~/clientpanel/Dashboard/transactionhistory")">
-                        <i class="fa fa-money"></i> <span>Transaction History</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="@Url.Content("~/clientpanel/addressbook/")">
-                        <i class="fa fa-book"></i> <span>Address Book</span>
-                    </a>
-                </li>
+                    <li class="header">SUPPORT &amp; HELP</li>
+                    <li class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Tickets" ? "active" : "")">
+                        <a href="@Url.Action("Index", "Tickets", new { area = "ClientPanel" })">
+                            <i class="fa fa-headset" style="color:#38BDF8;"></i> <span>Support Desk &amp; Tickets</span>
+                        </a>
+                    </li>
 
-                <li class="treeview">
-                    <a href="#">
-                        <i class="fa fa-folder"></i> <span>Top Up Units</span>
-                        <span class="pull-right-container">
-                            <i class="fa fa-angle-left pull-right"></i>
-                        </span>
-                    </a>
-                    <ul class="treeview-menu">
-                        <li>@*<a href="@Url.Content("~/clientpanel/dashboard/buyunit")"><i class="fa fa-circle-o"></i>Buy SMS Units</a>*@</li>
-                        <li><a href="@Url.Content("~/clientpanel/dashboard/buyunit")"><i class="fa fa-circle-o"></i>Buy SMS Units</a></li>
-                        <li><a href="@Url.Content("~/clientpanel/dashboard/loadvoucher")"><i class="fa fa-circle-o"></i>Load Voucher</a></li>
-                    </ul>
-                </li>
-                <li class="treeview">
-                    <a href="#">
-                        <i class="fa fa-user"></i> <span>Profile</span>
-                        <span class="pull-right-container">
-                            <i class="fa fa-angle-left pull-right"></i>
-                        </span>
-                    </a>
-                    <ul class="treeview-menu">
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <li class="header">ADMINISTRATION</li>
                         <li>
-                            <a href="@Url.Content("~/clientpanel/dashboard/Details")">
-                                <i class="fa fa-circle-o"></i> <span>Profile</span>
+                            <a href="@Url.Content("~/adminpanel/main")" style="color:#E50914 !important;">
+                                <i class="fa fa-shield-halved" style="color:#E50914;"></i> <span>Admin Control Panel</span>
                             </a>
                         </li>
-                        <li>
-                            <a href="@Url.Content("~/clientpanel/ApiSettings")">
-                                <i class="fa fa-circle-o"></i> <span>API Settings</span>
-                            </a>
-                        </li>
+                    }
 
-                        <li><a href="@Url.Action("ChangePassword","Account", new { area = "" })"><i class="fa fa-circle-o"></i>Change Password</a></li>
-                    </ul>
-                </li>
-
-
-                <li><a href="#"><i class="fa fa-book"></i> <span>Documentation</span></a></li>
-                <li><a href="@Url.Content("~/Home/")"><i class="fa fa-home"></i> <span>Home</span></a></li>
-                @*<li class="header">LABELS</li>
-        <li><a href="#"><i class="fa fa-circle-o text-red"></i> <span>Important</span></a></li>
-        <li><a href="#"><i class="fa fa-circle-o text-yellow"></i> <span>Warning</span></a></li>
-        <li><a href="#"><i class="fa fa-circle-o text-aqua"></i> <span>Information</span></a></li>*@
-            </ul>
+                    <li class="header">DEVELOPER &amp; ACCOUNT</li>
+                    <li>
+                        <a href="@Url.Action("UpdatedFeatures", "Home", new { area = "" })">
+                            <i class="fa fa-star" style="color:#F59E0B;"></i> <span>Updated Features</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Content("~/clientpanel/ApiSettings")">
+                            <i class="fa fa-code"></i> <span>API Settings &amp; Keys</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("Developers", "Home", new { area = "" })" target="_blank">
+                            <i class="fa fa-book-bookmark"></i> <span>API Documentation</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("Index", "Home", new { area = "" })">
+                            <i class="fa fa-globe"></i> <span>Public Website</span>
+                        </a>
+                    </li>
+                </ul>
             </section>
-            <!-- /.sidebar -->
         </aside>
 
+        <!-- Main Content Body -->
         <div class="content-wrapper">
             @RenderBody()
         </div>
-        <div class="clearfix"></div>
+
+        <!-- Footer -->
         <footer class="main-footer">
-            <div class="pull-right hidden-xs">
-                <b>Version</b> 3.0.0.0
+            <div>
+                &copy; @DateTime.UtcNow.Year <a href="https://exwhyzee.ng/" target="_blank" rel="noopener noreferrer" style="color:#0284C7; font-weight:800; text-decoration:none;">Exwhyzee Smart Solutions Limited</a>. All rights reserved. &bull; <a href="@Url.Action("UpdatedFeatures", "Home", new { area = "" })" style="font-weight:700; color:#0284C7;">Updated Features</a>
             </div>
-            <strong>Copyright &copy; 2008 - 2023 <a href="www.exwhyzee.ng">Exwhyzee Technologies Ltd.</a>.</strong> All rights
-            reserved.
+            <div class="hidden-xs" style="font-weight:700;">
+                Exwhyzee Bulk SMS Portal v3.5
+            </div>
         </footer>
     </div>
 
+    <!-- Scripts -->
     <script src="/Content/Dashboard/plugins/jQuery/jquery-2.2.3.min.js"></script>
     <script src="/Content/Dashboard/plugins/jQuery/jquery-ui-1.12.0.min.js"></script>
     <script src="/Content/Dashboard/bootstrap/js/bootstrap.min.js"></script>
     <script src="/Content/Dashboard/plugins/datepicker/bootstrap-datepicker.js"></script>
     <script src="/Content/Dashboard/dist/js/app.min.js"></script>
+    <script src="/Scripts/modern-app.js"></script>
+
+    <!-- Theme & Fullscreen Scripts -->
+    <script>
+        (function () {
+            // Dark / Light Mode Switcher Function
+            function toggleTheme() {
+                document.body.classList.toggle('xyz-dark-theme');
+                const isDark = document.body.classList.contains('xyz-dark-theme');
+                localStorage.setItem('xyz_theme', isDark ? 'dark' : 'light');
+                const themeIcon = document.getElementById('xyzThemeIcon');
+                if (themeIcon) {
+                    themeIcon.className = isDark ? 'fa fa-sun' : 'fa fa-moon';
+                }
+                if (window.xyzToast) {
+                    xyzToast.info(isDark ? 'Dark Mode Enabled' : 'Light Mode Enabled', 'Theme Updated');
+                }
+            }
+
+            const themeBtn = document.getElementById('xyzThemeToggleBtn');
+            const mobileThemeBtn = document.getElementById('xyzMobileThemeToggle');
+            const themeIcon = document.getElementById('xyzThemeIcon');
+            const savedTheme = localStorage.getItem('xyz_theme');
+
+            if (savedTheme === 'dark') {
+                document.body.classList.add('xyz-dark-theme');
+                if (themeIcon) themeIcon.className = 'fa fa-sun';
+            }
+
+            if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+            if (mobileThemeBtn) mobileThemeBtn.addEventListener('click', toggleTheme);
+
+            // Fullscreen Toggle
+            const fsBtn = document.getElementById('xyzFullscreenToggleBtn');
+            const fsIcon = document.getElementById('xyzFullscreenIcon');
+
+            if (fsBtn) {
+                fsBtn.addEventListener('click', function () {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(() => {});
+                        if (fsIcon) fsIcon.className = 'fa fa-compress';
+                    } else {
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen().catch(() => {});
+                        }
+                        if (fsIcon) fsIcon.className = 'fa fa-expand';
+                    }
+                });
+            }
+        })();
+    </script>
+
+    <!-- Toast Alerts Listener for TempData -->
+    @if (TempData["Success"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.xyzToast) {
+                    window.xyzToast.success("@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["Success"].ToString()))", "Success");
+                }
+            });
+        </script>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.xyzToast) {
+                    window.xyzToast.error("@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["Error"].ToString()))", "Error");
+                }
+            });
+        </script>
+    }
+    @if (TempData["error"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.xyzToast) {
+                    window.xyzToast.error("@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["error"].ToString()))", "Error");
+                }
+            });
+        </script>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.xyzToast) {
+                    window.xyzToast.info("@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["Info"].ToString()))", "Information");
+                }
+            });
+        </script>
+    }
 
     @RenderSection("scripts", required: false)
+    <!-- DASHBOARD ANNOUNCEMENT MODAL POPUP -->
+    <div class="modal fade" id="xyzDashboardAnnouncementModal" tabindex="-1" role="dialog" aria-labelledby="xyzAnnouncementTitle">
+        <div class="modal-dialog" role="document" style="max-width: 600px; margin: 60px auto;">
+            <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 50px rgba(0,0,0,0.3); overflow: hidden;">
+                <!-- Modal Header Banner Image -->
+                <div id="xyzModalBannerContainer" style="display:none; width:100%; max-height:240px; overflow:hidden; background:#0F172A;">
+                    <img id="xyzModalBannerImg" src="" style="width:100%; height:100%; object-fit:cover;" />
+                </div>
+
+                <div class="modal-header" style="background:#0F172A; color:#FFFFFF; padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                    <button type="button" class="close" onclick="dismissDashboardAnnouncement()" style="color:#FFFFFF; opacity:0.8; font-size:1.5rem;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title" id="xyzAnnouncementTitle" style="font-weight:800; font-size:1.25rem; color:#FFFFFF; margin:0; display:flex; align-items:center; gap:10px;">
+                        <i class="fa fa-bullhorn" style="color:#0284C7;"></i> <span id="xyzModalTitleText">Announcement</span>
+                    </h4>
+                </div>
+
+                <div class="modal-body" style="padding:24px; color:#334155; font-size:0.95rem; line-height:1.6;">
+                    <div id="xyzModalBodyHtml"></div>
+                </div>
+
+                <div class="modal-footer" style="background:#F8FAFC; border-top:1px solid #E2E8F0; padding:14px 24px; display:flex; justify-content:space-between; align-items:center;">
+                    <small style="color:#64748B; font-size:0.8rem;" id="xyzModalFrequencyText">Show once every 7 days</small>
+                    <button type="button" class="btn btn-primary" onclick="dismissDashboardAnnouncement()" style="background:#0284C7; border:none; font-weight:800; padding:10px 24px; border-radius:10px; box-shadow:0 4px 14px rgba(2,132,199,0.3);">
+                        <i class="fa fa-check"></i> Got It &amp; Dismiss
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentModalId = 0;
+
+        function checkDashboardAnnouncementModal() {
+            $.get('/Adminpanel/ModalInfoes/GetActiveModalJson', function (res) {
+                if (res && res.hasModal) {
+                    currentModalId = res.id;
+                    const freqDays = res.frequencyDays || 7;
+                    const storageKey = 'xyz_modal_dismissed_v' + res.id;
+                    const lastDismissed = localStorage.getItem(storageKey);
+                    const now = Date.now();
+                    const msInDay = 24 * 60 * 60 * 1000;
+
+                    if (!lastDismissed || (now - parseInt(lastDismissed, 10)) > (freqDays * msInDay)) {
+                        // Populate title
+                        document.getElementById('xyzModalTitleText').textContent = res.title || 'Announcement';
+
+                        // Populate image banner
+                        const bannerContainer = document.getElementById('xyzModalBannerContainer');
+                        const bannerImg = document.getElementById('xyzModalBannerImg');
+                        if (res.imageUrl) {
+                            bannerImg.src = res.imageUrl;
+                            bannerContainer.style.display = 'block';
+                        } else {
+                            bannerContainer.style.display = 'none';
+                        }
+
+                        // Populate body content
+                        document.getElementById('xyzModalBodyHtml').innerHTML = res.contentHtml || 'Welcome to Exwhyzee Messaging Platform.';
+
+                        // Populate frequency text
+                        document.getElementById('xyzModalFrequencyText').textContent = 'This reminder displays once every ' + freqDays + ' days.';
+
+                        // Show modal
+                        $('#xyzDashboardAnnouncementModal').modal({ backdrop: 'static', keyboard: false });
+                    }
+                }
+            });
+        }
+
+        function dismissDashboardAnnouncement() {
+            if (currentModalId > 0) {
+                const storageKey = 'xyz_modal_dismissed_v' + currentModalId;
+                localStorage.setItem(storageKey, Date.now().toString());
+            }
+            $('#xyzDashboardAnnouncementModal').modal('hide');
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            setTimeout(checkDashboardAnnouncementModal, 800);
+        });
+    </script>
 </body>
 </html>
-

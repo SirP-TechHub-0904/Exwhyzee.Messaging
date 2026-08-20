@@ -1,0 +1,125 @@
+@model Exwhyzee.Messaging.Core.Models.Message
+@{
+    ViewBag.Title = "Edit Scheduled Broadcast";
+    var approvedSenderIds = ViewBag.ApprovedSenderIds as List<string> ?? new List<string>();
+}
+
+<style>
+    .xyz-edit-card {
+        background: #FFFFFF;
+        border-radius: 14px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+        max-width: 780px;
+        margin: 0 auto 30px;
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-edit-card {
+        background: #131B2E;
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+</style>
+
+<div style="max-width:780px; margin:0 auto 16px; display:flex; justify-content:space-between; align-items:center;">
+    <a href="@Url.Action("ScheduledMessages", "Dashboard", new { area = "ClientPanel" })" class="btn btn-default" style="font-weight:700; border-radius:8px;">
+        &larr; Back to Scheduled Queue
+    </a>
+    <span class="badge" style="background:#F59E0B; font-weight:800; padding:6px 12px; font-size:0.85rem;">
+        <i class="fa fa-clock"></i> Scheduled (ID #@Model.MessageId)
+    </span>
+</div>
+
+@Html.Partial("_ResponseMessagePartial")
+
+<div class="xyz-edit-card">
+    <div style="padding:18px 24px; border-bottom:1px solid #E2E8F0; background:#F8FAFC;">
+        <h3 style="margin:0; font-weight:800; font-size:1.15rem; color:#1E293B; display:flex; align-items:center; gap:8px;">
+            <i class="fa fa-pencil" style="color:#6366F1;"></i> Edit Scheduled Broadcast
+        </h3>
+        <p style="margin:4px 0 0; color:#64748B; font-size:0.88rem;">Modify message details, recipient list, or dispatch date before automatic broadcast.</p>
+    </div>
+
+    <div style="padding:24px;">
+        @using (Html.BeginForm("EditScheduledMessage", "Dashboard", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.MessageId" />
+
+            <!-- Sender ID -->
+            <div class="form-group" style="margin-bottom:18px;">
+                <label style="font-weight:700; font-size:0.92rem; margin-bottom:6px; display:block;">Sender ID:</label>
+                <input type="text" name="senderId" maxlength="11" class="form-control" value="@Model.SenderId" required style="font-weight:800; font-size:1rem; text-transform:uppercase;" />
+                @if (approvedSenderIds.Any())
+                {
+                    <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                        <small style="color:#64748B; font-weight:700;">Approved:</small>
+                        @foreach (var s in approvedSenderIds)
+                        {
+                            <span class="badge" onclick="$('input[name=senderId]').val('@s')" style="background:#EEF2FF; color:#4338CA; cursor:pointer; font-weight:700;">@s</span>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Scheduled Date & Time -->
+            <div class="form-group" style="margin-bottom:18px;">
+                <label style="font-weight:700; font-size:0.92rem; margin-bottom:6px; display:block;">Scheduled Date & Time:</label>
+                <div class="input-group date" id="datetimepicker_edit">
+                    <input type="text" name="scheduleDate" class="form-control" value="@(Model.Scheduleddate?.ToString("dd/MM/yyyy HH:mm") ?? DateTime.Now.AddHours(1).ToString("dd/MM/yyyy HH:mm"))" required style="border-radius:8px 0 0 8px;" />
+                    <span class="input-group-addon" style="background:#6366F1; color:#fff; border:none; cursor:pointer; border-radius:0 8px 8px 0;">
+                        <i class="fa fa-calendar"></i>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Recipients -->
+            <div class="form-group" style="margin-bottom:18px;">
+                <label style="font-weight:700; font-size:0.92rem; margin-bottom:6px; display:block;">Recipients (Comma, space, or newline separated):</label>
+                <textarea name="recipients" rows="5" class="form-control" required style="font-family:'JetBrains Mono', monospace; font-size:0.9rem;">@Model.Recipients</textarea>
+            </div>
+
+            <!-- Message Content -->
+            <div class="form-group" style="margin-bottom:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <label style="font-weight:700; font-size:0.92rem; margin:0;">Message Content:</label>
+                    <span class="badge" id="editCharCounter" style="background:#1E293B; font-weight:700;">0 / 160 Chars</span>
+                </div>
+                <textarea name="messageContent" id="editMessageContent" rows="6" class="form-control" required style="font-size:0.95rem; line-height:1.5;">@Model.MessageContent</textarea>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #E2E8F0; padding-top:18px; flex-wrap:wrap; gap:10px;">
+                <a href="@Url.Action("ScheduledMessages", "Dashboard", new { area = "ClientPanel" })" class="btn btn-default" style="font-weight:700; border-radius:8px;">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary" style="background:#6366F1; border:none; font-weight:800; font-size:0.95rem; padding:10px 24px; border-radius:8px;">
+                    <i class="fa fa-save"></i> Save Changes
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/moment.js"></script>
+    <script type="text/javascript" src="/scripts/bootstrap-datetimepicker.js"></script>
+    <script>
+        $(document).ready(function () {
+            if ($('#datetimepicker_edit').length) {
+                $('#datetimepicker_edit').datetimepicker({
+                    format: 'DD/MM/YYYY HH:mm',
+                    minDate: moment()
+                });
+            }
+
+            function updateEditCounter() {
+                const len = $('#editMessageContent').val().length;
+                $('#editCharCounter').text(len + ' / 160 Chars');
+            }
+
+            $('#editMessageContent').on('input', updateEditCounter);
+            updateEditCounter();
+        });
+    </script>
+}

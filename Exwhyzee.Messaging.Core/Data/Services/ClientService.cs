@@ -32,9 +32,33 @@ namespace Exwhyzee.Messaging.Core.Data.Services
 
         public async Task AddUnit(int id, Transaction item)
         {
-            var user = await db.Clients.FindAsync(id);
-            user.Units = user.Units + item.Units;
-            db.Transactions.Add(item);
+            var client = await db.Clients.FirstOrDefaultAsync(x => x.ClientId == id);
+            if (client != null)
+            {
+                client.Units += item.Units;
+            }
+
+            if (item.TransactionId > 0)
+            {
+                var existingTx = await db.Transactions.FirstOrDefaultAsync(t => t.TransactionId == item.TransactionId);
+                if (existingTx != null)
+                {
+                    existingTx.Status = item.Status;
+                    existingTx.DateApproved = item.DateApproved;
+                    existingTx.TransactionReference = item.TransactionReference;
+                    existingTx.AmountPaid = item.AmountPaid;
+                    existingTx.ApprovedBy = item.ApprovedBy;
+                    existingTx.PaymentSource = item.PaymentSource;
+                    existingTx.IsAdminTransferred = item.IsAdminTransferred;
+                    if (!string.IsNullOrEmpty(item.Note)) existingTx.Note = item.Note;
+                }
+            }
+            else
+            {
+                item.User = null;
+                db.Transactions.Add(item);
+            }
+
             await db.SaveChangesAsync();
         }
 
@@ -505,19 +529,26 @@ namespace Exwhyzee.Messaging.Core.Data.Services
                 {
                     var response = await SubmitSenderId(senderId, message);
                     sid.XYZ_error_code = response.error_code;
-                    sid.XYZ_msg = response.msg;
-                    sid.XYZ_status = response.status;
+                    if (response.status == "success" || (response.msg != null && response.msg.ToLower().Contains("success")))
+                    {
+                        sid.XYZ_status = "Pending Approval";
+                        sid.XYZ_msg = "Submitted to gateway. Please check status in 20 minutes.";
+                    }
+                    else
+                    {
+                        sid.XYZ_status = response.status ?? "Pending Approval";
+                        sid.XYZ_msg = response.msg ?? "Submitted for operator verification.";
+                    }
                 }
                 catch (Exception c)
                 {
-                    sid.XYZ_msg = c.ToString();
-                    sid.XYZ_status = "Not Verified and Submitted";
+                    sid.XYZ_msg = c.Message;
+                    sid.XYZ_status = "Not on Gateway";
                 }
 
                 db.XyzSenderIDs.Add(sid);
-
                 await db.SaveChangesAsync();
-                return senderId + " has been added successfully";
+                return $"Sender ID [{senderId}] submitted to gateway. Please check status in 20 minutes.";
             }
             else
             {
@@ -525,18 +556,26 @@ namespace Exwhyzee.Messaging.Core.Data.Services
                 {
                     var response = await SubmitSenderId(senderId, message);
                     check.XYZ_error_code = response.error_code;
-                    check.XYZ_msg = response.msg;
-                    check.XYZ_status = response.status;
+                    if (response.status == "success" || (response.msg != null && response.msg.ToLower().Contains("success")))
+                    {
+                        check.XYZ_status = "Pending Approval";
+                        check.XYZ_msg = "Submitted to gateway. Please check status in 20 minutes.";
+                    }
+                    else
+                    {
+                        check.XYZ_status = response.status ?? "Pending Approval";
+                        check.XYZ_msg = response.msg ?? "Submitted for operator verification.";
+                    }
                 }
                 catch (Exception c)
                 {
-                    check.XYZ_msg = c.ToString();
-                    check.XYZ_status = "Not Verified and Submitted";
+                    check.XYZ_msg = c.Message;
+                    check.XYZ_status = "Not on Gateway";
                 }
 
                 db.Entry(check).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-                return "Sender ID resubmitted. Result: " + check.XYZ_msg;
+                return $"Sender ID [{senderId}] re-submitted to gateway. Please check status in 20 minutes.";
             }
         }
 
@@ -556,20 +595,47 @@ namespace Exwhyzee.Messaging.Core.Data.Services
         public async Task<string> VerifySender(string senderId)
         {
             var xsenderid = await db.XyzSenderIDs.FirstOrDefaultAsync(x => x.SenderId == senderId);
+            if (xsenderid == null) return "Sender ID not found";
 
             try
             {
                 var response = await VerifySenderId(xsenderid.SenderId);
-                xsenderid.Verify_msg = response.msg;
-                xsenderid.XYZ_msg = response.msg;
-                xsenderid.XYZ_status = response.status;
+                string rawStatus = (!string.IsNullOrEmpty(response.senderidStatus) ? response.senderidStatus : (response.msg ?? response.status ?? "Pending")).ToLower();
+                string displayStatus = "Pending Approval";
+                string remark = "Under operator review. Please check in 20 minutes.";
+
+                if (rawStatus == "approved" || rawStatus.Contains("active"))
+                {
+                    displayStatus = "Approved";
+                    remark = "Approved and active for SMS broadcasts.";
+                }
+                else if (rawStatus == "pending" || rawStatus.Contains("progress") || rawStatus.Contains("submit"))
+                {
+                    displayStatus = "Pending Approval";
+                    remark = "Under operator review. Please check in 20 minutes.";
+                }
+                else if (rawStatus == "denied" || rawStatus == "rejected" || rawStatus.Contains("reject"))
+                {
+                    displayStatus = "Rejected";
+                    remark = "Sender ID was denied by telco operators.";
+                }
+                else if (rawStatus.Contains("doesn't exist") || rawStatus.Contains("does not exist") || rawStatus.Contains("not found"))
+                {
+                    displayStatus = "Not on Gateway";
+                    remark = "The sender ID supplied does not exist on gateway.";
+                }
+
+                xsenderid.XYZ_status = displayStatus;
+                xsenderid.XYZ_msg = remark;
+                xsenderid.Verify_msg = displayStatus;
+                xsenderid.XYZ_error_code = response.error_code;
                 db.Entry(xsenderid).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-                return response.msg;
+                return displayStatus;
             }
             catch (Exception c)
             {
-                xsenderid.Verify_msg = c.ToString();
+                xsenderid.Verify_msg = "Error checking status";
                 return "Error checking status";
             }
         }

@@ -39,6 +39,27 @@ namespace Exwhyzee.Messaging.Core.Migrations
                     b.Property<decimal>("FlatUnitsPerSms")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("OutflowAccountName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OutflowAccountNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OutflowBankCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OutflowBankLastUpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("OutflowBankLastUpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OutflowBankName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaystackRecipientCode")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("PreventApiModification")
                         .HasColumnType("bit");
 
@@ -99,6 +120,49 @@ namespace Exwhyzee.Messaging.Core.Migrations
                     b.ToTable("ApiSetting");
                 });
 
+            modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.AppNotification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateRead")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NotificationType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AppNotification");
+                });
+
             modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -127,6 +191,12 @@ namespace Exwhyzee.Messaging.Core.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("LastOtpCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastOtpExpiry")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -150,11 +220,17 @@ namespace Exwhyzee.Messaging.Core.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<int>("PreferredTwoFactorMethod")
+                        .HasColumnType("int");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
+
+                    b.Property<string>("TwoFactorSecretKey")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
@@ -245,6 +321,15 @@ namespace Exwhyzee.Messaging.Core.Migrations
                     b.Property<string>("FirstName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("GeminiApiKey")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastLowUnitAlertDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("LowUnitReminderThreshold")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("OtherNames")
                         .HasColumnType("nvarchar(max)");
 
@@ -284,6 +369,9 @@ namespace Exwhyzee.Messaging.Core.Migrations
                     b.Property<int?>("GroupId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
 
@@ -322,6 +410,40 @@ namespace Exwhyzee.Messaging.Core.Migrations
                     b.HasIndex("PriceSettingId");
 
                     b.ToTable("DialCode");
+                });
+
+            modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.EmailLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BodyHtml")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DateSent")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsSuccess")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RecipientEmail")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EmailLog");
                 });
 
             modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.Group", b =>
@@ -464,8 +586,32 @@ namespace Exwhyzee.Messaging.Core.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ContentHtml")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Modal")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ShowFrequencyDays")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("UseImage")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("UseText")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -525,6 +671,105 @@ namespace Exwhyzee.Messaging.Core.Migrations
                     b.ToTable("Slider");
                 });
 
+            modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.SupportTicket", b =>
+                {
+                    b.Property<int>("TicketId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TicketId"));
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DateUpdated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SenderEmail")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("SenderName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SenderPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("TicketNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("TicketId");
+
+                    b.ToTable("SupportTicket");
+                });
+
+            modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.TicketResponse", b =>
+                {
+                    b.Property<int>("ResponseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ResponseId"));
+
+                    b.Property<string>("AdminRepliedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsAdminReply")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SenderName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SenderUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TicketId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ResponseId");
+
+                    b.HasIndex("TicketId");
+
+                    b.ToTable("TicketResponse");
+                });
+
             modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.Transaction", b =>
                 {
                     b.Property<int>("TransactionId")
@@ -551,10 +796,22 @@ namespace Exwhyzee.Messaging.Core.Migrations
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DateTransferred")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("GatewayResponse")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsAdminTransferred")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPaystackOutflow")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentSource")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Status")
@@ -565,6 +822,9 @@ namespace Exwhyzee.Messaging.Core.Migrations
 
                     b.Property<int>("TransactionType")
                         .HasColumnType("int");
+
+                    b.Property<string>("TransferredBy")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Units")
                         .HasColumnType("decimal(18,2)");
@@ -827,6 +1087,17 @@ namespace Exwhyzee.Messaging.Core.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.TicketResponse", b =>
+                {
+                    b.HasOne("Exwhyzee.Messaging.Core.Models.SupportTicket", "Ticket")
+                        .WithMany("Responses")
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ticket");
+                });
+
             modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.Transaction", b =>
                 {
                     b.HasOne("Exwhyzee.Messaging.Core.Models.ApplicationUser", "User")
@@ -928,6 +1199,11 @@ namespace Exwhyzee.Messaging.Core.Migrations
             modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.PriceSetting", b =>
                 {
                     b.Navigation("DialCodes");
+                });
+
+            modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.SupportTicket", b =>
+                {
+                    b.Navigation("Responses");
                 });
 #pragma warning restore 612, 618
         }

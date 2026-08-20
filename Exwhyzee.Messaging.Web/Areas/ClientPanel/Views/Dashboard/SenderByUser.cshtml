@@ -1,82 +1,491 @@
 @model IEnumerable<Exwhyzee.Messaging.Core.Models.XyzSenderID>
 
 @{
-    ViewBag.Title = "SenderByUser";
+    ViewBag.Title = "Manage Sender IDs";
 }
 
+<style>
+    .xyz-sender-hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 28px;
+    }
 
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>Manage Sender IDs</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Manage Sender IDs</a></li>
-        <li class="active">Sender IDs List</li>
-    </ol>
-</section>
+    .xyz-sender-hero h1 {
+        font-size: 2.35rem;
+        font-weight: 800;
+        margin: 0 0 6px;
+        color: var(--xyz-dash-text);
+        letter-spacing: -0.5px;
+    }
 
-<section class="content">
-    @Html.Partial("_ResponseMessagePartial")
+    .xyz-sender-hero p {
+        font-size: 1.2rem;
+        color: var(--xyz-dash-muted);
+        margin: 0;
+    }
 
-    <div class="box">
-        <div class="box-header">
-            <h3 class="box-title">My Sender IDs  <small class="label bg-green"> @Model.Count()</small></h3>
-            <span class="pull-right">
-                @Html.ActionLink("New Sender ID", "Create", null, new{@class= "btn btn-primary" })
+    /* Tag Badge for Sender IDs */
+    .xyz-sender-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366F1;
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        padding: 6px 16px;
+        border-radius: 10px;
+        font-weight: 800;
+        font-size: 1.15rem;
+        letter-spacing: 0.5px;
+    }
 
-             </span>
-        </div>
-        <div class="box-body table-responsive">
-            <table id="example1" class="table table-bordered table-striped">
-                <tr>
-                    <th>
-                        @Html.DisplayNameFor(model => model.SenderId)
-                    </th>
-                   
-                    <th>
-                       Status
-                    </th>
-                    <th>
-                       Action
-                    </th>
+    /* Modern Panel Card */
+    .xyz-panel-card {
+        background: #FFFFFF;
+        border-radius: 18px;
+        border: 1px solid var(--xyz-dash-border);
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.03);
+        margin-bottom: 30px;
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-panel-card {
+        background: #131B2E;
+    }
+
+    .xyz-panel-header {
+        padding: 22px 28px;
+        border-bottom: 1px solid var(--xyz-dash-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .xyz-panel-title {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--xyz-dash-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .xyz-badge-status {
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 9999px;
+        font-size: 0.95rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+
+    .xyz-status-approved,
+    .xyz-status-delivered,
+    .xyz-status-active {
+        background: rgba(16, 185, 129, 0.14);
+        color: #10B981;
+    }
+
+    .xyz-status-pending {
+        background: rgba(245, 158, 11, 0.14);
+        color: #F59E0B;
+    }
+
+    .xyz-status-unregistered,
+    .xyz-status-not-exist {
+        background: rgba(239, 68, 68, 0.12);
+        color: #EF4444;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .xyz-status-rejected,
+    .xyz-status-failed {
+        background: rgba(229, 9, 20, 0.14);
+        color: #E50914;
+    }
+
+    /* Regulatory Notice Box */
+    .xyz-guide-card {
+        background: rgba(99, 102, 241, 0.05);
+        border: 1px solid rgba(99, 102, 241, 0.18);
+        border-radius: 16px;
+        padding: 22px 26px;
+        margin-bottom: 28px;
+    }
+
+    .xyz-guide-card h4 {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #6366F1;
+        margin: 0 0 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .xyz-guide-card ul {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 1.05rem;
+        color: var(--xyz-dash-text);
+        line-height: 1.6;
+    }
+</style>
+
+<!-- Hero Section -->
+<div class="xyz-sender-hero">
+    <div>
+        <h1><i class="fa fa-tags" style="color:#6366F1; margin-right:8px;"></i> Sender ID Registry</h1>
+        <p>Register, verify, and re-add branded alphanumeric Sender IDs for SMS broadcasts across all telecom networks.</p>
+    </div>
+    <div>
+        <button type="button" class="btn btn-primary" onclick="openCreateModal('')" style="background:#E50914; border:none; font-weight:800; font-size:1.1rem; padding:12px 26px; border-radius:12px; box-shadow:0 6px 18px rgba(229,9,20,0.3);">
+            <i class="fa fa-plus"></i> Request New Sender ID
+        </button>
+    </div>
+</div>
+
+<!-- NCC & Operator Regulatory Guidelines -->
+<div class="xyz-guide-card">
+    <h4><i class="fa fa-shield-halved"></i> Sender ID Approval Guidelines (NCC Regulations)</h4>
+    <ul>
+        <li><strong>Max 11 Characters:</strong> Alphanumeric characters only (A-Z, 0-9). Spaces and special symbols (<code style="color:#E50914;">@@, #, $, %, &amp;, !</code>) are strictly disallowed.</li>
+        <li><strong>Unregistered / Does Not Exist:</strong> If an old Sender ID shows <em>"Does Not Exist"</em>, simply click <strong>"Re-Submit to Gateway"</strong> to submit it for immediate operator verification.</li>
+        <li><strong>Approval Window:</strong> Telco operators activate submitted promotional sender IDs within 1 to 24 business hours.</li>
+    </ul>
+</div>
+
+<!-- Sender IDs Table -->
+<div class="xyz-panel-card">
+    <div class="xyz-panel-header">
+        <h3 class="xyz-panel-title">
+            <i class="fa fa-list-check" style="color:#10B981;"></i> My Registered Sender IDs
+            <span class="badge" style="background:#6366F1; font-size:0.95rem; font-weight:800; padding:6px 12px;">@Model.Count() Total</span>
+        </h3>
+        <a href="@Url.Action("Index", "Dashboard", new { area = "ClientPanel" })" class="btn btn-sm btn-default" style="font-weight:700; font-size:0.95rem;">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+
+    <div class="table-responsive" style="margin-bottom:0;">
+        <table class="table table-hover" style="margin-bottom:0;">
+            <thead>
+                <tr style="background:rgba(0,0,0,0.02); font-size:1.05rem; color:var(--xyz-dash-muted);">
+                    <th style="padding:18px 26px;">Sender ID</th>
+                    <th>Approval Status</th>
+                    <th>Gateway Remarks</th>
+                    <th style="text-align:right; padding-right:26px;">Actions</th>
                 </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var item in Model)
+                    {
+                        string rawStatus = (item.XYZ_status ?? item.XYZ_msg ?? "Pending").ToLower();
+                        string badgeClass = "xyz-status-pending";
+                        string statusLabel = item.XYZ_status ?? "Pending Approval";
+                        bool isNotExist = rawStatus.Contains("doesn't exist") || rawStatus.Contains("does not exist") || rawStatus.Contains("not verified");
 
-                @foreach (var item in Model)
+                        if (rawStatus == "approved" || rawStatus.Contains("active"))
+                        {
+                            badgeClass = "xyz-status-approved";
+                            statusLabel = "Approved";
+                        }
+                        else if (isNotExist)
+                        {
+                            badgeClass = "xyz-status-unregistered";
+                            statusLabel = "Not on Gateway";
+                        }
+                        else if (rawStatus.Contains("fail") || rawStatus.Contains("rej") || rawStatus.Contains("deni"))
+                        {
+                            badgeClass = "xyz-status-rejected";
+                            statusLabel = "Rejected";
+                        }
+                        else
+                        {
+                            badgeClass = "xyz-status-pending";
+                            statusLabel = "Pending Approval";
+                        }
+
+                        <tr id="sender-row-@item.SenderId">
+                            <td style="padding:18px 26px;">
+                                <div class="xyz-sender-tag">
+                                    <i class="fa fa-tag"></i> @item.SenderId
+                                </div>
+                            </td>
+                            <td style="padding:18px 12px;">
+                                <span class="xyz-badge-status @badgeClass" id="status-badge-@item.SenderId">
+                                    <i class="fa fa-circle" style="font-size:0.65rem; margin-right:4px;"></i> @statusLabel
+                                </span>
+                            </td>
+                            <td style="padding:18px 12px; font-size:1.05rem; color:var(--xyz-dash-muted);" id="remark-@item.SenderId">
+                                @(string.IsNullOrEmpty(item.XYZ_msg) ? "Pending Telco verification" : item.XYZ_msg)
+                            </td>
+                            <td style="text-align:right; padding-right:26px; padding-top:18px;">
+                                <div style="display:inline-flex; align-items:center; gap:8px;">
+                                    @if (isNotExist || badgeClass == "xyz-status-rejected")
+                                    {
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="openCreateModal('@item.SenderId')" title="Re-submit to Gateway" style="font-weight:800; font-size:0.92rem; padding:7px 14px; border-radius:8px; background:#E50914;">
+                                            <i class="fa fa-paper-plane"></i> Re-Submit
+                                        </button>
+                                    }
+
+                                    <button type="button" class="btn btn-default" onclick="checkSenderStatus('@item.SenderId')" id="btn-check-@item.SenderId" style="font-weight:800; font-size:0.92rem; padding:7px 14px; border-radius:8px;">
+                                        <i class="fa fa-rotate"></i> Check Status
+                                    </button>
+
+                                    <button type="button" class="btn btn-default" onclick="deleteSenderId('@item.SenderId')" title="Remove from list" style="color:#EF4444; padding:7px 12px; border-radius:8px;">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
                 {
                     <tr>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.SenderId)
-                        </td>
-                         
-                        <td>
-                            @Html.DisplayFor(modelItem => item.XYZ_msg)
-                        </td>
-                        <td>
-                            @using (Html.BeginForm("VerifySenderId", "Dashboard", new { area = "ClientPanel" }, FormMethod.Post))
-                            {
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="senderId" value="@item.SenderId" />
-                                <button type="submit" class="btn btn-sm btn-info">Verify</button>
-                            }
+                        <td colspan="4" style="text-align:center; padding:60px 24px; color:var(--xyz-dash-muted); font-size:1.2rem;">
+                            <i class="fa fa-tag" style="font-size:3rem; display:block; margin-bottom:16px; opacity:0.35;"></i>
+                            No Sender IDs registered yet. Click <strong>"Request New Sender ID"</strong> above to register your brand name!
                         </td>
                     </tr>
                 }
+            </tbody>
+        </table>
+    </div>
+</div>
 
-            </table>
+<!-- Modal: Request / Re-Submit Sender ID -->
+<div class="modal fade" id="newSenderModal" tabindex="-1" role="dialog" aria-labelledby="newSenderModalLabel">
+    <div class="modal-dialog" role="document" style="max-width:560px;">
+        <div class="modal-content" style="border-radius:18px; border:none; box-shadow:0 12px 40px rgba(0,0,0,0.2); overflow:hidden;">
+            <div class="modal-header" style="background:#0B0F19; color:#FFFFFF; padding:20px 26px;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#FFFFFF; opacity:0.8; font-size:1.5rem;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="newSenderModalLabel" style="font-weight:800; font-size:1.35rem;">
+                    <i class="fa fa-tag" style="color:#E50914; margin-right:8px;"></i> <span id="modalActionTitle">Request New Sender ID</span>
+                </h4>
+            </div>
+
+            @using (Html.BeginForm("Create", "Dashboard", new { area = "ClientPanel" }, FormMethod.Post, new { id = "senderForm" }))
+            {
+                @Html.AntiForgeryToken()
+                <div class="modal-body" style="padding:26px 28px;">
+                    <div class="form-group" style="margin-bottom:20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <label style="font-weight:800; font-size:1.1rem; margin:0;">
+                                Sender ID <span style="color:#E50914;">*</span>
+                            </label>
+                            <span id="charCountBadge" class="badge" style="background:rgba(99,102,241,0.15); color:#6366F1; font-weight:800; font-size:0.9rem; padding:4px 10px;">
+                                11 chars remaining
+                            </span>
+                        </div>
+                        <input type="text" name="SenderId" id="senderIdInput" maxlength="11" class="form-control" placeholder="e.g. YOURBRAND" required style="height:52px; font-size:1.25rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; border-radius:10px;" />
+                        <small style="color:var(--xyz-dash-muted); font-size:0.92rem; margin-top:6px; display:block;">
+                            Maximum 11 alphanumeric characters (A-Z, 0-9). Spaces and special characters are automatically removed.
+                        </small>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <label style="font-weight:800; font-size:1.1rem; margin:0;">
+                                Sample Message <span style="color:#E50914;">*</span>
+                            </label>
+                            <small style="color:var(--xyz-dash-muted); font-size:0.85rem;">Click a template below to auto-fill:</small>
+                        </div>
+
+                        <!-- 1-Click Template Selector Chips (Clean GSM text, no emojis) -->
+                        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                            <button type="button" class="btn btn-xs btn-default" onclick="setSampleTemplate('welcome')" style="font-weight:700; border-radius:999px; padding:5px 14px; font-size:0.88rem; background:rgba(99,102,241,0.08); color:#6366F1; border-color:rgba(99,102,241,0.25);">
+                                Welcome Notice
+                            </button>
+                            <button type="button" class="btn btn-xs btn-default" onclick="setSampleTemplate('otp')" style="font-weight:700; border-radius:999px; padding:5px 14px; font-size:0.88rem; background:rgba(16,185,129,0.08); color:#10B981; border-color:rgba(16,185,129,0.25);">
+                                OTP / Verification Alert
+                            </button>
+                            <button type="button" class="btn btn-xs btn-default" onclick="setSampleTemplate('promo')" style="font-weight:700; border-radius:999px; padding:5px 14px; font-size:0.88rem; background:rgba(245,158,11,0.08); color:#F59E0B; border-color:rgba(245,158,11,0.25);">
+                                Promotional Update
+                            </button>
+                        </div>
+
+                        <textarea name="Message" id="messageInput" rows="3" class="form-control" placeholder="Type your sample broadcast message..." required style="border-radius:10px; font-size:1.05rem; padding:12px; line-height:1.5;">Dear Customer, welcome to our platform. Your account registration is successful. Thank you for choosing us.</textarea>
+                        <small style="color:var(--xyz-dash-muted); font-size:0.92rem; margin-top:6px; display:block;">
+                            Standard GSM text only. Do not include emojis or special symbols.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="background:#F8FAFC; border-top:1px solid #E2E8F0; padding:18px 28px; display:flex; justify-content:flex-end; gap:12px;">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" style="font-weight:700; font-size:1.05rem; padding:10px 22px; border-radius:10px;">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" style="background:#E50914; border:none; font-weight:800; font-size:1.05rem; padding:10px 26px; border-radius:10px;">
+                        <i class="fa fa-paper-plane"></i> Submit to Gateway
+                    </button>
+                </div>
+            }
         </div>
     </div>
-</section>
+</div>
 
-@section scripts{
-
-    <script src="~/Content/Dashboard/plugins/datatables/jquery.dataTables.min.js"></script>
-    <script src="~/Content/Dashboard/plugins/datatables/dataTables.bootstrap.min.js"></script>
-
+@section scripts {
     <script>
-        $(function () {
-            $("#example1").DataTable();
+        // Character count & Auto-uppercase validation
+        const senderInput = document.getElementById('senderIdInput');
+        const charBadge = document.getElementById('charCountBadge');
 
-        });
+        function updateCharCount() {
+            if (!senderInput) return;
+            senderInput.value = senderInput.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            const remaining = 11 - senderInput.value.length;
+            if (charBadge) {
+                charBadge.textContent = remaining + ' chars remaining';
+                charBadge.style.background = remaining <= 2 ? 'rgba(229,9,20,0.15)' : 'rgba(99,102,241,0.15)';
+                charBadge.style.color = remaining <= 2 ? '#E50914' : '#6366F1';
+            }
+        }
+
+        const msgInput = document.getElementById('messageInput');
+        if (msgInput) {
+            msgInput.addEventListener('input', function () {
+                // Strip emojis from SMS sample message
+                this.value = this.value.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
+            });
+        }
+
+        function setSampleTemplate(type) {
+            const msgInput = document.getElementById('messageInput');
+            if (!msgInput) return;
+
+            const templates = {
+                'welcome': 'Dear Customer, welcome to our platform. Your account registration is successful. Thank you for choosing us.',
+                'otp': 'Your one-time verification security code is 482910. It expires in 10 minutes. Do not share this code with anyone.',
+                'promo': 'Exclusive Offer: Enjoy a 20 percent discount on all purchases today. Visit our store or website to claim your reward.'
+            };
+
+            if (templates[type]) {
+                msgInput.value = templates[type];
+                if (window.xyzToast) {
+                    xyzToast.info('Sample template applied.', 'Template Loaded');
+                }
+            }
+        }
+
+        function openCreateModal(prefillSenderId) {
+            const input = document.getElementById('senderIdInput');
+            const title = document.getElementById('modalActionTitle');
+            if (input) {
+                input.value = prefillSenderId || '';
+                updateCharCount();
+            }
+            if (title) {
+                title.textContent = prefillSenderId ? ('Re-Submit Sender ID: [' + prefillSenderId + ']') : 'Request New Sender ID';
+            }
+            $('#newSenderModal').modal('show');
+        }
+
+        // Live AJAX Status Verification
+        function checkSenderStatus(senderId) {
+            const btn = document.getElementById('btn-check-' + senderId);
+            const badge = document.getElementById('status-badge-' + senderId);
+            const remark = document.getElementById('remark-' + senderId);
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Checking...';
+            }
+
+            $.post('@Url.Action("CheckSenderIdAjax", "Dashboard", new { area = "ClientPanel" })', { senderId: senderId }, function (res) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa fa-rotate"></i> Check Status';
+                }
+
+                if (res && res.success) {
+                    const statusStr = (res.status || '').toLowerCase();
+                    let newBadgeClass = 'xyz-status-pending';
+                    let displayStatus = res.status || 'Pending';
+                    let displayRemark = 'Under operator review. Please check in 20 minutes.';
+
+                    if (statusStr === 'approved' || statusStr === 'active') {
+                        newBadgeClass = 'xyz-status-approved';
+                        displayStatus = 'Approved';
+                        displayRemark = 'Approved and active for SMS broadcasts.';
+                    } else if (statusStr.includes("doesn't exist") || statusStr.includes('does not exist') || statusStr.includes('not found')) {
+                        newBadgeClass = 'xyz-status-unregistered';
+                        displayStatus = 'Not on Gateway';
+                        displayRemark = 'The sender ID supplied does not exist on gateway.';
+                    } else if (statusStr.includes('fail') || statusStr.includes('rej') || statusStr.includes('deni')) {
+                        newBadgeClass = 'xyz-status-rejected';
+                        displayStatus = 'Rejected';
+                        displayRemark = 'Sender ID was denied by telco operators.';
+                    } else {
+                        newBadgeClass = 'xyz-status-pending';
+                        displayStatus = 'Pending Approval';
+                        displayRemark = 'Under operator review. Please check in 20 minutes.';
+                    }
+
+                    if (badge) {
+                        badge.className = 'xyz-badge-status ' + newBadgeClass;
+                        badge.innerHTML = '<i class="fa fa-circle" style="font-size:0.65rem; margin-right:4px;"></i> ' + displayStatus;
+                    }
+
+                    if (remark) {
+                        remark.textContent = displayRemark;
+                    }
+
+                    if (window.xyzToast) {
+                        if (displayStatus === 'Approved') {
+                            xyzToast.success('Sender ID [' + senderId + '] is Approved & Active!', 'Verified');
+                        } else if (displayStatus === 'Pending Approval') {
+                            xyzToast.info('Sender ID [' + senderId + '] is under operator review. Please check in 20 minutes.', 'Pending Approval');
+                        } else {
+                            xyzToast.warning('Sender ID [' + senderId + '] status: ' + displayStatus, 'Status Checked');
+                        }
+                    }
+                } else {
+                    if (window.xyzToast) {
+                        xyzToast.error(res.message || 'Unable to verify status at this time.', 'Verification Error');
+                    }
+                }
+            }).fail(function () {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa fa-rotate"></i> Check Status';
+                }
+                if (window.xyzToast) {
+                    xyzToast.error('Network error while checking Sender ID status.', 'Error');
+                }
+            });
+        }
+
+        // Delete / Clean Sender ID
+        function deleteSenderId(senderId) {
+            if (!confirm('Are you sure you want to remove Sender ID [' + senderId + '] from your list?')) {
+                return;
+            }
+
+            $.post('@Url.Action("DeleteSenderAjax", "Dashboard", new { area = "ClientPanel" })', { senderId: senderId }, function (res) {
+                if (res && res.success) {
+                    const row = document.getElementById('sender-row-' + senderId);
+                    if (row) row.remove();
+                    if (window.xyzToast) {
+                        xyzToast.info('Sender ID [' + senderId + '] removed.', 'Removed');
+                    }
+                } else {
+                    if (window.xyzToast) {
+                        xyzToast.error(res.message || 'Failed to remove Sender ID.', 'Error');
+                    }
+                }
+            });
+        }
     </script>
 }

@@ -1,87 +1,252 @@
 @model Exwhyzee.Messaging.Core.Models.Client
 @{
-    ViewBag.Title = "API Settings";
+    ViewBag.Title = "API & AI Integration Settings";
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>API Settings</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Dashboard</a></li>
-        <li class="active">API Settings</li>
-    </ol>
-</section>
+<style>
+    .xyz-api-hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 28px;
+    }
 
-<section class="content">
-    <div class="box">
-        <div class="box-header">
-            <h3 class="box-title">API Settings</h3>
-            <p class="text-muted" style="margin-top: 5px;">
-                Manage your API Key for accessing the Developer API.
-            </p>
-        </div>
-        <div class="box-body">
+    .xyz-api-hero h1 {
+        font-size: 2.35rem;
+        font-weight: 800;
+        margin: 0 0 6px;
+        color: var(--xyz-dash-text);
+        letter-spacing: -0.5px;
+    }
 
-            @if (TempData["Message"] != null)
-            {
-                <div class="alert alert-success">
-                    @TempData["Message"]
-                </div>
-            }
+    .xyz-api-hero p {
+        font-size: 1.2rem;
+        color: var(--xyz-dash-muted);
+        margin: 0;
+    }
 
-            <div class="form-group">
-                <label>Current API Key</label>
-                <div class="input-group">
-                    <input type="@(string.IsNullOrEmpty(Model.ApiKey) ? "text" : "password")" id="apiKeyInput" class="form-control" value="@(string.IsNullOrEmpty(Model.ApiKey) ? "No API Key Generated" : Model.ApiKey)" readonly />
-                    <span class="input-group-btn">
-                        <button class="btn btn-default" type="button" id="toggleApiKeyBtn" title="Show/Hide API Key">
-                            <i class="fa fa-eye"></i>
-                        </button>
-                        <button class="btn btn-default" type="button" id="copyApiKeyBtn" title="Copy API Key">
-                            <i class="fa fa-copy"></i>
-                        </button>
-                    </span>
-                </div>
+    .xyz-setting-card {
+        background: #FFFFFF;
+        border-radius: 18px;
+        border: 1px solid var(--xyz-dash-border);
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.03);
+        margin-bottom: 28px;
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-setting-card {
+        background: #131B2E;
+    }
+
+    .xyz-setting-header {
+        padding: 22px 28px;
+        border-bottom: 1px solid var(--xyz-dash-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .xyz-setting-title {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--xyz-dash-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .xyz-setting-body {
+        padding: 26px 28px;
+    }
+
+    .xyz-key-box {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+
+    .xyz-key-input {
+        flex: 1;
+        height: 52px;
+        font-size: 1.15rem;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        border-radius: 12px;
+        border: 1px solid var(--xyz-dash-border);
+        padding: 0 16px;
+        background: var(--xyz-dash-bg);
+        color: var(--xyz-dash-text);
+    }
+</style>
+
+<!-- Hero Section -->
+<div class="xyz-api-hero">
+    <div>
+        <h1><i class="fa fa-code" style="color:#6366F1; margin-right:8px;"></i> Developer & AI Settings</h1>
+        <p>Manage your Exwhyzee REST API Key and configure Google Gemini AI for screenshot OCR and contact parsing.</p>
+    </div>
+    <div>
+        <a href="@Url.Action("Documentation", "ApiSettings")" target="_blank" class="btn btn-default" style="font-weight:800; font-size:1.1rem; padding:12px 24px; border-radius:12px;">
+            <i class="fa fa-book" style="color:#10B981; margin-right:6px;"></i> View API Documentation
+        </a>
+    </div>
+</div>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success alert-dismissible" style="border-radius:12px; font-weight:700; font-size:1.1rem; margin-bottom:24px;">
+        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+        <i class="fa fa-check-circle"></i> @TempData["Message"]
+    </div>
+}
+
+<div class="row">
+    <!-- Exwhyzee REST API Key Card -->
+    <div class="col-md-6">
+        <div class="xyz-setting-card">
+            <div class="xyz-setting-header">
+                <h3 class="xyz-setting-title">
+                    <i class="fa fa-key" style="color:#E50914;"></i> Exwhyzee SMS API Key
+                </h3>
+                <span class="badge" style="background:#E50914; font-size:0.9rem; font-weight:800; padding:6px 12px;">
+                    @(string.IsNullOrEmpty(Model.ApiKey) ? "No Key Active" : "Active Key")
+                </span>
             </div>
+            <div class="xyz-setting-body">
+                <p style="font-size:1.05rem; color:var(--xyz-dash-muted); margin-bottom:16px;">
+                    Use this secret key to authenticate programmatic broadcast and balance requests to our REST endpoints.
+                </p>
 
-            <div class="m-t-30" style="margin-top: 30px;">
-                @using (Html.BeginForm("RegenerateKey", "ApiSettings", FormMethod.Post, new { @class = "d-inline-block m-r-10", style="display:inline-block; margin-right: 10px;" }))
-                {
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to regenerate your API Key? The old key will stop working immediately.');">
-                        @(string.IsNullOrEmpty(Model.ApiKey) ? "Generate API Key" : "Regenerate API Key")
+                <div class="xyz-key-box">
+                    <input type="@(string.IsNullOrEmpty(Model.ApiKey) ? "text" : "password")" id="apiKeyInput" class="xyz-key-input" value="@(string.IsNullOrEmpty(Model.ApiKey) ? "No API Key Generated" : Model.ApiKey)" readonly />
+                    <button type="button" class="btn btn-default" id="toggleApiKeyBtn" title="Show/Hide API Key" style="height:52px; width:52px; border-radius:12px; font-size:1.2rem;">
+                        <i class="fa fa-eye"></i>
                     </button>
-                }
+                    <button type="button" class="btn btn-default" id="copyApiKeyBtn" title="Copy API Key" style="height:52px; width:52px; border-radius:12px; font-size:1.2rem;">
+                        <i class="fa fa-copy"></i>
+                    </button>
+                </div>
 
-                @if (!string.IsNullOrEmpty(Model.ApiKey))
-                {
-                    using (Html.BeginForm("DeleteKey", "ApiSettings", FormMethod.Post, new { @class = "d-inline-block", style="display:inline-block;" }))
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    @using (Html.BeginForm("RegenerateKey", "ApiSettings", FormMethod.Post))
                     {
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete your API Key? You will lose access to the API.');">
-                            Delete API Key
+                        <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to regenerate your API Key? The old key will stop working immediately.');" style="background:#6366F1; border:none; font-weight:800; font-size:1rem; padding:10px 22px; border-radius:10px;">
+                            <i class="fa fa-rotate"></i> @(string.IsNullOrEmpty(Model.ApiKey) ? "Generate API Key" : "Regenerate Key")
                         </button>
                     }
-                }
-            </div>
-            
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-                <h4>Developer Documentation</h4>
-                <p class="text-muted">Explore the API endpoints, view request examples, and test the API using our interactive documentation powered by Scalar.</p>
-                <a href="@Url.Action("Documentation", "ApiSettings")" target="_blank" class="btn btn-success">
-                    <i class="fa fa-book"></i> View API Documentation
-                </a>
-            </div>
 
+                    @if (!string.IsNullOrEmpty(Model.ApiKey))
+                    {
+                        using (Html.BeginForm("DeleteKey", "ApiSettings", FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete your API Key?');" style="background:#EF4444; border:none; font-weight:800; font-size:1rem; padding:10px 22px; border-radius:10px;">
+                                <i class="fa fa-trash"></i> Delete Key
+                            </button>
+                        }
+                    }
+                </div>
+            </div>
         </div>
     </div>
-</section>
+
+    <!-- Google Gemini AI Vision & OCR Engine Card -->
+    <div class="col-md-6">
+        <div class="xyz-setting-card" style="border-left:4px solid #6366F1;">
+            <div class="xyz-setting-header">
+                <h3 class="xyz-setting-title">
+                    <i class="fa fa-brain" style="color:#6366F1;"></i> Google Gemini AI Vision
+                </h3>
+                <span class="badge" id="geminiStatusBadge" style="background:@(string.IsNullOrEmpty(Model.GeminiApiKey) ? "#F59E0B" : "#10B981"); font-size:0.9rem; font-weight:800; padding:6px 12px;">
+                    @(string.IsNullOrEmpty(Model.GeminiApiKey) ? "Not Configured" : "Configured")
+                </span>
+            </div>
+            <div class="xyz-setting-body">
+                <p style="font-size:1.05rem; color:var(--xyz-dash-muted); margin-bottom:14px;">
+                    Powers instant <strong>Screenshot OCR & Document Contact Extraction</strong> (.docx, .xlsx, .txt, image pastes).
+                </p>
+
+                @using (Html.BeginForm("SaveGeminiKey", "ApiSettings", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label style="font-weight:800; font-size:1.05rem; margin-bottom:8px; display:flex; justify-content:space-between;">
+                            <span>Google Gemini API Key</span>
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#6366F1; font-weight:700; text-decoration:none;">
+                                Get Free Key at Google AI Studio &rarr;
+                            </a>
+                        </label>
+                        <div class="xyz-key-box">
+                            <input type="@(string.IsNullOrEmpty(Model.GeminiApiKey) ? "text" : "password")" name="geminiApiKey" id="geminiApiKeyInput" class="xyz-key-input" placeholder="Paste your Gemini API key (starts with AIzaSy...)" value="@Model.GeminiApiKey" />
+                            <button type="button" class="btn btn-default" id="toggleGeminiKeyBtn" title="Show/Hide Gemini Key" style="height:52px; width:52px; border-radius:12px; font-size:1.2rem;">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                            <button type="button" class="btn btn-default" id="copyGeminiKeyBtn" title="Copy Gemini Key" style="height:52px; width:52px; border-radius:12px; font-size:1.2rem;">
+                                <i class="fa fa-copy"></i>
+                            </button>
+                        </div>
+                        <small style="color:var(--xyz-dash-muted); font-size:0.9rem; display:block;">
+                            Your key is stored securely and used exclusively for your account's contact extraction.
+                        </small>
+                    </div>
+
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:20px;">
+                        <button type="submit" class="btn btn-primary" style="background:#E50914; border:none; font-weight:700; font-size:0.92rem; padding:8px 18px; border-radius:8px;">
+                            <i class="fa fa-save"></i> Save Gemini Key
+                        </button>
+                        <button type="button" class="btn btn-default" onclick="testGeminiKey()" id="btnTestGemini" style="font-weight:700; font-size:0.92rem; padding:8px 16px; border-radius:8px;">
+                            <i class="fa fa-plug"></i> Test Connection
+                        </button>
+                        @if (!string.IsNullOrEmpty(Model.GeminiApiKey))
+                        {
+                            <button type="button" class="btn btn-danger" onclick="if(confirm('Are you sure you want to remove your Gemini API Key?')){ document.getElementById('deleteGeminiForm').submit(); }" style="background:#EF4444; border:none; font-weight:700; font-size:0.92rem; padding:8px 16px; border-radius:8px;">
+                                <i class="fa fa-trash"></i> Delete Key
+                            </button>
+                        }
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.GeminiApiKey))
+                {
+                    using (Html.BeginForm("DeleteGeminiKey", "ApiSettings", FormMethod.Post, new { id = "deleteGeminiForm", style = "display:none;" }))
+                    {
+                        @Html.AntiForgeryToken()
+                    }
+                }
+
+                <!-- Step-by-Step Guide Box -->
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:14px; padding:18px 20px;">
+                    <h5 style="font-weight:800; font-size:1.05rem; margin:0 0 12px; color:#1E293B;">
+                        <i class="fa fa-circle-question" style="color:#6366F1;"></i> How to get your FREE Gemini API Key (1 minute):
+                    </h5>
+                    <ol style="margin:0; padding-left:20px; color:#475569; font-size:0.95rem; line-height:1.7;">
+                        <li>
+                            Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" style="font-weight:800; color:#6366F1; text-decoration:underline;">Google AI Studio API Keys Page &rarr;</a> (Sign in with your Gmail).
+                        </li>
+                        <li>
+                            Click the blue <strong>"Create API key"</strong> button.
+                        </li>
+                        <li>
+                            Select <em>"Create API key in new project"</em> $\rightarrow$ Copy the generated key (starts with <code>AIzaSy...</code>).
+                        </li>
+                        <li>
+                            Paste the key into the input above $\rightarrow$ Click <strong>"Save Gemini Key"</strong> $\rightarrow$ Click <strong>"Test Connection"</strong>!
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section scripts {
     <script>
         $(document).ready(function () {
+            // Show/Hide Kudisms API Key
             $('#toggleApiKeyBtn').click(function () {
                 var input = $('#apiKeyInput');
                 var icon = $(this).find('i');
@@ -94,28 +259,83 @@
                 }
             });
 
+            // Copy Kudisms API Key
             $('#copyApiKeyBtn').click(function () {
                 var input = document.getElementById("apiKeyInput");
                 var originalType = input.type;
-                if (originalType === 'password') {
-                    input.type = 'text';
-                }
-                
+                input.type = 'text';
                 input.select();
                 input.setSelectionRange(0, 99999);
-
                 document.execCommand("copy");
-                
-                if (originalType === 'password') {
-                    input.type = 'password';
+                input.type = originalType;
+                if (window.xyzToast) {
+                    xyzToast.success('API Key copied to clipboard!', 'Copied');
+                } else {
+                    alert('API Key copied to clipboard!');
                 }
+            });
 
+            // Show/Hide Gemini API Key
+            $('#toggleGeminiKeyBtn').click(function () {
+                var input = $('#geminiApiKeyInput');
                 var icon = $(this).find('i');
-                icon.removeClass('fa-copy').addClass('fa-check text-success');
-                setTimeout(function () {
-                    icon.removeClass('fa-check text-success').addClass('fa-copy');
-                }, 2000);
+                if (input.attr('type') === 'password') {
+                    input.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    input.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+
+            // Copy Gemini API Key
+            $('#copyGeminiKeyBtn').click(function () {
+                var input = document.getElementById("geminiApiKeyInput");
+                if (!input.value) {
+                    if (window.xyzToast) xyzToast.warning('No Gemini Key to copy.', 'Empty Key');
+                    else alert('No Gemini Key to copy.');
+                    return;
+                }
+                var originalType = input.type;
+                input.type = 'text';
+                input.select();
+                input.setSelectionRange(0, 99999);
+                document.execCommand("copy");
+                input.type = originalType;
+                if (window.xyzToast) {
+                    xyzToast.success('Gemini API Key copied to clipboard!', 'Copied');
+                } else {
+                    alert('Gemini API Key copied to clipboard!');
+                }
             });
         });
+
+        // Test Gemini API Key
+        function testGeminiKey() {
+            var key = $('#geminiApiKeyInput').val();
+            if (!key) {
+                if (window.xyzToast) xyzToast.warning('Please enter a Gemini API Key first.', 'Key Missing');
+                else alert('Please enter a Gemini API Key first.');
+                return;
+            }
+
+            var btn = $('#btnTestGemini');
+            btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Testing...');
+
+            $.post('@Url.Action("TestGeminiKeyAjax", "ApiSettings", new { area = "ClientPanel" })', { geminiApiKey: key }, function (res) {
+                btn.prop('disabled', false).html('<i class="fa fa-plug"></i> Test Connection');
+                if (res && res.success) {
+                    if (window.xyzToast) xyzToast.success(res.message, 'Gemini Connected');
+                    else alert(res.message);
+                    $('#geminiStatusBadge').css('background', '#10B981').text('Active & Verified');
+                } else {
+                    if (window.xyzToast) xyzToast.error(res.message || 'Verification failed.', 'Error');
+                    else alert(res.message);
+                }
+            }).fail(function () {
+                btn.prop('disabled', false).html('<i class="fa fa-plug"></i> Test Connection');
+                if (window.xyzToast) xyzToast.error('Network error testing Gemini key.', 'Error');
+            });
+        }
     </script>
 }

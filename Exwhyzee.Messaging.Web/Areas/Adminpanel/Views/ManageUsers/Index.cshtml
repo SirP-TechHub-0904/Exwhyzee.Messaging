@@ -1,103 +1,404 @@
-@using Exwhyzee.Messaging.Core.Services;
+@model IEnumerable<Exwhyzee.Messaging.Core.Dtos.UserManagementDto>
 @{
-    ViewBag.Title = "Manage Users";
-
+    ViewBag.Title = "User Management Studio";
+    var rolesList = ViewBag.Roles as IEnumerable<Microsoft.AspNetCore.Identity.IdentityRole> ?? new List<Microsoft.AspNetCore.Identity.IdentityRole>();
+    int pageNumber = ViewBag.PageNumber ?? 1;
+    int pageSize = ViewBag.PageSize ?? 25;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalUsersCount = ViewBag.TotalUsersCount ?? 0;
+    decimal totalFilteredUnits = ViewBag.TotalFilteredUnits ?? 0m;
+    decimal totalFilteredNaira = totalFilteredUnits * 2.0m; // Based on standard unit rate
+    string currentFilter = ViewBag.CurrentFilter as string ?? "";
+    string roleFilter = ViewBag.RoleFilter as string ?? "";
+    string paystackPublicKey = ViewBag.PaystackPublicKey as string ?? "";
+    int sn = (pageNumber - 1) * pageSize + 1;
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>Manage Users</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Manage users</a></li>
-        <li class="active">User List</li>
-    </ol>
-</section>
+<style>
+    .xyz-user-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
 
-<section class="content">
+    .xyz-filter-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .xyz-table-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        overflow: hidden;
+    }
+
+    .xyz-role-pill {
+        display: inline-block;
+        padding: 3px 9px;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        margin-right: 4px;
+        margin-bottom: 4px;
+    }
+
+    .xyz-role-superadmin { background: #FEE2E2; color: #DC2626; border: 1px solid #FCA5A5; }
+    .xyz-role-admin { background: #DBEAFE; color: #2563EB; border: 1px solid #93C5FD; }
+    .xyz-role-client { background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB; }
+
+    .xyz-unit-chip {
+        background: #EFF6FF;
+        color: #1D4ED8;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        border: 1px solid #BFDBFE;
+    }
+
+    .xyz-btn-paystack {
+        background: #09A5DB;
+        color: #FFFFFF !important;
+        font-weight: 800;
+        border: none;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 0.76rem;
+        transition: all 0.2s ease;
+    }
+
+    .xyz-btn-paystack:hover {
+        background: #0786B3;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(9, 165, 219, 0.4);
+    }
+</style>
+
+<div class="container-fluid" style="padding-top: 10px;">
     @Html.Partial("_ResponseMessagePartial")
-   
-    <div class="box">
-        <div class="box-header">
-            <h3 class="box-title">Users <small class="label bg-green"> @ViewBag.Users.Count</small></h3>
+
+    <!-- HEADER BLOCK -->
+    <div class="xyz-user-header">
+        <div>
+            <h2 style="font-weight: 800; color: #0F172A; margin: 0; font-size: 1.6rem; letter-spacing: -0.5px;">
+                <i class="fa fa-users-gear" style="color: #4F46E5; margin-right: 8px;"></i> User Management Studio
+            </h2>
+            <p style="color: #64748B; margin: 4px 0 0 0; font-size: 0.9rem;">
+                Sub-100ms executive management for <strong style="color: #0F172A;">@totalUsersCount.ToString("N0") registered users</strong>.
+            </p>
         </div>
-        <div class="box-body table-responsive">
-            <table id="example1" class="table table-bordered table-striped">
-                <thead>
+        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <!-- DYNAMIC FILTERED TOTAL WALLET BALANCE SUMMATION -->
+            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 8px 16px; display: flex; align-items: center; gap: 12px;">
+                <div style="background: #2563EB; color: #FFF; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                    <i class="fa fa-wallet"></i>
+                </div>
+                <div>
+                    <small style="color: #1E40AF; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; display: block;">Total Wallet Balance Sum</small>
+                    <strong style="color: #1D4ED8; font-size: 1.05rem; font-family: 'JetBrains Mono', monospace;">@totalFilteredUnits.ToString("N2") Units</strong>
+                    <small style="color: #3B82F6; font-size: 0.78rem; font-weight: 700;">(&#8358;@totalFilteredNaira.ToString("N2"))</small>
+                </div>
+            </div>
+            <a href="@Url.Action("Register", "Account", new { area = "" })" class="btn btn-primary" style="font-weight: 800; border-radius: 8px; padding: 10px 18px;">
+                <i class="fa fa-user-plus"></i> Add New User
+            </a>
+        </div>
+    </div>
+
+    <!-- FILTER & SEARCH BAR -->
+    <div class="xyz-filter-card">
+        @using (Html.BeginForm("Index", "ManageUsers", FormMethod.Get, new { @class = "row form-inline", style = "margin:0; align-items:center;" }))
+        {
+            <div class="col-md-5 col-sm-6" style="padding-left:0;">
+                <div class="input-group" style="width: 100%;">
+                    <span class="input-group-addon" style="background:#F8FAFC; border-color:#CBD5E1;"><i class="fa fa-search"></i></span>
+                    <input type="text" name="searchString" value="@currentFilter" placeholder="Search by Username, Email, or Phone..." class="form-control" style="border-color:#CBD5E1; height:40px; font-size:0.9rem;" />
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-4">
+                <select name="roleFilter" class="form-control" style="width: 100%; height:40px; border-color:#CBD5E1; font-size:0.9rem;">
+                    <option value="">-- All User Roles --</option>
+                    @foreach (var r in rolesList)
+                    {
+                        <option value="@r.Name" selected="@(roleFilter == r.Name ? "selected" : null)">@r.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-2 text-right" style="padding-right:0;">
+                <button type="submit" class="btn btn-dark" style="height:40px; font-weight:800; border-radius:8px; width:100%; background:#1E293B; color:#FFF;">
+                    Filter Users
+                </button>
+            </div>
+        }
+    </div>
+
+    <!-- USER DATA TABLE -->
+    <div class="xyz-table-card">
+        <div class="table-responsive">
+            <table class="table table-hover" style="margin: 0; vertical-align: middle; font-size: 0.88rem;">
+                <thead style="background: #F8FAFC; font-weight: 800; font-size: 0.75rem; color: #475569; text-transform: uppercase; border-bottom: 2px solid #E2E8F0;">
                     <tr>
-                        <th>Actions</th>
-                        <th>Name</th>
-                        
-                        <th>Phone Number</th>
-                        <th>Date of Birth</th>
-
-                        @foreach (var item in ViewBag.Roles)
-                        {
-                            <th>@item.Name</th>
-                        }
-
-                       
+                        <th style="padding: 12px 16px; width: 60px;">S/N</th>
+                        <th style="padding: 12px 16px;">User Details</th>
+                        <th>Contact info</th>
+                        <th>Assigned Roles</th>
+                        <th>Wallet Balance &amp; Top Up</th>
+                        <th style="text-align: right; padding: 12px 16px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in ViewBag.Users)
+                    @if (Model != null && Model.Any())
                     {
-                        <tr>
-                            <td>
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-info btn-sm">Action</button>
-                                    <button type="button" class="btn btn-info dropdown-toggle btn-sm" data-toggle="dropdown">
-                                        <span class="caret"></span>
-                                        <span class="sr-only">Toggle Dropdown</span>
-                                    </button>
-                                    <ul class="dropdown-menu" role="menu">
-                                        <li><a href="@Url.Content("~/adminpanel/manageusers/clientdetails/"+ item.Id)">Details</a></li>
-                                     
-                                    </ul>
-                                </div>
-                            </td>
-                            <td>@item.UserName
-                            <br />
-                            @item.Email</td>
-                            
-                            <td>@item.PhoneNumber</td>
-                            <td>@item.DateOfBirth.ToShortDateString()</td>
-                            @foreach (var role in ViewBag.Roles)
-                            {
-                                <td>
-                                    @using (Html.BeginForm("UserToRole", "ManageUsers"))
+                        foreach (var user in Model)
+                        {
+                            <tr>
+                                <td style="padding: 12px 16px; font-weight: 700; color: #64748B;">@(sn++)</td>
+                                <td style="padding: 12px 16px;">
+                                    @if (!string.IsNullOrWhiteSpace(user.FullName) && !user.FullName.Equals(user.Username, StringComparison.OrdinalIgnoreCase))
                                     {
-                                        <input type="hidden" value="@item.Id" name="userId" />
-                                        <input type="hidden" value="@role.Name" name="rolename" />
-                                        <input type="checkbox" class="icheckbox_minimal-blue" name="ischecked" onclick="this.form.submit();" value="true" checked="@GeneralServices.IsUserInRole(item.Id, role.Name)" />
-
+                                        <strong style="color: #0F172A; display: block; font-size: 0.95rem;">@user.FullName</strong>
+                                        <small style="color: #64748B;">@@@user.Username</small>
+                                    }
+                                    else
+                                    {
+                                        <strong style="color: #0F172A; display: block; font-size: 0.95rem;">@@@user.Username</strong>
                                     }
                                 </td>
-                            }
+                                <td>
+                                    <div style="color: #1E293B; font-weight: 600;">@user.Email</div>
+                                    <small style="color: #64748B;"><i class="fa fa-phone" style="font-size: 0.75rem;"></i> @(string.IsNullOrEmpty(user.PhoneNumber) ? "N/A" : user.PhoneNumber)</small>
+                                </td>
+                                <td>
+                                    @if (user.Roles != null && user.Roles.Any())
+                                    {
+                                        foreach (var role in user.Roles)
+                                        {
+                                            string pillClass = "xyz-role-client";
+                                            if (role.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase)) { pillClass = "xyz-role-superadmin"; }
+                                            else if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase)) { pillClass = "xyz-role-admin"; }
 
-                           
+                                            <span class="xyz-role-pill @pillClass">@role</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="xyz-role-pill xyz-role-client">Client</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="xyz-unit-chip" id="unit-balance-@user.UserId">
+                                            @user.UnitsBalance.ToString("N2") Units
+                                        </span>
+                                        <button type="button" class="xyz-btn-paystack" onclick="openAdminPaystackModal('@user.UserId', '@user.Username', '@user.UnitsBalance')" title="Credit wallet securely via Paystack">
+                                            <i class="fa fa-credit-card"></i> Paystack Top Up
+                                        </button>
+                                    </div>
+                                </td>
+                                <td style="text-align: right; padding: 12px 16px;">
+                                    <div class="dropdown" style="display: inline-block;">
+                                        <button class="btn btn-sm btn-default dropdown-toggle" type="button" data-toggle="dropdown" style="font-weight: 700; border-radius: 6px; border-color: #CBD5E1;">
+                                            Manage <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-right" role="menu" style="border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+                                            @if (user.ClientId > 0)
+                                            {
+                                                <li><a href="@Url.Action("ClientDetails", "ManageUsers", new { area = "Adminpanel", id = user.UserId })"><i class="fa fa-user" style="color: #4F46E5;"></i> Client Details</a></li>
+                                                <li><a href="@Url.Action("UserTransactions", "ManageUsers", new { area = "Adminpanel", id = user.ClientId })"><i class="fa fa-list-alt" style="color: #059669;"></i> View Transactions</a></li>
+                                            }
+                                            <li><a href="@Url.Action("EditUser", "ManageUsers", new { area = "Adminpanel", id = user.UserId })"><i class="fa fa-pen" style="color: #D97706;"></i> Edit Profile</a></li>
+                                            <li><a href="@Url.Action("ManageRoles", "ManageUsers", new { area = "Adminpanel", id = user.UserId })"><i class="fa fa-user-shield" style="color: #7C3AED;"></i> Manage Roles</a></li>
+                                            <li class="divider"></li>
+                                            <li><a href="@Url.Action("DeleteUser", "ManageUsers", new { area = "Adminpanel", id = user.UserId })" style="color: #DC2626;"><i class="fa fa-trash"></i> Delete User</a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 36px; color: #94A3B8;">
+                                <i class="fa fa-users-slash" style="font-size: 2rem; display: block; margin-bottom: 8px; color: #CBD5E1;"></i>
+                                No registered users found matching your filter criteria.
+                            </td>
                         </tr>
-
                     }
                 </tbody>
-                @{ 
-                    var s = "dddd";
-                }
             </table>
         </div>
+
+        <!-- PAGINATION CONTROLS -->
+        @if (totalPages > 1)
+        {
+            <div style="padding: 16px 20px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #64748B; font-size: 0.85rem;">
+                    Page <strong>@pageNumber</strong> of <strong>@totalPages</strong> &bull; Showing @Model.Count() of @totalUsersCount users
+                </span>
+                <ul class="pagination pagination-sm" style="margin: 0;">
+                    @if (pageNumber > 1)
+                    {
+                        <li><a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", page = pageNumber - 1, searchString = currentFilter, roleFilter = roleFilter })">&laquo; Previous</a></li>
+                    }
+                    else
+                    {
+                        <li class="disabled"><span>&laquo; Previous</span></li>
+                    }
+
+                    @for (int p = Math.Max(1, pageNumber - 2); p <= Math.Min(totalPages, pageNumber + 2); p++)
+                    {
+                        <li class="@(p == pageNumber ? "active" : "")">
+                            <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", page = p, searchString = currentFilter, roleFilter = roleFilter })">@p</a>
+                        </li>
+                    }
+
+                    @if (pageNumber < totalPages)
+                    {
+                        <li><a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", page = pageNumber + 1, searchString = currentFilter, roleFilter = roleFilter })">Next &raquo;</a></li>
+                    }
+                    else
+                    {
+                        <li class="disabled"><span>Next &raquo;</span></li>
+                    }
+                </ul>
+            </div>
+        }
     </div>
-</section>
+</div>
 
-@section scripts{
+<!-- ADMIN PAYSTACK TOP-UP MODAL -->
+<div class="modal fade" id="adminPaystackModal" tabindex="-1" role="dialog" aria-labelledby="paystackModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 440px;">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 40px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #0B0F19 0%, #1E293B 100%); color: #FFF; border-radius: 16px 16px 0 0; padding: 20px 24px;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#FFF; opacity:0.8;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="paystackModalLabel" style="font-weight: 800; font-size: 1.15rem;">
+                    <i class="fa fa-credit-card" style="color:#09A5DB;"></i> Paystack Top Up for User
+                </h4>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;">
+                    <small style="color: #64748B; display: block; font-weight: 700; text-transform: uppercase; font-size: 0.72rem;">Target Client</small>
+                    <strong style="color: #0F172A; font-size: 1.05rem;" id="modalTargetUsername">Username</strong>
+                    <span class="pull-right text-muted" id="modalCurrentBalance">0 Units</span>
+                </div>
 
-    <script src="~/Content/Dashboard/plugins/datatables/jquery.dataTables.min.js"></script>
-    <script src="~/Content/Dashboard/plugins/datatables/dataTables.bootstrap.min.js"></script>
+                <input type="hidden" id="modalTargetUserId" />
 
-    <script>
-        $(function () {
-            $("#example1").DataTable();
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label style="font-weight: 700; color: #334155;">Quantity of SMS Units to Credit</label>
+                    <div class="input-group">
+                        <input type="number" id="modalUnitsInput" class="form-control" placeholder="e.g. 500" min="1" step="1" style="height: 44px; font-size: 1.1rem; font-weight: 800; border-color: #CBD5E1;" />
+                        <span class="input-group-addon" style="font-weight:700; background:#F1F5F9;">Units</span>
+                    </div>
+                </div>
 
+                <button type="button" class="btn btn-block btn-lg" id="btnInitiatePaystack" style="background: #09A5DB; color: #FFF; font-weight: 800; border-radius: 10px; height: 48px; font-size: 1rem;" onclick="processAdminPaystackPayment()">
+                    <i class="fa fa-shield-alt"></i> Proceed to Paystack Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PAYSTACK INLINE POPUP SCRIPT -->
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+    const PAYSTACK_PUB_KEY = "@paystackPublicKey";
+
+    function openAdminPaystackModal(userId, username, currentBalance) {
+        document.getElementById('modalTargetUserId').value = userId;
+        document.getElementById('modalTargetUsername').innerText = '@@' + username;
+        document.getElementById('modalCurrentBalance').innerText = 'Current: ' + parseFloat(currentBalance).toLocaleString() + ' Units';
+        document.getElementById('modalUnitsInput').value = '';
+        $('#adminPaystackModal').modal('show');
+    }
+
+    function processAdminPaystackPayment() {
+        const userId = document.getElementById('modalTargetUserId').value;
+        const units = parseFloat(document.getElementById('modalUnitsInput').value);
+
+        if (!units || units <= 0) {
+            alert('Please enter a valid unit quantity greater than zero.');
+            return;
+        }
+
+        const btn = document.getElementById('btnInitiatePaystack');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Initializing Paystack...';
+
+        $.ajax({
+            url: '@Url.Action("InitializeAdminPaystackTopUp", "ManageUsers", new { area = "Adminpanel" })',
+            type: 'POST',
+            data: { targetUserId: userId, units: units },
+            success: function (res) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-shield-alt"></i> Proceed to Paystack Payment';
+
+                if (res.success) {
+                    $('#adminPaystackModal').modal('hide');
+
+                    let handler = PaystackPop.setup({
+                        key: res.publicKey || PAYSTACK_PUB_KEY,
+                        email: res.email,
+                        amount: res.amountInKobo,
+                        currency: "NGN",
+                        ref: 'EXW_ADM_' + Math.floor((Math.random() * 1000000000) + 1),
+                        callback: function (response) {
+                            verifyAdminPayment(response.reference, res.transactionId, userId);
+                        },
+                        onClose: function () {
+                            alert('Paystack transaction was cancelled.');
+                        }
+                    });
+                    handler.openIframe();
+                } else {
+                    alert(res.message || 'Failed to initialize Paystack transaction.');
+                }
+            },
+            error: function () {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-shield-alt"></i> Proceed to Paystack Payment';
+                alert('Error connecting to server. Please try again.');
+            }
         });
-    </script>
-}
+    }
+
+    function verifyAdminPayment(reference, transactionId, userId) {
+        $.ajax({
+            url: '@Url.Action("VerifyAdminPaystackTopUp", "ManageUsers", new { area = "Adminpanel" })',
+            type: 'POST',
+            data: { reference: reference, transactionId: transactionId },
+            success: function (res) {
+                if (res.success) {
+                    alert('🎉 Success! ' + res.message);
+                    const balEl = document.getElementById('unit-balance-' + userId);
+                    if (balEl && res.newBalance) {
+                        balEl.innerText = parseFloat(res.newBalance).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' Units';
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert('⚠️ Verification Warning: ' + res.message);
+                }
+            },
+            error: function () {
+                alert('Error verifying payment. Please refresh the page.');
+            }
+        });
+    }
+</script>

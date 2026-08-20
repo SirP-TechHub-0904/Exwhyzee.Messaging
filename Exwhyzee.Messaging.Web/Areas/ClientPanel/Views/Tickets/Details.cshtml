@@ -1,0 +1,195 @@
+@model Exwhyzee.Messaging.Core.Models.SupportTicket
+@using Exwhyzee.Messaging.Core.Models
+
+@{
+    ViewBag.Title = $"Ticket #{Model.TicketNumber} Thread";
+    string statusClass = Model.Status == TicketStatus.Open ? "xyz-badge-open"
+        : Model.Status == TicketStatus.InProgress ? "xyz-badge-progress"
+        : Model.Status == TicketStatus.Resolved ? "xyz-badge-resolved" : "xyz-badge-closed";
+}
+
+<style>
+    .xyz-details-header {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        color: #FFFFFF;
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .xyz-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .xyz-msg-bubble {
+        border-radius: 12px;
+        padding: 18px;
+        margin-bottom: 16px;
+        border: 1px solid #E2E8F0;
+    }
+
+    .xyz-msg-client {
+        background: #F8FAFC;
+        border-left: 4px solid #64748B;
+    }
+
+    .xyz-msg-admin {
+        background: #EFF6FF;
+        border-left: 4px solid #2563EB;
+    }
+
+    .xyz-badge-open { background: #DBEAFE; color: #1E40AF; }
+    .xyz-badge-progress { background: #FEF3C7; color: #92400E; }
+    .xyz-badge-resolved { background: #D1FAE5; color: #065F46; }
+    .xyz-badge-closed { background: #F3F4F6; color: #374151; }
+</style>
+
+<div class="container-fluid" style="padding-top: 10px;">
+    @Html.Partial("_ResponseMessagePartial")
+
+    <!-- HEADER BANNER -->
+    <div class="xyz-details-header">
+        <div>
+            <h2 style="font-weight: 800; margin: 0 0 4px 0; font-size: 1.5rem; letter-spacing: -0.5px;">
+                <i class="fa fa-comments" style="color: #38BDF8; margin-right: 8px;"></i> Support Ticket Thread: <span style="font-family: 'JetBrains Mono', monospace; color: #38BDF8;">#@Model.TicketNumber</span>
+            </h2>
+            <p style="color: #94A3B8; margin: 0; font-size: 0.9rem;">
+                Subject: <strong style="color: #FFF;">@Model.Subject</strong>
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <span class="badge @statusClass" style="font-size: 0.9rem; padding: 8px 16px; font-weight: 800;">
+                @Model.Status
+            </span>
+            <a href="@Url.Action("Index", "Tickets", new { area = "ClientPanel" })" class="btn btn-default" style="font-weight: 800; border-radius: 8px; background: #FFF; color: #0F172A; border: none;">
+                <i class="fa fa-arrow-left"></i> Back to My Tickets
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- ORIGINAL TICKET INQUIRY -->
+            <div class="xyz-card">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-bottom: 16px;">
+                    <div>
+                        <strong style="color: #0F172A; font-size: 1.05rem;">@Model.SenderName (You)</strong>
+                        <small style="color: #64748B; display: block;">@Model.Category &bull; @Model.DateCreated.ToString("dd MMM yyyy HH:mm")</small>
+                    </div>
+                    <span class="badge" style="background: #EFF6FF; color: #1D4ED8; height: 24px; align-self: center;">@Model.Priority Priority</span>
+                </div>
+
+                <div style="color: #1E293B; font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap;">@Model.Message</div>
+            </div>
+
+            <!-- RESPONSES -->
+            @if (Model.Responses != null && Model.Responses.Any())
+            {
+                <h4 style="font-weight: 800; color: #0F172A; margin: 24px 0 16px 0;">
+                    <i class="fa fa-reply-all" style="color: #2563EB;"></i> Replies &amp; Support Messages (@Model.Responses.Count)
+                </h4>
+
+                foreach (var resp in Model.Responses.OrderBy(r => r.DateCreated))
+                {
+                    string bubbleCss = resp.IsAdminReply ? "xyz-msg-admin" : "xyz-msg-client";
+
+                    <div class="xyz-msg-bubble @bubbleCss">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <div>
+                                @if (resp.IsAdminReply)
+                                {
+                                    <strong style="color: #1E40AF;"><i class="fa fa-user-shield"></i> Support Staff: @(resp.AdminRepliedBy ?? resp.SenderName)</strong>
+                                }
+                                else
+                                {
+                                    <strong style="color: #334155;"><i class="fa fa-user"></i> You (@resp.SenderName)</strong>
+                                }
+                            </div>
+                            <small style="color: #64748B;">@resp.DateCreated.ToString("dd MMM yyyy HH:mm")</small>
+                        </div>
+
+                        <div style="color: #1E293B; font-size: 0.93rem; line-height: 1.5; white-space: pre-wrap;">@resp.Message</div>
+                    </div>
+                }
+            }
+
+            <!-- CLIENT REPLY FORM -->
+            @if (Model.Status != TicketStatus.Closed)
+            {
+                <div class="xyz-card" style="margin-top: 24px;">
+                    <h4 style="font-weight: 800; color: #0F172A; margin: 0 0 14px 0;">
+                        <i class="fa fa-pen-to-square" style="color: #2563EB;"></i> Post Follow-Up Reply
+                    </h4>
+
+                    @using (Html.BeginForm("PostReply", "Tickets", new { area = "ClientPanel" }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ticketId" value="@Model.TicketId" />
+
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <textarea name="message" class="form-control" rows="4" placeholder="Type your follow-up reply here..." style="border-radius: 10px;" required></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="font-weight: 800; border-radius: 8px; padding: 12px 28px; background: #2563EB;">
+                            <i class="fa fa-paper-plane"></i> Send Reply
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                <div style="background: #F3F4F6; border: 1px solid #D1D5DB; border-radius: 12px; padding: 16px; text-align: center; color: #4B5563; font-weight: 700;">
+                    <i class="fa fa-lock"></i> This ticket has been marked as closed.
+                </div>
+            }
+        </div>
+
+        <!-- SIDEBAR DETAILS -->
+        <div class="col-md-4">
+            <div class="xyz-card">
+                <h4 style="font-weight: 800; color: #0F172A; margin: 0 0 14px 0; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px;">
+                    <i class="fa fa-circle-info"></i> Ticket Metadata
+                </h4>
+
+                <div style="font-size: 0.9rem; line-height: 2;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding: 6px 0;">
+                        <span style="color: #64748B;">Tracking Code:</span>
+                        <strong style="color: #2563EB; font-family: monospace;">#@Model.TicketNumber</strong>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding: 6px 0;">
+                        <span style="color: #64748B;">Category:</span>
+                        <strong style="color: #0F172A;">@Model.Category</strong>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding: 6px 0;">
+                        <span style="color: #64748B;">Status:</span>
+                        <strong style="color: #0F172A;">@Model.Status</strong>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding: 6px 0;">
+                        <span style="color: #64748B;">Submitted On:</span>
+                        <strong style="color: #334155;">@Model.DateCreated.ToString("dd MMM yyyy HH:mm")</strong>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; padding: 6px 0;">
+                        <span style="color: #64748B;">Last Updated:</span>
+                        <strong style="color: #334155;">@Model.DateUpdated.ToString("dd MMM yyyy HH:mm")</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

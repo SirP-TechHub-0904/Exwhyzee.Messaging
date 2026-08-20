@@ -25,9 +25,9 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
         
 
-        public ApiSettingsController(ApiSettings apiSettings)
+        public ApiSettingsController(IApiSettings apiSettings)
         {
-            _apiSettings = apiSettings;
+            _apiSettings = apiSettings ?? new ApiSettings();
         }
 
         // GET: Adminpanel/ApiSettings

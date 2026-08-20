@@ -2,11 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-
 namespace Exwhyzee.Messaging.Core.Dtos
 {
-
-
     public class SmsResponse
     {
         public string status { get; set; }
@@ -17,9 +14,7 @@ namespace Exwhyzee.Messaging.Core.Dtos
         public int length { get; set; }
         public int page { get; set; }
         public string balance { get; set; }
-
         public string BalanceResponse { get; set; }
-
     }
 
     public class BalanceResponse
@@ -29,12 +24,12 @@ namespace Exwhyzee.Messaging.Core.Dtos
         public string msg { get; set; }
     }
 
-
     public class GeneralResponse
     {
         public string status { get; set; }
         public string error_code { get; set; }
         public string msg { get; set; }
+        public string senderID { get; set; }
+        public string senderidStatus { get; set; }
     }
 }
-

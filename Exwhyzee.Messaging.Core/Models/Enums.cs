@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
-
 namespace Exwhyzee.Messaging.Core.Models
 {
     public enum AllowNotifications
@@ -19,7 +18,8 @@ namespace Exwhyzee.Messaging.Core.Models
         Pending = 1,
         Approved = 2,
         Cancelled = 3,
-        Failed = 4
+        Failed = 4,
+        Revoked = 5
     }
 
     public enum MessageStatus
@@ -28,7 +28,8 @@ namespace Exwhyzee.Messaging.Core.Models
         Failed = 2,
         Sent = 3,
         Draft = 4,
-        Scheduled = 5
+        Scheduled = 5,
+        Revoked = 6
     }
 
     public enum VoucherStatus
@@ -63,5 +64,54 @@ namespace Exwhyzee.Messaging.Core.Models
 
         SaveAsDraft = 3
     }
-}
 
+    public enum TwoFactorMethod
+    {
+        None = 0,
+        GoogleAuth = 1,
+        MicrosoftAuth = 2,
+        SmsOtp = 3,
+        EmailOtp = 4
+    }
+
+    public enum TicketStatus
+    {
+        [Description("Open")]
+        Open = 1,
+
+        [Description("In Progress")]
+        InProgress = 2,
+
+        [Description("Resolved")]
+        Resolved = 3,
+
+        [Description("Closed")]
+        Closed = 4
+    }
+
+    public enum TicketPriority
+    {
+        Low = 1,
+        Medium = 2,
+        High = 3,
+        Urgent = 4
+    }
+
+    public enum TicketCategory
+    {
+        [Description("General Inquiry")]
+        General = 1,
+
+        [Description("Billing & Paystack")]
+        Billing = 2,
+
+        [Description("API Integration")]
+        ApiIntegration = 3,
+
+        [Description("Account Lockout / Suspension")]
+        AccountSuspended = 4,
+
+        [Description("SMS Delivery Issue")]
+        SmsDelivery = 5
+    }
+}

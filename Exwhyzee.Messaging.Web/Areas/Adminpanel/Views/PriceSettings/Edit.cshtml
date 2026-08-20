@@ -4,91 +4,73 @@
     ViewBag.Title = "Edit Price Setting";
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>Price Settings</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Price Settings</a></li>
-        <li class="active">Edit Price Setting</li>
-    </ol>
-</section>
+<style>
+    .xyz-form-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        padding: 28px;
+        max-width: 680px;
+        margin: 0 auto 30px;
+    }
+</style>
 
-<section class="content">
+@Html.Partial("_ResponseMessagePartial")
 
-    <div class="box">
-        <div class="box-header">
-            <h3 class="box-title">Edit Price Settings </h3>
+<div class="xyz-form-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid #E2E8F0; padding-bottom:16px;">
+        <h3 style="margin:0; font-weight:800; font-size:1.3rem; color:#0F172A;">
+            <i class="fa fa-pen-to-square" style="color:#0284C7;"></i> Edit Price Setting #@Model.PriceSettingId
+        </h3>
+        <a href="@Url.Action("Index", "PriceSettings", new { area = "Adminpanel" })" class="btn btn-sm btn-default" style="font-weight:700; border-radius:8px;">
+            &larr; Back to List
+        </a>
+    </div>
 
-            <span class="pull-right">
-                <a href="@Url.Content(" ../../pricesettings/")" class="btn btn-app"><i class="fa fa-backward"></i>Back</a>
-            </span>
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "text-danger", style = "margin-bottom:16px;" })
+        @Html.HiddenFor(model => model.PriceSettingId)
+
+        <div class="form-group" style="margin-bottom:16px;">
+            <label style="font-weight:700; font-size:0.85rem; color:#334155;">Country Name <span style="color:#E50914;">*</span></label>
+            @Html.EditorFor(model => model.Country, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:600;", required = "required" } })
+            @Html.ValidationMessageFor(model => model.Country, "", new { @class = "text-danger" })
         </div>
-        <div class="box-body">
-            <div class="col-md-6 col-sm-12 col-md-offset-3">
-                @using (Html.BeginForm())
-            {
-                    @Html.AntiForgeryToken()
 
-                    <div class="form-horizontal">
+        <div class="form-group" style="margin-bottom:16px;">
+            <label style="font-weight:700; font-size:0.85rem; color:#334155;">International Dial Code</label>
+            @Html.EditorFor(model => model.InternationalDialCode, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:600;" } })
+            @Html.ValidationMessageFor(model => model.InternationalDialCode, "", new { @class = "text-danger" })
+        </div>
 
-                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-                        @Html.HiddenFor(model => model.PriceSettingId)
+        <div class="form-group" style="margin-bottom:16px;">
+            <label style="font-weight:700; font-size:0.85rem; color:#334155;">Network Provider Name <span style="color:#E50914;">*</span></label>
+            @Html.EditorFor(model => model.NetworkProvider, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:600; text-transform:uppercase;", required = "required" } })
+            @Html.ValidationMessageFor(model => model.NetworkProvider, "", new { @class = "text-danger" })
+        </div>
 
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.Country, htmlAttributes: new { @class = "control-label col-md-3" })
-                            <div class="col-md-9">
-                                @Html.EditorFor(model => model.Country, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.Country, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.InternationalDialCode, htmlAttributes: new { @class = "control-label col-md-3" })
-                            <div class="col-md-9">
-                                @Html.EditorFor(model => model.InternationalDialCode, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.InternationalDialCode, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.NetworkProvider, htmlAttributes: new { @class = "control-label col-md-3" })
-                            <div class="col-md-9">
-                                @Html.EditorFor(model => model.NetworkProvider, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.NetworkProvider, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.DigitCount, htmlAttributes: new { @class = "control-label col-md-3" })
-                            <div class="col-md-9">
-                                @Html.EditorFor(model => model.DigitCount, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.DigitCount, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.UnitsPerSms, htmlAttributes: new { @class = "control-label col-md-3" })
-                            <div class="col-md-9">
-                                @Html.EditorFor(model => model.UnitsPerSms, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.UnitsPerSms, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="col-md-offset-2 col-md-10">
-                                <input type="submit" value="Save" class="btn btn-default" />
-                            </div>
-                        </div>
-                    </div>
-                }
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label style="font-weight:700; font-size:0.85rem; color:#334155;">Phone Digit Count <span style="color:#E50914;">*</span></label>
+                    @Html.EditorFor(model => model.DigitCount, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:600;", required = "required" } })
+                    @Html.ValidationMessageFor(model => model.DigitCount, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label style="font-weight:700; font-size:0.85rem; color:#334155;">Units Charged Per SMS <span style="color:#E50914;">*</span></label>
+                    @Html.EditorFor(model => model.UnitsPerSms, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:700; color:#059669;", required = "required" } })
+                    @Html.ValidationMessageFor(model => model.UnitsPerSms, "", new { @class = "text-danger" })
+                </div>
             </div>
         </div>
-    </div>
-</section>
 
-@section Scripts {
-    @Scripts.Render("~/bundles/jqueryval")
-}
-
-
+        <button type="submit" class="btn btn-success btn-block" style="background:#059669; border:none; font-weight:800; font-size:1rem; padding:12px; border-radius:10px; box-shadow:0 4px 14px rgba(5,150,105,0.3);">
+            <i class="fa fa-save"></i> Update Price Setting
+        </button>
+    }
+</div>

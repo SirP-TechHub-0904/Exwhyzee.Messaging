@@ -1,23 +1,35 @@
-@if (TempData["error"] != null)
+@if (TempData["error"] != null || TempData["Error"] != null)
 {
-    <div class="alert alert-error alert-dismissible" role="alert">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <strong>Error!</strong> @TempData["error"]
+    var err = TempData["error"] ?? TempData["Error"];
+    <div style="background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 0.92rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fa fa-circle-xmark" style="font-size: 1.2rem; color: #DC2626;"></i>
+            <span><strong style="color: #7F1D1D;">Error!</strong> @err</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" style="background: transparent; border: none; color: #991B1B; font-size: 1.3rem; cursor: pointer; opacity: 0.6; line-height: 1; padding: 0;">&times;</button>
     </div>
 }
 
 @if (TempData["Success"] != null || TempData["success"] != null)
 {
-    <div class="alert alert-success alert-dismissible" role="alert">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <strong>Success!</strong> @(TempData["success"] ?? TempData["Success"])
+    var msg = TempData["success"] ?? TempData["Success"];
+    <div style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 0.92rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fa fa-circle-check" style="font-size: 1.2rem; color: #059669;"></i>
+            <span><strong style="color: #047857;">Success!</strong> @msg</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" style="background: transparent; border: none; color: #065F46; font-size: 1.3rem; cursor: pointer; opacity: 0.6; line-height: 1; padding: 0;">&times;</button>
     </div>
 }
 
-@if (TempData["warning"] != null)
+@if (TempData["warning"] != null || TempData["Warning"] != null)
 {
-    <div class="alert alert-warning alert-dismissible" role="alert">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <strong>Warning!</strong> @TempData["warning"]
+    var warn = TempData["warning"] ?? TempData["Warning"];
+    <div style="background: #FFFBEB; border: 1px solid #FCD34D; color: #92400E; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 0.92rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fa fa-triangle-exclamation" style="font-size: 1.2rem; color: #D97706;"></i>
+            <span><strong style="color: #78350F;">Warning!</strong> @warn</span>
+        </div>
+        <button type="button" onclick="this.parentElement.remove()" style="background: transparent; border: none; color: #92400E; font-size: 1.3rem; cursor: pointer; opacity: 0.6; line-height: 1; padding: 0;">&times;</button>
     </div>
 }

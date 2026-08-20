@@ -4,72 +4,104 @@
     ViewBag.Title = "Price Setting Details";
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>Price Settings</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Price Settings</a></li>
-        <li class="active">Price Settings Details</li>
-    </ol>
-</section>
+<style>
+    .xyz-details-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        padding: 28px;
+        max-width: 780px;
+        margin: 0 auto 30px;
+    }
+</style>
 
-<section class="content">
+@Html.Partial("_ResponseMessagePartial")
 
-    <div class="box">
-        <div class="box-header">
-            <h3 class="box-title">Price Settings Details </h3>
-
-            <span class="pull-right">
-                <a href="@Url.Content(" ../../pricesettings")" class="btn btn-app"><i class="fa fa-backward"></i>Back</a>
-                <a href="@Url.Content(" ../../pricesettings/edit/"+Model.PriceSettingId)" class="btn btn-app"><i class="fa fa-pencil-square-o"></i>Edit Setting</a>
-                <a href="@Url.Content(" ../../pricesettings/CreateDial/"+Model.PriceSettingId)" class="btn btn-app"><i class="fa fa-plus-square-o"></i>Add Code</a>
-            </span>
+<div class="xyz-details-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; border-bottom:1px solid #E2E8F0; padding-bottom:16px;">
+        <div>
+            <h3 style="margin:0 0 4px; font-weight:800; font-size:1.3rem; color:#0F172A;">
+                <i class="fa fa-circle-info" style="color:#0284C7;"></i> Tariff Details: @Model.Country (@Model.NetworkProvider)
+            </h3>
+            <span style="color:#64748B; font-size:0.88rem;">Configuration ID #@Model.PriceSettingId</span>
         </div>
-        <div class="box-body">
-            <div class="col-md-6 col-sm-12 col-md-offset-2">
-                <strong><i class="fa fa-user-secret margin-r-5"></i>@Html.DisplayNameFor(model => model.Country)</strong>
-                <p class="text-muted">
-                    @Html.DisplayFor(model => model.Country)
-                </p>
-                <hr>
+        <div style="display:flex; gap:8px;">
+            <a href="@Url.Action("Edit", "PriceSettings", new { area = "Adminpanel", id = Model.PriceSettingId })" class="btn btn-sm btn-warning" style="font-weight:700; border-radius:8px;">
+                <i class="fa fa-pen-to-square"></i> Edit Setting
+            </a>
+            <a href="@Url.Action("Index", "PriceSettings", new { area = "Adminpanel" })" class="btn btn-sm btn-default" style="font-weight:700; border-radius:8px;">
+                &larr; Back to List
+            </a>
+        </div>
+    </div>
 
-                <strong><i class="fa fa-user-secret margin-r-5"></i>@Html.DisplayNameFor(model => model.InternationalDialCode) </strong>
-                <p class="text-muted">
-                    @Html.DisplayFor(model => model.InternationalDialCode)
-                </p>
-                <hr>
-                <strong><i class="fa fa-user-secret margin-r-5"></i>@Html.DisplayNameFor(model => model.NetworkProvider)</strong>
-                <p class="text-muted">
-                    @Html.DisplayFor(model => model.NetworkProvider)
-                </p>
-                <hr>
-                <strong><i class="fa fa-user-secret margin-r-5"></i>@Html.DisplayNameFor(model => model.DigitCount)</strong>
-                <p class="text-muted">
-                    @Html.DisplayFor(model => model.DigitCount)
-                </p>
-                <hr>
-                <strong><i class="fa fa-user-secret margin-r-5"></i>@Html.DisplayNameFor(model => model.UnitsPerSms)</strong>
-                <p class="text-muted">
-                    @Html.DisplayFor(model => model.UnitsPerSms)
-                </p>
-                <hr>
+    <div class="row" style="margin-bottom:20px;">
+        <div class="col-md-6">
+            <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:18px;">
+                <div style="margin-bottom:12px;">
+                    <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">Country</small>
+                    <strong style="font-size:1.1rem; color:#0F172A;">@Model.Country</strong>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">International Dial Code</small>
+                    <code style="font-size:1rem; color:#0284C7; font-weight:800;">+@(Model.InternationalDialCode ?? "234")</code>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">Network Provider</small>
+                    <strong style="font-size:1rem; color:#4F46E5;">@Model.NetworkProvider</strong>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">Phone Number Digits</small>
+                    <span style="font-weight:700; color:#334155;">@Model.DigitCount Digits</span>
+                </div>
+                <div>
+                    <small style="color:#64748B; font-weight:700; text-transform:uppercase; font-size:0.75rem; display:block;">SMS Charge Rate</small>
+                    <span style="font-family:'JetBrains Mono', monospace; font-size:1.3rem; font-weight:800; color:#059669;">@Model.UnitsPerSms.ToString("N2") Units/SMS</span>
+                </div>
             </div>
-            <div class="col-md-6 col-sm-12 col-md-offset-2">
-                <table class="table table-striped">
-                    <tr>
-                        <th>Codes</th>
-                    </tr>
-                    @foreach (var item in Model.DialCodes)
-                    {
+        </div>
+
+        <div class="col-md-6">
+            <div style="background:#ffffff; border:1px solid #E2E8F0; border-radius:10px; padding:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <strong style="font-weight:800; color:#0F172A; font-size:0.95rem;">Assigned Network Prefix Codes</strong>
+                    <a href="@Url.Action("CreateDial", "PriceSettings", new { area = "Adminpanel", id = Model.PriceSettingId })" class="btn btn-xs btn-primary" style="font-weight:800; border-radius:6px; background:#0284C7; border:none;">
+                        <i class="fa fa-plus"></i> Add Prefix Code
+                    </a>
+                </div>
+
+                <table class="table table-hover" style="font-size:0.88rem; margin-bottom:0;">
+                    <thead style="background:#F8FAFC; font-weight:800; font-size:0.75rem; color:#475569; text-transform:uppercase;">
                         <tr>
-                            <td>@item.NumberPrefix</td>
-                            <td><a href="@Url.Content(" ../../pricesettings/DeleteDialCode/"+item.DialCodeId)" class="btn btn-xs btn-danger"><i class="fa fa-trash-o"> </i> Delete</a></td>
+                            <th>Number Prefix</th>
+                            <th style="text-align:right;">Action</th>
                         </tr>
-                    }
+                    </thead>
+                    <tbody>
+                        @if (Model.DialCodes != null && Model.DialCodes.Any())
+                        {
+                            foreach (var item in Model.DialCodes)
+                            {
+                                <tr>
+                                    <td><code style="font-size:0.9rem; font-weight:700; color:#0284C7;">@item.NumberPrefix</code></td>
+                                    <td style="text-align:right;">
+                                        <a href="@Url.Action("DeleteDialCode", "PriceSettings", new { area = "Adminpanel", id = item.DialCodeId })" class="btn btn-xs btn-default" style="color:#EF4444; font-weight:700; border-radius:6px;" onclick="return confirm('Delete dial code prefix @item.NumberPrefix?');">
+                                            <i class="fa fa-trash"></i> Delete
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="2" style="text-align:center; color:#94A3B8; padding:16px;">No prefix codes assigned.</td>
+                            </tr>
+                        }
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
-</section>
+</div>

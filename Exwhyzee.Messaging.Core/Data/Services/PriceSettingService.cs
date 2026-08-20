@@ -51,7 +51,7 @@ namespace Exwhyzee.Messaging.Core.Data.Services
 
         public async Task<PriceSetting> GetPriceSetting(int? id)
         {
-            var priceSetting = await db.PriceSettings.FindAsync(id);
+            var priceSetting = await db.PriceSettings.Include(x => x.DialCodes).FirstOrDefaultAsync(x => x.PriceSettingId == id);
             return priceSetting;
         }
 

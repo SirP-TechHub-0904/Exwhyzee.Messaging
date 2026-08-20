@@ -1,120 +1,283 @@
 @model Exwhyzee.Messaging.Core.Models.Client
-
 @{
-    ViewBag.Title = "Client Details";
+    ViewBag.Title = "Client Details Studio";
+    var userDetails = ViewBag.Details as Exwhyzee.Messaging.Core.Models.ApplicationUser;
+    string displayName = $"{Model.FirstName} {Model.Surname}".Trim();
+    if (string.IsNullOrWhiteSpace(displayName)) { displayName = userDetails?.UserName ?? "Client Profile"; }
+    string initials = !string.IsNullOrEmpty(displayName) && displayName.Length >= 2 ? displayName.Substring(0, 2).ToUpper() : "US";
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small>Manage Users</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Manage users</a></li>
-        <li class="active">Client Details</li>
-    </ol>
-</section>
+<style>
+    .xyz-details-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
 
-<section class="content">
- 
+    .xyz-profile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 20px;
+        background: linear-gradient(135deg, #0B0F19 0%, #1E293B 100%);
+        color: #FFFFFF;
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(11, 15, 25, 0.15);
+    }
+
+    .xyz-avatar-circle {
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+        color: #FFFFFF;
+        font-weight: 800;
+        font-size: 1.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    .xyz-balance-chip {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        padding: 8px 16px;
+        font-family: 'JetBrains Mono', monospace;
+        color: #38BDF8;
+        font-weight: 800;
+        font-size: 1.1rem;
+    }
+
+    .xyz-form-label {
+        font-weight: 700;
+        color: #334155;
+        font-size: 0.85rem;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .xyz-form-control {
+        height: 42px;
+        border-radius: 8px;
+        border: 1px solid #CBD5E1;
+        font-size: 0.9rem;
+        padding: 8px 14px;
+        transition: all 0.2s ease;
+    }
+
+    .xyz-form-control:focus {
+        border-color: #4F46E5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+</style>
+
+<div class="container-fluid" style="padding-top: 10px;">
     @Html.Partial("_ResponseMessagePartial")
 
-    <div class="box box-primary">
-        <div class="box-header">
-            <h3 class="box-title pull-left">Client Details </h3>
-            <br />
-            <span class="pull-left">
-                <i class="bg-green label">@ViewBag.Details.Email</i><br />
-                <i class="bg-orange label">@ViewBag.Details.UserName</i><br />
-                <i class="bg-blue-active label">@ViewBag.Details.PhoneNumber</i>
-            </span>
-
-            <span class="pull-right">
-
-                <a href="@Url.Action("ResetUserPassword", "Account",new { userId = Model.UserId, Area=""})" class="btn btn-app"><i class="fa fa-lock"></i>Reset Password</a>
-                <a href="@Url.Content(" ../../manageusers/addunit/"+Model.ClientId)" class="btn btn-app"><i class="fa fa-plus-circle"></i>Add Units</a>
-                <a href="@Url.Content(" ../../manageusers/usertransactions/"+Model.ClientId)" class="btn btn-app"><i class="fa fa-bars"></i>Tranx History</a>
-                <a href="@Url.Content("../../manageusers")" class="btn btn-app"><i class="fa fa-backward"></i>Back</a>
-            </span>
+    <!-- EXECUTIVE PROFILE HEADER BANNER -->
+    <div class="xyz-profile-header">
+        <div style="display: flex; align-items: center; gap: 18px;">
+            <div class="xyz-avatar-circle">
+                @initials
+            </div>
+            <div>
+                <h3 style="font-weight: 800; margin: 0 0 4px 0; font-size: 1.4rem;">@displayName</h3>
+                <div style="color: #94A3B8; font-size: 0.9rem;">
+                    @@@(userDetails?.UserName ?? "user") &bull; <i class="fa fa-envelope" style="font-size:0.8rem;"></i> @(userDetails?.Email ?? "N/A")
+                    &bull; <i class="fa fa-phone" style="font-size:0.8rem;"></i> @(userDetails?.PhoneNumber ?? "N/A")
+                </div>
+            </div>
         </div>
-        <div class="box-body">
-            <div class="col-md-8 col-md-offset-2">
+
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div class="xyz-balance-chip">
+                <small style="display:block; color:#94A3B8; font-size:0.7rem; text-transform:uppercase; font-weight:700;">Wallet Balance</small>
+                @Model.Units.ToString("N2") Units
+            </div>
+
+            <a href="@Url.Action("ManageRoles", "ManageUsers", new { area = "Adminpanel", id = Model.UserId })" class="btn btn-primary" style="font-weight: 800; border-radius: 8px; padding: 10px 16px; background: #7C3AED; border: none;">
+                <i class="fa fa-user-shield"></i> Manage Roles
+            </a>
+
+            <a href="@Url.Action("UserTransactions", "ManageUsers", new { area = "Adminpanel", id = Model.ClientId })" class="btn btn-info" style="font-weight: 800; border-radius: 8px; padding: 10px 16px;">
+                <i class="fa fa-list-alt"></i> Transactions
+            </a>
+
+            <a href="@Url.Action("ResetUserPassword", "Account", new { userId = Model.UserId, Area="" })" class="btn btn-warning" style="font-weight: 800; border-radius: 8px; padding: 10px 16px; color:#1E293B;">
+                <i class="fa fa-key"></i> Reset Password
+            </a>
+
+            <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-default" style="font-weight: 800; border-radius: 8px; padding: 10px 16px; background:#FFFFFF; color:#1E293B; border-color:#CBD5E1;">
+                <i class="fa fa-arrow-left"></i> Back to Users
+            </a>
+        </div>
+    </div>
+
+    <!-- MAIN FORM & DETAILS CARD -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="xyz-details-card">
+                <div style="border-bottom: 1px solid #E2E8F0; padding-bottom: 14px; margin-bottom: 20px;">
+                    <h4 style="font-weight: 800; color: #0F172A; margin: 0;">
+                        <i class="fa fa-user-gear" style="color: #4F46E5; margin-right: 6px;"></i> Edit Client Profile Information
+                    </h4>
+                </div>
+
                 @using (Html.BeginForm())
                 {
                     @Html.AntiForgeryToken()
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
-                    <div class="form-horizontal">
+                    @Html.HiddenFor(model => model.ClientId)
+                    @Html.HiddenFor(model => model.UserId)
+                    @Html.HiddenFor(model => model.Units)
+                    @Html.HiddenFor(model => model.Discount)
 
-                        <hr />
-                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-                        @Html.HiddenFor(model => model.ClientId)
-                        @Html.HiddenFor(model => model.UserId)
-                        @Html.HiddenFor(model => model.Units)
-                        @Html.HiddenFor(model => model.Discount)
-
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.Units, htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                @Html.EditorFor(model => model.Units, new { htmlAttributes = new { @class = "form-control", @disabled = "disabled" } })
-                                @Html.ValidationMessageFor(model => model.Units, "", new { @class = "text-danger" })
-                            </div>
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="xyz-form-label">Surname</label>
+                            @Html.EditorFor(model => model.Surname, new { htmlAttributes = new { @class = "form-control xyz-form-control", placeholder = "Enter surname" } })
+                            @Html.ValidationMessageFor(model => model.Surname, "", new { @class = "text-danger" })
                         </div>
 
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.Surname, htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                @Html.EditorFor(model => model.Surname, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.Surname, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            @Html.Label("First Name", htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            @Html.Label("Other Names", htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                @Html.EditorFor(model => model.OtherNames, new { htmlAttributes = new { @class = "form-control" } })
-                                @Html.ValidationMessageFor(model => model.OtherNames, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            @Html.LabelFor(model => model.Discount, htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                @Html.EditorFor(model => model.Discount, new { htmlAttributes = new { @class = "form-control", @disabled = "disabled" } })
-                                @Html.ValidationMessageFor(model => model.Discount, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            @Html.Label("Allow Notifications", htmlAttributes: new { @class = "control-label col-md-2" })
-                            <div class="col-md-10">
-                                @Html.EnumDropDownListFor(model => model.AllowNotifications, htmlAttributes: new { @class = "form-control" })
-                                @Html.ValidationMessageFor(model => model.AllowNotifications, "", new { @class = "text-danger" })
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="col-md-offset-2 col-md-10">
-                                <input type="submit" value="Update" class="btn btn-primary" />
-                            </div>
+                        <div class="col-md-6 form-group">
+                            <label class="xyz-form-label">First Name</label>
+                            @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control xyz-form-control", placeholder = "Enter first name" } })
+                            @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
                         </div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="xyz-form-label">Allow System Notifications</label>
+                            @Html.EnumDropDownListFor(model => model.AllowNotifications, htmlAttributes: new { @class = "form-control xyz-form-control" })
+                            @Html.ValidationMessageFor(model => model.AllowNotifications, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="col-md-6 form-group">
+                            <label class="xyz-form-label">Low Unit Reminder Limit (Units)</label>
+                            @Html.EditorFor(model => model.LowUnitReminderThreshold, new { htmlAttributes = new { @class = "form-control xyz-form-control", placeholder = "50.00" } })
+                            @Html.ValidationMessageFor(model => model.LowUnitReminderThreshold, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="xyz-form-label">Current Unit Balance (Locked)</label>
+                            <input type="text" class="form-control xyz-form-control" value="@Model.Units.ToString("N2") Units" disabled="disabled" style="background:#F8FAFC; font-weight:800; font-family:'JetBrains Mono', monospace;" />
+                        </div>
+
+                        <div class="col-md-6 form-group">
+                            <label class="xyz-form-label">Discount Rate (%) (Locked)</label>
+                            <input type="text" class="form-control xyz-form-control" value="@Model.Discount.ToString("N2")%" disabled="disabled" style="background:#F8FAFC; font-weight:700;" />
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 24px; text-align: right;">
+                        <button type="submit" class="btn btn-primary" style="font-weight: 800; border-radius: 8px; padding: 10px 24px;">
+                            <i class="fa fa-save"></i> Save Profile Changes
+                        </button>
+                    </div>
                 }
             </div>
         </div>
 
-        <div style="margin-top:100px;"></div>
+        <!-- SIDE PANEL SUMMARY & DANGER ZONE -->
+        <div class="col-md-4">
+            <div class="xyz-details-card">
+                <h4 style="font-weight: 800; color: #0F172A; margin: 0 0 16px 0; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px;">
+                    <i class="fa fa-shield-halved" style="color: #6366F1;"></i> Identity Overview
+                </h4>
 
-        <a href="@Url.Content(" ../../manageusers/deleteuser/"+Model.UserId)" class="btn btn-app btn-danger"><i class="fa fa-recycle"></i>Remove User</a>
+                <div style="font-size: 0.9rem; line-height: 2;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding: 6px 0;">
+                        <span style="color: #64748B;">Client ID:</span>
+                        <strong style="color: #0F172A;">#@Model.ClientId</strong>
+                    </div>
 
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding: 6px 0;">
+                        <span style="color: #64748B;">Username:</span>
+                        <strong style="color: #0F172A;">@@@(userDetails?.UserName ?? "N/A")</strong>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding: 6px 0;">
+                        <span style="color: #64748B;">Email Confirmed:</span>
+                        @if (userDetails != null && userDetails.EmailConfirmed)
+                        {
+                            <span class="badge" style="background: #10B981;">Yes Verified</span>
+                        }
+                        else
+                        {
+                            <span class="badge" style="background: #F59E0B;">Unverified</span>
+                        }
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding: 6px 0;">
+                        <span style="color: #64748B;">Phone Confirmed:</span>
+                        @if (userDetails != null && userDetails.PhoneNumberConfirmed)
+                        {
+                            <span class="badge" style="background: #10B981;">Yes Verified</span>
+                        }
+                        else
+                        {
+                            <span class="badge" style="background: #64748B;">No</span>
+                        }
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; padding: 6px 0;">
+                        <span style="color: #64748B;">2FA Security:</span>
+                        @if (userDetails != null && userDetails.TwoFactorEnabled)
+                        {
+                            <span class="badge" style="background: #10B981;">Active: @userDetails.PreferredTwoFactorMethod</span>
+                        }
+                        else
+                        {
+                            <span class="badge" style="background: #EF4444;">2FA Disabled</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUPERADMIN 2FA CONTROL CARD -->
+            @if (User.IsInRole("SuperAdmin") && userDetails != null && userDetails.TwoFactorEnabled)
+            {
+                <div class="xyz-details-card" style="border-color: #FCD34D; background: #FFFBEB; margin-bottom: 24px;">
+                    <h4 style="font-weight: 800; color: #92400E; margin: 0 0 10px 0;">
+                        <i class="fa fa-key"></i> SuperAdmin 2FA Controls
+                    </h4>
+                    <p style="color: #78350F; font-size: 0.85rem; margin-bottom: 12px;">
+                        User has 2FA enabled (@userDetails.PreferredTwoFactorMethod). You can disable 2FA if the user lost access.
+                    </p>
+                    @using (Html.BeginForm("DisableUserTwoFactor", "ManageUsers", new { area = "Adminpanel", userId = Model.UserId }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-warning btn-block" style="font-weight: 800; border-radius: 8px; color: #1E293B;">
+                            <i class="fa fa-unlock"></i> Emergency Disable 2FA for User
+                        </button>
+                    }
+                </div>
+            }
+
+            <!-- DANGER ZONE CARD -->
+            <div class="xyz-details-card" style="border-color: #FCA5A5; background: #FEF2F2;">
+                <h4 style="font-weight: 800; color: #991B1B; margin: 0 0 10px 0;">
+                    <i class="fa fa-triangle-exclamation"></i> Danger Zone
+                </h4>
+                <p style="color: #7F1D1D; font-size: 0.85rem; margin-bottom: 14px;">
+                    Deleting this user will remove their wallet balance, messages, contacts, and account records.
+                </p>
+                <a href="@Url.Action("DeleteUser", "ManageUsers", new { area = "Adminpanel", id = Model.UserId })" class="btn btn-danger btn-block" style="font-weight: 800; border-radius: 8px; height: 42px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa fa-trash" style="margin-right: 6px;"></i> Delete User Account
+                </a>
+            </div>
+        </div>
     </div>
-
-</section>
+</div>

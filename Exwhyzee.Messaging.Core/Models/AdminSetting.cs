@@ -36,6 +36,15 @@ namespace Exwhyzee.Messaging.Core.Models
         public bool SendAccountCreditedNotification { get; set; }
         public bool SendUserBirthdayWishes { get; set; }
         public bool PreventApiModification { get; set; }
+
+        // Paystack Outflow Destination Bank Account & Audit Properties
+        public string OutflowBankName { get; set; }
+        public string OutflowBankCode { get; set; }
+        public string OutflowAccountNumber { get; set; }
+        public string OutflowAccountName { get; set; }
+        public string PaystackRecipientCode { get; set; }
+        public string OutflowBankLastUpdatedBy { get; set; }
+        public DateTime? OutflowBankLastUpdatedDate { get; set; }
     }
 }
 

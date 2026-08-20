@@ -1,59 +1,197 @@
-﻿
+@model IEnumerable<Exwhyzee.Messaging.Core.Models.PriceSetting>
 @{
-    ViewBag.Title = "SmsPlan";
+    ViewBag.Title = "Pricing";
+    var admin = ViewBag.AdminSetting as Exwhyzee.Messaging.Core.Models.AdminSetting;
+    decimal basePrice = admin != null && admin.PricePerUnit > 0 ? admin.PricePerUnit : 2.00m;
 }
 
-
-<!--/ pricing-->
-<div class="pricing text-center">
-    <div class="container">
-        <h1 style="color:red;" class="text-center"><span style="color:red;">Exwhyzee SMS Plan</span></h1>
-        <br />
-        <div class="inner_sec_info_w3ls_agile text-center">
-            <div class="col-md-2 pricing_inner_main">
-            </div>
-            <div class="col-md-4 pricing_inner_main">
-                <div class="pricing-top">
-                    <h3>Gold Plan</h3>
-                    <p>#<span>3.5 / Sms</span></p>
-                </div>
-                <div class="pricing-bottom">
-                    <div class="pricing-bottom-bottom">
-                        <p>Send to DND Numbers <i class="fa fa-check-circle"></i></p>
-
-                        <p>Instant Delivery <i class="fa fa-check-circle"></i></p>
-                        <p>No Technical Skills Required <i class="fa fa-check-circle"></i></p>
-
-
-                    </div>
-
-                    <div class="sign text-center">
-                        <a class="btn btn-primary" href="@Url.Action("ChangePlan", "Dashboard", new { area = "ClientPanel" })">SELECT NOW</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4 pricing_inner_main">
-                <div class="pricing-top purple">
-                    <h3>Silver Plan</h3>
-                    <p>#<span>2.0 / Sms</span></p>
-                </div>
-                <div class="pricing-bottom">
-                    <div class="pricing-bottom-bottom">
-                        <p>Send to DND Numbers <i class="fa fa-times-circle-o"></i></p>
-                        <p>Instant Delivery <i class="fa fa-check-circle"></i></p>
-                        <p>No Technical Skills Required <i class="fa fa-check-circle"></i></p>
-                    </div>
-
-                    <div class="sign text-center">
-                        <a class="btn btn-primary" href="@Url.Action("ChangePlan", "Dashboard", new { area = "ClientPanel" })">SELECT NOW</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2 pricing_inner_main">
-            </div>
-            <div class="clearfix"></div>
+<!-- Pricing Hero -->
+<section class="xyz-hero" style="padding:50px 0 60px;">
+    <div class="xyz-container" style="text-align:center; max-width:800px;">
+        <span class="xyz-hero-badge">
+            <i class="fa fa-tags"></i> Transparent Pricing
+        </span>
+        <h1 class="xyz-hero-title">
+            Simple & Transparent <span class="gradient-text">Pricing</span>
+        </h1>
+        <p class="xyz-hero-subtitle" style="margin:0 auto 28px;">
+            No monthly subscription fees, no hidden maintenance charges, and no expiration date on your messaging units. Pay only for what you send.
+        </p>
+        <div style="display:flex; justify-content:center; gap:14px;">
+            <a href="@Url.Action("Register", "Account")" class="xyz-btn xyz-btn-primary xyz-btn-lg">
+                <i class="fa fa-user-plus"></i> Create Free Account
+            </a>
+            <a href="@Url.Action("Login", "Account")" class="xyz-btn xyz-btn-outline xyz-btn-lg">
+                <i class="fa fa-arrow-right-to-bracket"></i> Login to View Live Rates
+            </a>
         </div>
-        </div>
-</div>
+    </div>
+</section>
 
+<!-- Pricing Value Highlights -->
+<section class="xyz-section" style="padding-top:20px;">
+    <div class="xyz-container">
+        <div class="xyz-feature-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon" style="background:rgba(229,9,20,0.1); color:var(--xyz-primary);">
+                    <i class="fa fa-clock-rotate-left"></i>
+                </div>
+                <h3 class="xyz-feature-title">Units Never Expire</h3>
+                <p class="xyz-feature-desc">
+                    Your purchased messaging credits have lifetime validity. Top up any volume today and use your units whenever you need.
+                </p>
+            </div>
+
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon" style="background:rgba(16,185,129,0.1); color:#10B981;">
+                    <i class="fa fa-bolt-lightning"></i>
+                </div>
+                <h3 class="xyz-feature-title">Instant Automatic Top-Up</h3>
+                <p class="xyz-feature-desc">
+                    Fund your wallet online anytime 24/7 with zero waiting time. Your account balance is automatically credited in seconds.
+                </p>
+            </div>
+
+            <div class="xyz-feature-card">
+                <div class="xyz-feature-icon" style="background:rgba(99,102,241,0.1); color:var(--xyz-indigo);">
+                    <i class="fa fa-shield-halved"></i>
+                </div>
+                <h3 class="xyz-feature-title">Pay As You Send</h3>
+                <p class="xyz-feature-desc">
+                    No recurring contracts or minimum monthly commitment. You have complete control over your broadcast spending.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Live Network Coverage & Prefix Directory -->
+<section class="xyz-section" style="background:var(--xyz-gray-100);">
+    <div class="xyz-container">
+        <div class="xyz-section-header">
+            <span class="xyz-section-tag">Network Coverage</span>
+            <h2 class="xyz-section-title">Supported Networks & Prefix Directory</h2>
+            <p class="xyz-section-desc">
+                We deliver seamlessly across all Nigerian GSM networks (MTN, Airtel, Glo, 9mobile) and international destinations. Network tariffs update dynamically — sign in to your dashboard to view the real-time live rate sheet.
+            </p>
+            <div style="margin-top:20px; max-width:420px; margin-left:auto; margin-right:auto;">
+                <input type="text" id="dialCodeSearch" class="xyz-calc-input" placeholder="🔍 Search country, network, or prefix (e.g. 0803, MTN)..." />
+            </div>
+        </div>
+
+        <div class="xyz-table-wrapper">
+            <table class="xyz-table" id="dialCodeTable">
+                <thead>
+                    <tr>
+                        <th>Country / Region</th>
+                        <th>Network Provider</th>
+                        <th>Prefix / Dial Codes</th>
+                        <th>Live Tariff Rate</th>
+                        <th>Route Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td><strong>@(string.IsNullOrEmpty(item.Country) ? "Nigeria" : item.Country)</strong></td>
+                                <td>@item.NetworkProvider</td>
+                                <td>
+                                    <span style="font-family:var(--xyz-font-mono); font-size:0.85rem; color:var(--xyz-dark-800); background:var(--xyz-gray-200); padding:3px 8px; border-radius:4px;">
+                                        @item.InternationalDialCode
+                                        @if (item.DialCodes != null && item.DialCodes.Any())
+                                        {
+                                            @(" (" + string.Join(", ", item.DialCodes.Select(d => d.NumberPrefix).Take(4)) + "...)")
+                                        }
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("Login", "Account")" style="display:inline-flex; align-items:center; gap:6px; color:var(--xyz-primary); font-weight:700; text-decoration:none; font-size:0.88rem;">
+                                        <i class="fa fa-lock" style="font-size:0.75rem;"></i> Login to View Live Tariff
+                                    </a>
+                                </td>
+                                <td>
+                                    <span style="display:inline-flex; align-items:center; gap:5px; color:var(--xyz-success); font-weight:600; font-size:0.85rem;">
+                                        <i class="fa fa-circle" style="font-size:0.5rem;"></i> Active Route
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td><strong>Nigeria</strong></td>
+                            <td>MTN Nigeria</td>
+                            <td><code>+234 (0803, 0806, 0703, 0813...)</code></td>
+                            <td>
+                                <a href="@Url.Action("Login", "Account")" style="color:var(--xyz-primary); font-weight:700; text-decoration:none;">
+                                    <i class="fa fa-lock" style="font-size:0.75rem;"></i> Login to View Live Tariff
+                                </a>
+                            </td>
+                            <td><span style="color:var(--xyz-success); font-weight:600;"><i class="fa fa-circle" style="font-size:0.5rem;"></i> Active Route</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Nigeria</strong></td>
+                            <td>Airtel Nigeria</td>
+                            <td><code>+234 (0802, 0808, 0708, 0812...)</code></td>
+                            <td>
+                                <a href="@Url.Action("Login", "Account")" style="color:var(--xyz-primary); font-weight:700; text-decoration:none;">
+                                    <i class="fa fa-lock" style="font-size:0.75rem;"></i> Login to View Live Tariff
+                                </a>
+                            </td>
+                            <td><span style="color:var(--xyz-success); font-weight:600;"><i class="fa fa-circle" style="font-size:0.5rem;"></i> Active Route</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Nigeria</strong></td>
+                            <td>Globacom</td>
+                            <td><code>+234 (0805, 0807, 0705, 0815...)</code></td>
+                            <td>
+                                <a href="@Url.Action("Login", "Account")" style="color:var(--xyz-primary); font-weight:700; text-decoration:none;">
+                                    <i class="fa fa-lock" style="font-size:0.75rem;"></i> Login to View Live Tariff
+                                </a>
+                            </td>
+                            <td><span style="color:var(--xyz-success); font-weight:600;"><i class="fa fa-circle" style="font-size:0.5rem;"></i> Active Route</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Nigeria</strong></td>
+                            <td>9mobile</td>
+                            <td><code>+234 (0809, 0817, 0818, 0909...)</code></td>
+                            <td>
+                                <a href="@Url.Action("Login", "Account")" style="color:var(--xyz-primary); font-weight:700; text-decoration:none;">
+                                    <i class="fa fa-lock" style="font-size:0.75rem;"></i> Login to View Live Tariff
+                                </a>
+                            </td>
+                            <td><span style="color:var(--xyz-success); font-weight:600;"><i class="fa fa-circle" style="font-size:0.5rem;"></i> Active Route</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Automatic Online Wallet Top-Up Showcase -->
+<section class="xyz-section">
+    <div class="xyz-container">
+        <div class="xyz-feature-card" style="padding:48px 36px; background:linear-gradient(135deg, var(--xyz-dark-900), var(--xyz-dark-800)); color:white; border:none; text-align:center; max-width:850px; margin:0 auto;">
+            <div class="xyz-feature-icon" style="background:rgba(229,9,20,0.15); color:var(--xyz-primary); margin:0 auto 20px; width:64px; height:64px; font-size:1.8rem;">
+                <i class="fa fa-credit-card"></i>
+            </div>
+            <h2 style="font-size:2rem; font-weight:800; color:white; margin-bottom:12px;">Instant Online Wallet Top-Up</h2>
+            <p style="color:var(--xyz-gray-300); font-size:1.05rem; line-height:1.6; max-width:650px; margin:0 auto 28px;">
+                Top up your SMS units online anytime with automatic instant crediting. Pay securely with your Debit Card, Bank Transfer, or USSD. No waiting time, no manual teller submissions.
+            </p>
+            <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+                <a href="@Url.Action("Register", "Account")" class="xyz-btn xyz-btn-primary xyz-btn-lg">
+                    <i class="fa fa-paper-plane"></i> Get 20 Free Units &amp; Start
+                </a>
+                <a href="@Url.Action("Login", "Account")" class="xyz-btn xyz-btn-outline xyz-btn-lg" style="color:white; border-color:rgba(255,255,255,0.3);">
+                    <i class="fa fa-arrow-right-to-bracket"></i> Sign In to Top-Up
+                </a>
+            </div>
+        </div>
+    </div>
+</section>

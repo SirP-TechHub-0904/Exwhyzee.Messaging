@@ -2,281 +2,375 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>@ViewBag.Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewBag.Title != null ? ViewBag.Title + " - " : "")Exwhyzee Bulk SMS | Africa's #1 Messaging Gateway</title>
     <link href="~/Content/image/xyzico.png" rel="shortcut icon" type="image/x-icon" />
-    <meta name="viewport" content="width=device-width" />
-    <link href="~/Content/assets/css/main.css" rel="stylesheet" />
-    <link href="~/Content/assets/css/font-awesome.min.css" rel="stylesheet" />
-    <link href="~/Content/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="~/Content/css/font-awesome.min.css" rel="stylesheet" />
-    <link href="~/Content/Site.css" rel="stylesheet" />
 
-    
-    @RenderSection("myStyles", required: false)
-    <style>
-        body {
-            padding-top: 0px !important;
-            font-family: 'Palatino';
-        }
-        /*-- pricing --*/
+    <!-- SEO Meta Tags for Search Engines & Visibility -->
+    <meta name="description" content="Africa's #1 most reliable enterprise Bulk SMS broadcast platform. Send high-velocity marketing campaigns, customer appreciation notices, price updates, and alerts with 99.98% delivery rate." />
+    <meta name="keywords" content="Bulk SMS Nigeria, Bulk SMS Africa, Exwhyzee SMS, SMS Broadcast, SMS API, send bulk sms, custom sender ID, DND bypass SMS, cheap bulk sms Nigeria, enterprise messaging" />
+    <meta name="author" content="Exwhyzee Smart Solutions Limited" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#E50914" />
 
-        .pricing {
-            background: #ffffff;
-            padding: 3em 0;
-        }
+    <!-- Open Graph (Facebook, WhatsApp, LinkedIn) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Exwhyzee Bulk SMS" />
+    <meta property="og:title" content="@(ViewBag.Title != null ? ViewBag.Title + " - " : "")Exwhyzee Bulk SMS | Africa's #1 Messaging Gateway" />
+    <meta property="og:description" content="Africa's #1 Bulk SMS platform. Send branded broadcasts, customer appreciation notices, and scheduled alerts with 99.98% deliverability." />
+    <meta property="og:image" content="~/Content/image/SMS-LOGO.png" />
 
-        .pricing_inner_main {
-            margin: 0 auto;
-            /*width: 40%;*/
-            border: 1px solid #ffffff;
-            transition: 0.5s all;
-            -webkit-transition: 0.5s all;
-            -o-transition: 0.5s all;
-            -moz-transition: 0.5s all;
-            -ms-transition: 0.5s all;
-        }
-        h3.tittle-w3ls {
-            color: #1b1b1b;
-            font-size: 3.2em;
-            text-align: left;
-            text-transform: capitalize;
-            letter-spacing: 2px;
-            font-weight: 700;
-            margin-bottom: .7em;
-            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-        }
-            h3.tittle-w3ls.cen {
-                color: #f40000;
-                text-align: center;
-            }
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@(ViewBag.Title != null ? ViewBag.Title + " - " : "")Exwhyzee Bulk SMS" />
+    <meta name="twitter:description" content="High-velocity Bulk SMS broadcasting across all African and global networks with instant automated online wallet funding." />
 
-            .pricing_inner_main:hover .pricing-top {
-                /*background: #ff6a00;*/
-            }
+    <!-- Google Fonts & Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-            .pricing_inner_main:hover a.popup-with-zoom-anim {
-                /*background: #f60b0e;*/
-            }
+    <!-- Modern Design System Stylesheet -->
+    <link href="~/Content/css/modern-theme.css" rel="stylesheet" />
+    <link rel="manifest" href="/manifest.json" />
 
-            .pricing_inner_main.active .pricing-top {
-                background: #f60b0e;
-            }
+    <!-- OneSignal Web Push SDK -->
+    @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+    @if (!string.IsNullOrEmpty(Configuration["OneSignal:AppId"]) && !Configuration["OneSignal:AppId"].Contains("YOUR_ONESIGNAL"))
+    {
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+        <script>
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async function(OneSignal) {
+                await OneSignal.init({
+                    appId: "@Configuration["OneSignal:AppId"]",
+                    allowLocalhostAsSecureOrigin: true,
+                });
+            });
+        </script>
+    }
 
-        a.popup-with-zoom-anim.orange.active {
-            background: #f60b0e;
-        }
-
-        .pricing-top {
-            padding: 1.2em 0;
-            background: #f40000;
-            text-align: center;
-        }
-
-        .pop_up h4 {
-            text-align: center;
-            font-size: 2em;
-            margin: 1em 0 0.5em 0;
-            font-size: 1.8em;
-            color: #111;
-        }
-
-        .pricing-top h3 {
-            color: #FFF;
-            font-size: 2em;
-            margin: 0;
-            font-weight: 100;
-        }
-
-        .pricing-top p {
-            color: #FFF;
-            font-size: .875em;
-            margin: 1em 0 0 0;
-        }
-
-            .pricing-top p span {
-                font-size: 3em;
-                font-weight: 600;
-            }
-
-        .pricing-bottom {
-            background: #fff;
-            text-align: center;
-            padding: 4em 2em;
-        }
-
-        .pricing_inner_main:hover,
-        .pricing_inner_main.active {
-            transform: scale(1.05);
-            -webkit-transform: scale(1.05);
-            -moz-transform: scale(1.05);
-            -o-transform: scale(1.05);
-            -ms-transform: scale(1.05);
-        }
-
-        .pricing-bottom-bottom p {
-            color: #565656;
-            font-size: 1.4em;
-            margin: 0 0 1em 0;
-        }
-        .pricing-bottom-bottom fa {
-            color: #f40000 !important;
-           
-        }
-
-            .pricing-bottom-bottom p span {
-                font-weight: 600;
-                color: #333;
-            }
-
-        p.text {
-            margin-bottom: 0;
-        }
-
-        .buy-button {
-            margin: 1.5em 0 0 0;
-        }
-
-            .buy-button a {
-                background: #fd5c63;
-                padding: .5em 2em;
-                border: solid 1px #fd5c63;
-                color: #fff;
-                transition: 0.5s all;
-                -webkit-transition: 0.5s all;
-                -moz-transition: 0.5s all;
-                -o-transition: 0.5s all;
-                -ms-transition: 0.5s all;
-                -webkit-appearance: none;
-            }
-
-                .buy-button a:hover {
-                    background: none;
-                    border: solid 1px #333;
-                    color: #333;
-                    text-decoration: none;
-                }
-
-                .buy-button a:focus {
-                    outline: none;
-                }
-
-        .green-button a {
-            background: #1d1c1c;
-            border: solid 1px #1d1c1c;
-        }
-
-        /*.pricing_inner_main:nth-child(1),
-        .pricing_inner_main:nth-child(3) {
-            margin-top: 4em;
-        }*/
-
-
-        /*-- //pricing --*/
-    </style>
-    <!--Start of Tawk.to Script-->
-    <!--Start of Tawk.to Script-->
+    <!-- Tawk.to Live Chat Script -->
     <script type="text/javascript">
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/5a5705274b401e45400bfcfd/default';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
-})();
+        var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+        (function () {
+            var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
+            s1.async = true;
+            s1.src = 'https://embed.tawk.to/5a5705274b401e45400bfcfd/default';
+            s1.charset = 'UTF-8';
+            s1.setAttribute('crossorigin', '*');
+            s0.parentNode.insertBefore(s1, s0);
+        })();
     </script>
-    <!--End of Tawk.to Script-->
-    <!--End of Tawk.to Script-->
+
+    @RenderSection("myStyles", required: false)
 </head>
 <body>
-    <div class="navbar navbar-static-top" style="margin-bottom: 0px; border-bottom:1px solid #f40000;">
-        <div class="container-fluid">
-            <div class="navbar-header" style="vertical-align: middle;">
-                <button type="button" class="navbar-toggle nav-bot" data-toggle="collapse" data-target=".navbar-collapse">
-                    <span style="font-weight:bold; margin-bottom: 5px;">MENU</span>
-                </button>
-                <img src="~/Uploads/BULK%20SMS.png" style="max-height:50px;" class="img-responsive" />
-            </div>
-            <div class="navbar-collapse collapse nav-link text-uppercase" style="font-weight: bold;">
-                @Html.Partial("_ClientPartial")
-                <ul class="nav navbar-nav navbar-right nav-right text-uppercase" style="font-weight: bold;">
-                    <li><a style="color:;" href="@Url.Content("~/Home/")"><span class="glyphicon glyphicon-home"></span> HOME</a> </li>
-                    <li>@Html.ActionLink("Features", "SmsFeatures", "Home")</li>
+    <!-- Global Header -->
+    <header class="xyz-navbar-wrapper">
+        <div class="xyz-container">
+            <nav class="xyz-navbar">
+                <!-- Brand Logo -->
+                <a href="@Url.Action("Index", "Home", new { area = "" })" class="xyz-brand">
+                    <img src="~/Content/image/SMS-LOGO.png" alt="Exwhyzee Bulk SMS" class="xyz-brand-logo" />
+                </a>
 
-
+                <!-- Desktop Navigation Menu -->
+                <ul class="xyz-nav-menu">
+                    <li>
+                        <a href="@Url.Action("Index", "Home", new { area = "" })" class="xyz-nav-link">
+                            Home
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("SmsFeatures", "Home", new { area = "" })" class="xyz-nav-link">
+                            Features
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("SmsPlan", "Home", new { area = "" })" class="xyz-nav-link">
+                            Pricing
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("Developers", "Home", new { area = "" })" class="xyz-nav-link">
+                            Developers & API
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("About", "Home", new { area = "" })" class="xyz-nav-link">
+                            About
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("Contact", "Home", new { area = "" })" class="xyz-nav-link">
+                            Contact
+                        </a>
+                    </li>
                 </ul>
+
+                <!-- Header Actions & Authentication (Desktop + Mobile Toggle) -->
+                <div class="xyz-nav-actions">
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        if (User.IsInRole("Admin"))
+                        {
+                            <a href="@Url.Action("Index", "Main", new { area = "Adminpanel" })" class="xyz-btn xyz-btn-dark xyz-btn-sm xyz-desktop-auth-btn">
+                                <i class="fa fa-shield-halved"></i> Admin Panel
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("Index", "Dashboard", new { area = "ClientPanel" })" class="xyz-btn xyz-btn-primary xyz-btn-sm xyz-desktop-auth-btn">
+                                <i class="fa fa-gauge-high"></i> Dashboard
+                            </a>
+                        }
+
+                        <form asp-area="" asp-controller="Account" asp-action="LogOff" method="post" id="logoutFormNav" style="display:inline;" class="xyz-desktop-auth-btn">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="xyz-btn xyz-btn-outline xyz-btn-sm" title="Log out">
+                                <i class="fa fa-arrow-right-from-bracket"></i>
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a href="@Url.Action("Login", "Account", new { area = "" })" class="xyz-btn xyz-btn-outline xyz-btn-sm xyz-desktop-auth-btn">
+                            Sign In
+                        </a>
+                        <a href="@Url.Action("Register", "Account", new { area = "" })" class="xyz-btn xyz-btn-primary xyz-btn-sm xyz-desktop-auth-btn">
+                            Get Started Free
+                        </a>
+                    }
+
+                    <!-- Mobile Menu Hamburger Button -->
+                    <button type="button" class="xyz-menu-toggle" id="xyzMenuToggle" aria-label="Toggle navigation menu">
+                        <i class="fa fa-bars"></i>
+                    </button>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Mobile Backdrop Overlay -->
+        <div class="xyz-mobile-backdrop" id="xyzMobileBackdrop"></div>
+
+        <!-- Mobile Drawer Menu -->
+        <div class="xyz-mobile-drawer" id="xyzMobileDrawer">
+            <div class="xyz-mobile-drawer-inner">
+                <ul class="xyz-mobile-nav">
+                    <li>
+                        <a href="@Url.Action("Index", "Home", new { area = "" })" class="xyz-nav-link">
+                            <span>Home</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("SmsFeatures", "Home", new { area = "" })" class="xyz-nav-link">
+                            <span>Features</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("SmsPlan", "Home", new { area = "" })" class="xyz-nav-link">
+                            <span>Pricing</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("Developers", "Home", new { area = "" })" class="xyz-nav-link">
+                            <span>Developers & API</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("About", "Home", new { area = "" })" class="xyz-nav-link">
+                            <span>About Us</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="@Url.Action("Contact", "Home", new { area = "" })" class="xyz-nav-link">
+                            <span>Contact & Support</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="xyz-mobile-auth-actions">
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        if (User.IsInRole("Admin"))
+                        {
+                            <a href="@Url.Action("Index", "Main", new { area = "Adminpanel" })" class="xyz-btn xyz-btn-dark" style="width:100%;">
+                                <i class="fa fa-shield-halved"></i> Admin Control Panel
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="@Url.Action("Index", "Dashboard", new { area = "ClientPanel" })" class="xyz-btn xyz-btn-primary" style="width:100%;">
+                                <i class="fa fa-gauge-high"></i> Open Dashboard
+                            </a>
+                        }
+                        <form asp-area="" asp-controller="Account" asp-action="LogOff" method="post" style="width:100%;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="xyz-btn xyz-btn-outline" style="width:100%; margin-top:8px;">
+                                <i class="fa fa-arrow-right-from-bracket"></i> Sign Out
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a href="@Url.Action("Login", "Account", new { area = "" })" class="xyz-btn xyz-btn-outline" style="width:100%;">
+                            <i class="fa fa-arrow-right-to-bracket"></i> Sign In
+                        </a>
+                        <a href="@Url.Action("Register", "Account", new { area = "" })" class="xyz-btn xyz-btn-primary" style="width:100%;">
+                            <i class="fa fa-user-plus"></i> Register Account
+                        </a>
+                    }
+                </div>
             </div>
         </div>
-    </div>
+    </header>
 
-    @RenderSection("Slider", required: false)
+    <!-- Main Body Content -->
+    <main>
+        @RenderBody()
+    </main>
 
-    @RenderBody()
-
-    <!-- Footer -->
-    <div class="footer" style="bottom:0 !important; background-color:#f40000;padding-bottom:20px; padding-top:20px;">
-        <div class="container">
-            <div class="row text-center" style="background-color:#ffffff !important;margin-top:20px !important;">
-                <div class="col-md-4">
-                    <h4>Facebook Page</h4>
-                    <div class="fb-like" data-href="https://web.facebook.com/xyztech/" data-width="300px" data-layout="standard" data-action="like" data-size="small" data-show-faces="true" data-share="true"></div>
-
+    <!-- Global Modern Footer -->
+    <footer class="xyz-footer">
+        <div class="xyz-container">
+            <div class="xyz-footer-grid">
+                <!-- Col 1: Brand & Status -->
+                <div class="xyz-footer-brand">
+                    <div style="background:#FFFFFF; padding:8px 14px; border-radius:var(--xyz-radius-md); display:inline-flex; align-items:center; margin-bottom:16px;">
+                        <img src="~/Content/image/SMS-LOGO.png" alt="Exwhyzee Bulk SMS" style="height:36px; width:auto; display:block;" />
+                    </div>
+                    <p style="color:var(--xyz-gray-400); font-size:0.92rem; margin:0 0 16px; max-width:320px; line-height:1.6;">
+                        Africa's leading high-velocity bulk messaging platform and enterprise SMS gateway. Built for maximum deliverability and instant broadcast across all networks.
+                    </p>
+                    <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); padding:6px 12px; border-radius:var(--xyz-radius-full); font-size:0.8rem; color:#10B981; font-weight:600;">
+                        <span style="width:7px; height:7px; background:#10B981; border-radius:50%;"></span> Direct Gateway 99.98% Uptime
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <h4>Office Address</h4>
-                    <p><i class="fa fa-address-card" style="color: #ff6a00;"></i><span style="color: #ff6a00;">Main:</span> NO. 44, Azikiwe Road, Umuahia.</p>
-                     <p><i class="fa fa-address-card" style="color: #ff6a00;"></i><span style="color: #ff6a00;">Branch:</span> NO. 29, Cairo Cresent, Wuse 2, FCT Abuja.</p>
 
+                <!-- Col 2: Quick Links -->
+                <div>
+                    <h4 class="xyz-footer-title">Quick Links</h4>
+                    <ul class="xyz-footer-links">
+                        <li><a href="@Url.Action("About", "Home")"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px; font-size:0.85rem;"></i> About Us</a></li>
+                        <li><a href="@Url.Action("UpdatedFeatures", "Home")"><i class="fa fa-star" style="color:#F59E0B; margin-right:8px; font-size:0.85rem;"></i> Updated Features</a></li>
+                        <li><a href="@Url.Action("Developers", "Home")"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px; font-size:0.85rem;"></i> Developer API</a></li>
+                        <li><a href="@Url.Action("Contact", "Home")"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px; font-size:0.85rem;"></i> Contact Us</a></li>
+                        <li><a href="@Url.Action("SmsPlan", "Home")"><i class="fa fa-angle-right" style="color:var(--xyz-primary); margin-right:8px; font-size:0.85rem;"></i> Pricing</a></li>
+                    </ul>
                 </div>
-                <div class="col-md-4">
-                    <h4>Contact Address</h4>
-                    <p><i class="fa fa-mobile-phone" style="color: #ff6a00;"></i>  +234 806 866 9344, 07060530000</p>
-                    <p><i class="fa fa-envelope" style="color: #ff6a00;"></i> www.exwhyzee.ng, info&#64exwhyzee.ng</p>
+
+                <!-- Col 3: Offices & Locations -->
+                <div>
+                    <h4 class="xyz-footer-title">Office Addresses</h4>
+                    <ul class="xyz-footer-links" style="font-size:0.88rem; color:var(--xyz-gray-400);">
+                        <li style="margin-bottom:12px;">
+                            <strong style="color:white; display:block;"><i class="fa fa-location-dot" style="color:var(--xyz-primary); margin-right:6px;"></i> Main Office:</strong>
+                            No. 37 urban dwell estate, airport road, abuja
+                        </li>
+                        <li>
+                            <strong style="color:white; display:block;"><i class="fa fa-location-dot" style="color:var(--xyz-primary); margin-right:6px;"></i> Branch Office:</strong>
+                            NO. 44, Azikiwe Road, Umuahia.
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Col 4: Contact & Social -->
+                <div>
+                    <h4 class="xyz-footer-title">Contact & Support</h4>
+                    <ul class="xyz-footer-links">
+                        <li>
+                            <a href="tel:+2348068669344">
+                                <i class="fa fa-phone" style="margin-right:6px; color:var(--xyz-primary);"></i> +234 806 866 9344
+                            </a>
+                        </li>
+                        <li>
+                            <a href="tel:07060530000">
+                                <i class="fa fa-mobile-screen" style="margin-right:6px; color:var(--xyz-primary);"></i> 07060530000
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://wa.me/2348068669344" target="_blank">
+                                <i class="fab fa-whatsapp" style="margin-right:6px; color:#10B981;"></i> WhatsApp Support
+                            </a>
+                        </li>
+                        <li>
+                            <a href="mailto:info@exwhyzee.ng">
+                                <i class="fa fa-envelope" style="margin-right:6px; color:var(--xyz-primary);"></i> info@exwhyzee.ng
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://web.facebook.com/xyztech/" target="_blank">
+                                <i class="fab fa-facebook" style="margin-right:6px; color:#3b5998;"></i> Facebook Page
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
-            <div class="text-center footer-m" style="padding:10px;color:#ffffff !important;">
-                <a href="http://exwhyzee.ng">EXWHYZEE TECHNOLOGIES LIMITED</a>
+
+            <!-- Centralized Footer Bottom -->
+            <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 28px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                <div style="display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap; font-size: 0.92rem;">
+                    <a href="@Url.Action("Privacy", "Home")" style="color: var(--xyz-gray-400); text-decoration: none;">Privacy Policy</a>
+                    <span style="color: rgba(255,255,255,0.25);">|</span>
+                    <a href="@Url.Action("Terms", "Home")" style="color: var(--xyz-gray-400); text-decoration: none;">Terms &amp; Conditions</a>
+                    <span style="color: rgba(255,255,255,0.25);">|</span>
+                    <a href="@Url.Action("Faq", "Home")" style="color: var(--xyz-gray-400); text-decoration: none;">FAQ</a>
+                    <span style="color: rgba(255,255,255,0.25);">|</span>
+                    <a href="@Url.Action("Sitemap", "Home")" style="color: var(--xyz-gray-400); text-decoration: none;">Sitemap</a>
+                </div>
+                <div style="color: var(--xyz-gray-500); font-size: 0.85rem; margin-top: 4px;">
+                    &copy; 2026 <a href="https://exwhyzee.ng/" target="_blank" rel="noopener noreferrer" style="color: var(--xyz-gray-300); font-weight: 700; text-decoration: none; transition: color 0.2s ease;">Exwhyzee Smart Solutions Limited</a>. All rights reserved.
+                </div>
             </div>
         </div>
-    </div>
-   
-    <script src="~/Scripts/jquery-1.12.4.js"></script>
-    <script src="~/Scripts/bootstrap.min.js"></script>
+    </footer>
 
-    <script src="~/Content/assets/js/jquery.poptrox.min.js"></script>
-    <script src="~/Content/assets/js/jquery.scrolly.min.js"></script>
-    <script src="~/Content/assets/js/jquery.scrollex.min.js"></script>
-    <script src="~/Content/assets/js/skel.min.js"></script>
-    <script src="~/Content/assets/js/util.js"></script>
-    <script src="~/Content/assets/js/main.js"></script>
+    <!-- Interactive Scripts -->
+    <script src="~/Scripts/modern-app.js"></script>
 
-    <script src="~/Content/nivoslider/jquery.nivo.slider.js"></script>
-    <script src="~/Content/nivoslider/jquery.scrollbox.js"></script>
-
-    @RenderSection("scripts", required: false)
-
-
-    <script type="text/javascript">
-        $(window).load(function () {
-            $('#slider').nivoSlider({
-                effect: 'random',
-                slices: 15,
-                boxCols: 8,
-                boxRows: 4,
-                animSpeed: 1000,
-                pauseTime: 5000
-
+    @if (TempData["Success"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.xyzToast) {
+                    window.xyzToast.success("@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["Success"].ToString()))", "Success");
+                }
             });
-            $('#maque').scrollbox({
-                delay: 5,
-                speed: 100
+        </script>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.xyzToast) {
+                    window.xyzToast.error("@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["Error"].ToString()))", "Error");
+                }
             });
-        });
-    </script>
+        </script>
+    }
+    @if (TempData["error"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.xyzToast) {
+                    window.xyzToast.error("@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["error"].ToString()))", "Error");
+                }
+            });
+        </script>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                if (window.xyzToast) {
+                    window.xyzToast.info("@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(TempData["Info"].ToString()))", "Information");
+                }
+            });
+        </script>
+    }
 
+    @RenderSection("Scripts", required: false)
 </body>
 </html>
-
-
-

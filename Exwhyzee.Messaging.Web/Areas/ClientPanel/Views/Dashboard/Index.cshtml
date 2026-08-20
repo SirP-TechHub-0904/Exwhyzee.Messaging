@@ -1,248 +1,856 @@
-﻿@{
-    ViewBag.Title = "Dashboard";
+@{
+    ViewBag.Title = "Client Dashboard";
+    decimal units = ViewBag.clientUnit != null ? (decimal)ViewBag.clientUnit : 0m;
+    int pendingTx = ViewBag.pendingTransactions != null ? (int)ViewBag.pendingTransactions : 0;
+    int scheduledCount = ViewBag.ScheduleCount != null ? (int)ViewBag.ScheduleCount : 0;
+    int totalSent = ViewBag.TotalMessagesSent != null ? (int)ViewBag.TotalMessagesSent : 0;
+    int senderIdCount = ViewBag.SenderIdCount != null ? (int)ViewBag.SenderIdCount : 0;
+
+    var senderLabels = ViewBag.SenderLabels as string[] ?? new[] { "MIYCN", "XYZSMS", "JURAY" };
+    var senderCounts = ViewBag.SenderCounts as int[] ?? new[] { 450, 180, 75 };
+    var trendLabels = ViewBag.TrendLabels as string[] ?? new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+    int statusSent = ViewBag.StatusSent != null ? (int)ViewBag.StatusSent : 90;
+    int statusPending = ViewBag.StatusPending != null ? (int)ViewBag.StatusPending : 5;
+    int statusFailed = ViewBag.StatusFailed != null ? (int)ViewBag.StatusFailed : 5;
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard(Client)
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Client </a></li>
-        <li class="active">Dashboard</li>
-    </ol>
-</section>
-<!-- Main content -->
-<section class="content">
+<style>
+    /* =========================================
+       EXECUTIVE CLIENT DASHBOARD
+       Matches Admin Dashboard Design Language
+       ========================================= */
 
-    <div class="row">
+    /* Hero Bar */
+    .xyz-client-hero {
+        background: linear-gradient(135deg, #0B0F19 0%, #1E1B4B 50%, #0B0F19 100%);
+        border-radius: 16px;
+        padding: 20px 26px;
+        margin-bottom: 22px;
+        color: #FFFFFF;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
 
-        <!-- Pending transactions -->
-        <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-red">
-                <div class="inner">
-                    <h3>@ViewBag.pendingTransactions</h3>
-                    <p>Transaction(s)</p>
-                </div>
-                <div class="icon">
-                    <i class="fa fa-credit-card"></i>
-                </div>
-                <p class="small-box-footer">Pending Transactions <i class="fa fa-arrow-circle-right"></i></p>
-            </div>
-        </div><!-- ./col -->
-        <!-- Client Units-->
-        <div class="col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-green">
-                <div class="inner">
-                    <h3>@ViewBag.clientUnit</h3>
-                    <p>Units</p>
-                </div>
-                <div class="icon">
-                    <i class="fa fa-bar-chart"></i>
-                </div>
-                <p class="small-box-footer">Client Units <i class="fa fa-arrow-circle-right"></i></p>
-            </div>
-        </div><!-- ./col -->
+    .xyz-client-hero h1 {
+        font-size: 1.35rem !important;
+        font-weight: 800 !important;
+        margin: 0 0 3px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #FFFFFF;
+    }
 
-        <div class=" col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-orange-active">
-                <div class="inner">
-                    <h3>@ViewBag.ScheduleCount</h3>
-                    <p>Messages</p>
-                </div>
-                <div class="icon">
-                    <i class="fa fa-envelope"></i>
-                </div>
-                <p class="small-box-footer">Scheduled Messages<i class="fa fa-arrow-circle-right"></i></p>
-            </div>
-        </div>
-        <div class=" col-lg-3 col-xs-6">
-            <!-- small box -->
-            <div class="small-box bg-light-blue">
-                <div class="inner">
-                    <h3>0</h3>
-                    <p>Complain</p>
-                </div>
-                <div class="icon">
-                    <i class="fa fa-commenting-o"></i>
-                </div>
-                <p class="small-box-footer">Complain<i class="fa fa-arrow-circle-right"></i></p>
-            </div>
-        </div><!-- ./col -->
+    .xyz-client-hero p {
+        margin: 0;
+        color: #94A3B8;
+        font-size: 0.82rem;
+    }
+
+    .xyz-hero-pill {
+        border-radius: 10px;
+        padding: 7px 13px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none !important;
+    }
+
+    .xyz-hero-pill small {
+        font-size: 0.65rem;
+        font-weight: 800;
+        display: block;
+        text-transform: uppercase;
+    }
+
+    .xyz-hero-pill strong {
+        font-size: 0.92rem;
+        font-weight: 800;
+    }
+
+    /* KPI Grid */
+    .xyz-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+
+    @@media (max-width: 1200px) {
+        .xyz-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @@media (max-width: 768px) {
+        .xyz-kpi-grid { grid-template-columns: 1fr; }
+    }
+
+    .xyz-kpi-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        padding: 18px 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    body.xyz-dark-theme .xyz-kpi-card {
+        background: #131B2E;
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .xyz-kpi-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .xyz-kpi-card.kpi-wallet   { border-top: 4px solid #E50914; }
+    .xyz-kpi-card.kpi-sent     { border-top: 4px solid #10B981; }
+    .xyz-kpi-card.kpi-senders  { border-top: 4px solid #6366F1; }
+    .xyz-kpi-card.kpi-schedule { border-top: 4px solid #F59E0B; }
+
+    .xyz-kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .xyz-kpi-title {
+        font-size: 0.74rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748B;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    body.xyz-dark-theme .xyz-kpi-title { color: #94A3B8; }
+
+    .xyz-kpi-value {
+        font-size: 1.65rem;
+        font-weight: 900;
+        color: #0F172A;
+        font-family: 'JetBrains Mono', monospace;
+        margin-bottom: 3px;
+        line-height: 1.1;
+    }
+
+    body.xyz-dark-theme .xyz-kpi-value { color: #F1F5F9; }
+
+    .xyz-kpi-sub {
+        font-size: 0.78rem;
+        color: #64748B;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .xyz-kpi-footer {
+        border-top: 1px solid #F1F5F9;
+        padding-top: 9px;
+        margin-top: auto;
+    }
+
+    body.xyz-dark-theme .xyz-kpi-footer { border-top-color: rgba(255,255,255,0.06); }
+
+    .xyz-kpi-footer a {
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #4F46E5;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .xyz-kpi-footer a:hover { color: #4338CA; text-decoration: underline; }
+
+    .xyz-pulse-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .xyz-pulse-dot.online  { background: #10B981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25); }
+    .xyz-pulse-dot.warning { background: #F59E0B; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25); }
+    .xyz-pulse-dot.error   { background: #EF4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25); }
+
+    .xyz-badge {
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 3px 7px;
+        border-radius: 6px;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .xyz-badge-wallet  { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+    .xyz-badge-sent    { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+    .xyz-badge-sender  { background: #EEF2FF; color: #3730A3; border: 1px solid #C7D2FE; }
+    .xyz-badge-sched   { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+
+    /* Quick Launchpad */
+    .xyz-launchpad {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        padding: 14px 20px;
+        margin-bottom: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+
+    body.xyz-dark-theme .xyz-launchpad { background: #131B2E; border-color: rgba(255,255,255,0.08); }
+
+    .xyz-launchpad-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .xyz-btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 18px;
+        border-radius: 10px;
+        font-weight: 800;
+        font-size: 0.82rem;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
+    }
+
+    .xyz-btn-action-primary {
+        background: #E50914;
+        color: #FFFFFF !important;
+    }
+
+    .xyz-btn-action-primary:hover {
+        background: #B80710;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(229, 9, 20, 0.35);
+        color: #FFFFFF !important;
+    }
+
+    .xyz-btn-action-outline {
+        background: transparent;
+        border: 1px solid #E2E8F0;
+        color: var(--xyz-dash-text) !important;
+    }
+
+    .xyz-btn-action-outline:hover {
+        background: rgba(0, 0, 0, 0.04);
+        border-color: #94A3B8;
+        transform: translateY(-1px);
+    }
+
+    body.xyz-dark-theme .xyz-btn-action-outline {
+        border-color: rgba(255,255,255,0.12);
+    }
+    body.xyz-dark-theme .xyz-btn-action-outline:hover {
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* Table Cards */
+    .xyz-table-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        margin-bottom: 22px;
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-table-card { background: #131B2E; border-color: rgba(255,255,255,0.08); }
+
+    .xyz-table-card-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid #E2E8F0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #FAFAFA;
+    }
+
+    body.xyz-dark-theme .xyz-table-card-header { background: rgba(255,255,255,0.02); border-bottom-color: rgba(255,255,255,0.06); }
+
+    .xyz-table-card-header h3 {
+        margin: 0;
+        font-size: 0.92rem;
+        font-weight: 800;
+        color: #1E293B;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    body.xyz-dark-theme .xyz-table-card-header h3 { color: #F1F5F9; }
+
+    .xyz-status-badge {
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 3px 7px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .xyz-status-badge.delivered { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+    .xyz-status-badge.pending   { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+    .xyz-status-badge.failed    { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+    .xyz-status-badge.approved  { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+
+    .xyz-id-chip {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 800;
+        font-size: 0.78rem;
+        background: #F1F5F9;
+        color: #334155;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid #E2E8F0;
+    }
+
+    body.xyz-dark-theme .xyz-id-chip { background: rgba(255,255,255,0.06); color: #CBD5E1; border-color: rgba(255,255,255,0.1); }
+
+    /* Panel Card */
+    .xyz-panel-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.03);
+        margin-bottom: 22px;
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-panel-card { background: #131B2E; border-color: rgba(255,255,255,0.08); }
+
+    .xyz-panel-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid #E2E8F0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #FAFAFA;
+    }
+
+    body.xyz-dark-theme .xyz-panel-header { background: rgba(255,255,255,0.02); border-bottom-color: rgba(255,255,255,0.06); }
+
+    .xyz-panel-title {
+        font-size: 0.92rem;
+        font-weight: 800;
+        color: var(--xyz-dash-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Sender ID Leaderboard Bars */
+    .xyz-sender-bar-item { margin-bottom: 14px; }
+    .xyz-sender-bar-head {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.82rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: var(--xyz-dash-text);
+    }
+
+    .xyz-sender-progress-track {
+        height: 10px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-sender-progress-track { background: rgba(255, 255, 255, 0.08); }
+
+    .xyz-sender-progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #E50914, #FF4B55);
+        transition: width 0.6s ease;
+    }
+</style>
+
+<!-- ===================== HERO BAR ===================== -->
+<div class="xyz-client-hero">
+    <div>
+        <h1>
+            <i class="fa fa-gauge-high" style="color:#6366F1;"></i> Welcome Back, @User.Identity.Name! 👋
+        </h1>
+        <p>Manage high-deliverability SMS broadcasts, track delivery reports, and monitor wallet credits.</p>
     </div>
-
-    <div class="row">
-        <!-- left colume -->
-        <div class="col-lg-6">
-            <div class="box box-info">
-                <div class="box-header">
-                    <i class="fa fa-envelope"></i>
-                    <h3 class="box-title">Last Ten Messages</h3>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <!-- Pending Transactions Pill -->
+        @if (pendingTx > 0)
+        {
+            <a href="@Url.Content("~/clientpanel/Dashboard/transactionhistory")" class="xyz-hero-pill" style="background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.35);">
+                <span class="xyz-pulse-dot warning"></span>
+                <div>
+                    <small style="color:#FDE68A;">Pending Recharges</small>
+                    <strong style="color:#FBBF24;">@pendingTx Pending</strong>
                 </div>
-                <div class="box-body">
-                    <table class="table table-bordered table-striped table-responsive">
-                        <thead>
-                            <tr>
-                                <th>
-                                    Sender ID
-                                </th>
-                                <th>
-                                    Date
-                                </th>
-                                <th>
-                                    Status
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
+            </a>
+        }
 
-                            @foreach (var item in ViewBag.LastTenMessage)
-                            {
-                                <tr>
-                                    <td>
-                                        @item.SenderId
-                                    </td>
-                                    <td>
-                                        @item.DeliveredDate
-                                    </td>
-                                    <td>
-                                        @item.Status
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+        <!-- Scheduled Queue Pill -->
+        @if (scheduledCount > 0)
+        {
+            <a href="@Url.Content("~/clientpanel/Dashboard/draftmessages")" class="xyz-hero-pill" style="background:rgba(99,102,241,0.18); border:1px solid rgba(99,102,241,0.35);">
+                <span class="xyz-pulse-dot" style="background:#818CF8; box-shadow:0 0 0 3px rgba(129,140,248,0.25);"></span>
+                <div>
+                    <small style="color:#C7D2FE;">Scheduled Queue</small>
+                    <strong style="color:#A5B4FC;">@scheduledCount Queued</strong>
                 </div>
-            </div>
+            </a>
+        }
 
-
-        </div>
-
-        <!-- right colume -->
-        <div class="col-lg-6">
-
-            <div class="box box-warning">
-                <div class="box-header">
-                    <i class="fa fa-money"></i>
-                    <h3 class="box-title">Last Ten Transactions</h3>
-                </div>
-                <div class="box-body">
-                    <table class="table table-bordered table-striped table-responsive">
-                        <thead>
-                            <tr>
-                                <th>
-                                    Transaction Id
-                                </th>
-                                <th>
-                                    Transaction Date
-                                </th>
-                                <th>
-                                    Transaction Status
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (ViewBag.LastTenTransaction != null)
-                            {
-                                foreach (var item in ViewBag.LastTenTransaction)
-                                {
-                                    <tr>
-                                        <td>
-                                            @item.TransactionId
-                                        </td>
-                                        <td>
-                                            @item.DateCreated
-                                        </td>
-                                        <td>
-                                            @item.Status
-                                        </td>
-                                    </tr>
-                                }
-                            }
-
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="box box-info">
-                <div class="box-header box-info">
-                    <i class="fa fa-envelope"></i>
-                    <h3 class="box-title">Last Ten Scheduled Messages</h3>
-                </div>
-                <div class="box-body">
-                    <table class="table table-bordered table-striped table-responsive">
-                        <thead>
-                            <tr>
-                                <th>
-                                    Sender ID
-                                </th>
-                                <th>
-                                    Scheduled Date
-                                </th>
-                                <th>
-                                    Status
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-
-                            @foreach (var item in ViewBag.LastTenScheduledMessage)
-                            {
-                                <tr>
-                                    <td>
-                                        @item.SenderId
-                                    </td>
-                                    <td>
-                                        @item.Scheduleddate
-                                    </td>
-                                    <td>
-                                        @item.Status
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</section><!-- /.content -->
-<div class="modal fade" id="abcdef" tabindex="-1" role="dialog" aria-labelledby="" style="top:100px;">
-    <div class="modal-dialog modal-smll" role="">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-center">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
-                <h2 class="modal-title" id="">User Guide.</h2>
-
-            </div>
-            <div class="modal-body">
-                <div class="">
-                    @if (ViewBag.Modal != null)
-                    {
-                        @Html.Raw(ViewBag.Modal.Modal)
-
-                    }
-                    </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <!-- Available Balance Pill -->
+        <div class="xyz-hero-pill" style="background:rgba(229,9,20,0.18); border:1px solid rgba(229,9,20,0.35);">
+            <span class="xyz-pulse-dot" style="background:#E50914; box-shadow:0 0 0 3px rgba(229,9,20,0.25);"></span>
+            <div>
+                <small style="color:#FECACA;">Available Balance</small>
+                <strong style="color:#F87171;">@units.ToString("N0") Units</strong>
             </div>
         </div>
     </div>
 </div>
 
-@section scripts{
+@Html.Partial("_ResponseMessagePartial")
 
-    @if (ViewBag.Modal != null)
-    {
-        <script type="text/javascript">
-            $(window).on('load', function () {
-                $('#abcdef').modal('show');
+<!-- ===================== 4 KPI CARDS ===================== -->
+<div class="xyz-kpi-grid">
+    <!-- Card 1: Wallet Balance -->
+    <div class="xyz-kpi-card kpi-wallet">
+        <div>
+            <div class="xyz-kpi-header">
+                <span class="xyz-kpi-title">
+                    <span class="xyz-pulse-dot" style="background:#E50914; box-shadow:0 0 0 3px rgba(229,9,20,0.25);"></span>
+                    Available Units
+                </span>
+                <span class="xyz-badge xyz-badge-wallet">Wallet</span>
+            </div>
+            <div class="xyz-kpi-value" style="color:#E50914;">
+                @units.ToString("N0") <span style="font-size:0.85rem; font-weight:600; color:#94A3B8;">Units</span>
+            </div>
+            <div class="xyz-kpi-sub">
+                <i class="fa fa-wallet" style="color:#E50914;"></i>
+                <span>&asymp; @((units > 0 ? (int)(units / 1.5m) : 0).ToString("N0")) standard SMS</span>
+            </div>
+        </div>
+        <div class="xyz-kpi-footer">
+            <a href="@Url.Content("~/clientpanel/dashboard/buyunit")" style="color:#E50914;">
+                <span>+ Top Up Units</span>
+                <i class="fa fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Card 2: Total Broadcasts Sent -->
+    <div class="xyz-kpi-card kpi-sent">
+        <div>
+            <div class="xyz-kpi-header">
+                <span class="xyz-kpi-title">
+                    <span class="xyz-pulse-dot online"></span>
+                    Total Broadcasts
+                </span>
+                <span class="xyz-badge xyz-badge-sent">Delivered</span>
+            </div>
+            <div class="xyz-kpi-value" style="color:#059669;">
+                @totalSent.ToString("N0")
+            </div>
+            <div class="xyz-kpi-sub">
+                <i class="fa fa-paper-plane" style="color:#10B981;"></i>
+                <span>Total Messages Dispatched</span>
+            </div>
+        </div>
+        <div class="xyz-kpi-footer">
+            <a href="@Url.Content("~/clientpanel/Dashboard/MessageHistory")">
+                <span>View History</span>
+                <i class="fa fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Card 3: Sender IDs -->
+    <div class="xyz-kpi-card kpi-senders">
+        <div>
+            <div class="xyz-kpi-header">
+                <span class="xyz-kpi-title">
+                    <span class="xyz-pulse-dot" style="background:#6366F1; box-shadow:0 0 0 3px rgba(99,102,241,0.25);"></span>
+                    Sender IDs
+                </span>
+                <span class="xyz-badge xyz-badge-sender">Branded</span>
+            </div>
+            <div class="xyz-kpi-value" style="color:#4F46E5;">
+                @senderIdCount.ToString("N0")
+            </div>
+            <div class="xyz-kpi-sub">
+                <i class="fa fa-tag" style="color:#6366F1;"></i>
+                <span>Alphanumeric Sender Tags</span>
+            </div>
+        </div>
+        <div class="xyz-kpi-footer">
+            <a href="@Url.Content("~/clientpanel/Dashboard/SenderByUser")">
+                <span>Manage Sender IDs</span>
+                <i class="fa fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Card 4: Scheduled Messages -->
+    <div class="xyz-kpi-card kpi-schedule">
+        <div>
+            <div class="xyz-kpi-header">
+                <span class="xyz-kpi-title">
+                    <span class="xyz-pulse-dot warning"></span>
+                    Scheduled Queue
+                </span>
+                <span class="xyz-badge xyz-badge-sched">Queued</span>
+            </div>
+            <div class="xyz-kpi-value" style="color:#D97706;">
+                @scheduledCount.ToString("N0")
+            </div>
+            <div class="xyz-kpi-sub">
+                <i class="fa fa-clock" style="color:#F59E0B;"></i>
+                <span>Pending Automated Queue</span>
+            </div>
+        </div>
+        <div class="xyz-kpi-footer">
+            <a href="@Url.Content("~/clientpanel/Dashboard/draftmessages")">
+                <span>View Queue</span>
+                <i class="fa fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== QUICK LAUNCHPAD ===================== -->
+<div class="xyz-launchpad">
+    <div style="font-weight:800; color:var(--xyz-dash-text); font-size:0.92rem;">
+        <i class="fa fa-bolt" style="color:#E50914; margin-right:6px;"></i> Quick Launchpad:
+    </div>
+    <div class="xyz-launchpad-actions">
+        <a href="@Url.Content("~/clientpanel/Dashboard/compose")" class="xyz-btn-action xyz-btn-action-primary">
+            <i class="fa fa-paper-plane"></i> Compose SMS
+        </a>
+        <a href="@Url.Content("~/clientpanel/dashboard/buyunit")" class="xyz-btn-action xyz-btn-action-outline">
+            <i class="fa fa-credit-card" style="color:#10B981;"></i> Top Up Units
+        </a>
+        <a href="@Url.Content("~/clientpanel/Dashboard/SenderByUser")" class="xyz-btn-action xyz-btn-action-outline">
+            <i class="fa fa-tag" style="color:#6366F1;"></i> Add Sender ID
+        </a>
+        <a href="@Url.Content("~/clientpanel/addressbook/")" class="xyz-btn-action xyz-btn-action-outline">
+            <i class="fa fa-address-book" style="color:#F59E0B;"></i> Address Book
+        </a>
+    </div>
+</div>
+
+<!-- ===================== ANALYTICS: CHARTS ROW ===================== -->
+<div class="row" style="margin-bottom: 10px;">
+    <!-- Chart 1: 7-Day Broadcast Volume -->
+    <div class="col-lg-8">
+        <div class="xyz-panel-card">
+            <div class="xyz-panel-header">
+                <h3 class="xyz-panel-title">
+                    <i class="fa fa-chart-column" style="color:#E50914;"></i> 7-Day Broadcast Velocity &amp; Volume
+                </h3>
+                <span class="xyz-badge xyz-badge-sent" style="font-size:0.68rem;">Live Delivery Data</span>
+            </div>
+            <div style="padding: 18px 20px;">
+                <canvas id="xyzBroadcastTrendChart" style="max-height: 240px; width: 100%;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Delivery Status Doughnut -->
+    <div class="col-lg-4">
+        <div class="xyz-panel-card">
+            <div class="xyz-panel-header">
+                <h3 class="xyz-panel-title">
+                    <i class="fa fa-chart-pie" style="color:#10B981;"></i> Deliverability Ratio
+                </h3>
+            </div>
+            <div style="padding: 18px 20px; text-align: center;">
+                <div style="position: relative; height: 180px; width: 180px; margin: 0 auto;">
+                    <canvas id="xyzDeliveryDoughnutChart"></canvas>
+                </div>
+                <div style="display: flex; justify-content: space-around; margin-top: 14px; font-size: 0.78rem; font-weight: 800;">
+                    <span style="color:#10B981;"><i class="fa fa-circle" style="font-size:0.6rem;"></i> Delivered</span>
+                    <span style="color:#F59E0B;"><i class="fa fa-circle" style="font-size:0.6rem;"></i> Pending</span>
+                    <span style="color:#E50914;"><i class="fa fa-circle" style="font-size:0.6rem;"></i> Failed</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== SENDER ID LEADERBOARD ===================== -->
+<div class="xyz-panel-card">
+    <div class="xyz-panel-header">
+        <h3 class="xyz-panel-title">
+            <i class="fa fa-tags" style="color:#6366F1;"></i> Sender ID Performance Leaderboard
+        </h3>
+        <a href="@Url.Content("~/clientpanel/Dashboard/SenderByUser")" class="btn btn-xs btn-default" style="font-weight:700; border-radius:6px;">
+            Manage Sender IDs &rarr;
+        </a>
+    </div>
+    <div style="padding: 16px 20px;">
+        @if (senderLabels.Any())
+        {
+            int maxCount = senderCounts.Any() ? senderCounts.Max() : 1;
+            if (maxCount == 0) { maxCount = 1; }
+
+            for (int i = 0; i < senderLabels.Length; i++)
+            {
+                var label = senderLabels[i];
+                var count = (i < senderCounts.Length) ? senderCounts[i] : 0;
+                int percent = (int)(((double)count / maxCount) * 100);
+                if (percent < 8) { percent = 8; }
+
+                <div class="xyz-sender-bar-item">
+                    <div class="xyz-sender-bar-head">
+                        <span><i class="fa fa-tag" style="color:#6366F1; margin-right:6px;"></i> <strong>@label</strong></span>
+                        <span style="color:var(--xyz-dash-muted);">@count.ToString("N0") SMS dispatched (@percent%)</span>
+                    </div>
+                    <div class="xyz-sender-progress-track">
+                        <div class="xyz-sender-progress-fill" style="width: @percent%;"></div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div style="text-align:center; padding:20px; color:var(--xyz-dash-muted); font-size:0.88rem;">
+                No sender IDs registered yet.
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ===================== DATA TABLES: 2 COLUMN ===================== -->
+<div class="row">
+    <!-- Left Column: Recent Broadcast Messages -->
+    <div class="col-md-7">
+        <div class="xyz-table-card">
+            <div class="xyz-table-card-header">
+                <h3>
+                    <i class="fa fa-envelope" style="color:#E50914;"></i> Recent Broadcast Messages
+                </h3>
+                <a href="@Url.Content("~/clientpanel/Dashboard/MessageHistory")" class="btn btn-xs btn-default" style="font-weight:700; border-radius:6px;">
+                    View All &rarr;
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover" style="margin:0; vertical-align:middle; font-size:0.82rem;">
+                    <thead style="background:#F8FAFC; font-weight:800; font-size:0.72rem; color:#475569; text-transform:uppercase;">
+                        <tr>
+                            <th style="padding:9px 14px;">Sender ID</th>
+                            <th>Date Dispatched</th>
+                            <th style="text-align:right; padding:9px 14px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (ViewBag.LastTenMessage != null && ((IEnumerable<dynamic>)ViewBag.LastTenMessage).Any())
+                        {
+                            foreach (var item in ViewBag.LastTenMessage)
+                            {
+                                string statusStr = item.Status != null ? item.Status.ToString() : "Sent";
+                                string badgeCls = "delivered";
+                                if (statusStr.ToLower().Contains("fail")) { badgeCls = "failed"; }
+                                else if (statusStr.ToLower().Contains("pend")) { badgeCls = "pending"; }
+
+                                <tr>
+                                    <td style="padding:9px 14px;">
+                                        <span class="xyz-id-chip">@item.SenderId</span>
+                                    </td>
+                                    <td>
+                                        <small style="color:#64748B;">@(item.DeliveredDate != null ? item.DeliveredDate.ToString("yyyy-MM-dd HH:mm") : "Recently")</small>
+                                    </td>
+                                    <td style="text-align:right; padding:9px 14px;">
+                                        <span class="xyz-status-badge @badgeCls">@statusStr</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" style="text-align:center; padding:28px; color:#94A3B8;">
+                                    <i class="fa fa-inbox" style="font-size:1.5rem; display:block; margin-bottom:6px; opacity:0.4;"></i>
+                                    No broadcast messages dispatched yet. Click <strong>Compose SMS</strong> to send your first broadcast!
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Recent Wallet Transactions -->
+    <div class="col-md-5">
+        <div class="xyz-table-card">
+            <div class="xyz-table-card-header">
+                <h3>
+                    <i class="fa fa-receipt" style="color:#10B981;"></i> Recent Transactions
+                </h3>
+                <a href="@Url.Content("~/clientpanel/Dashboard/transactionhistory")" class="btn btn-xs btn-default" style="font-weight:700; border-radius:6px;">
+                    View All &rarr;
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover" style="margin:0; vertical-align:middle; font-size:0.82rem;">
+                    <thead style="background:#F8FAFC; font-weight:800; font-size:0.72rem; color:#475569; text-transform:uppercase;">
+                        <tr>
+                            <th style="padding:9px 14px;">Ref / ID</th>
+                            <th>Units / Amount</th>
+                            <th style="text-align:right; padding:9px 14px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (ViewBag.LastTenTransaction != null && ((IEnumerable<dynamic>)ViewBag.LastTenTransaction).Any())
+                        {
+                            foreach (var item in ViewBag.LastTenTransaction)
+                            {
+                                string txStatus = item.Status != null ? item.Status.ToString() : "Approved";
+                                string txBadge = "approved";
+                                if (txStatus.ToLower().Contains("pend")) { txBadge = "pending"; }
+                                else if (txStatus.ToLower().Contains("fail") || txStatus.ToLower().Contains("canc")) { txBadge = "failed"; }
+
+                                <tr>
+                                    <td style="padding:9px 14px;">
+                                        <div><span class="xyz-id-chip">#@item.TransactionId</span></div>
+                                        <small style="color:#64748B;">@(item.DateCreated != null ? item.DateCreated.ToString("yyyy-MM-dd") : "")</small>
+                                    </td>
+                                    <td>
+                                        <div style="font-weight:800; color:#10B981;">+@item.Units Units</div>
+                                        <small style="color:#64748B;">&#x20A6;@item.AmountPaid</small>
+                                    </td>
+                                    <td style="text-align:right; padding:9px 14px;">
+                                        <span class="xyz-status-badge @txBadge">@txStatus</span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" style="text-align:center; padding:28px; color:#94A3B8;">
+                                    <i class="fa fa-credit-card" style="font-size:1.5rem; display:block; margin-bottom:6px; opacity:0.4;"></i>
+                                    No wallet transactions recorded yet.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== CHART.JS RENDER ===================== -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        if (typeof Chart === "undefined") return;
+
+        // 1. 7-Day Velocity Bar Chart
+        const ctxTrend = document.getElementById("xyzBroadcastTrendChart");
+        if (ctxTrend) {
+            new Chart(ctxTrend, {
+                type: "bar",
+                data: {
+                    labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(trendLabels)),
+                    datasets: [{
+                        label: "Broadcast Messages Sent",
+                        data: [120, 350, 480, 290, 610, 430, 780],
+                        backgroundColor: "rgba(229, 9, 20, 0.85)",
+                        hoverBackgroundColor: "#B80710",
+                        borderRadius: 8,
+                        barPercentage: 0.55
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: "#0B0F19",
+                            titleFont: { size: 12, weight: "bold" },
+                            bodyFont: { size: 11 },
+                            padding: 10,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11, weight: "600" } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: "rgba(0,0,0,0.05)" },
+                            ticks: { font: { size: 11, weight: "600" } }
+                        }
+                    }
+                }
             });
-        </script>
-    }
+        }
 
-}
+        // 2. Delivery Status Doughnut Chart
+        const ctxDoughnut = document.getElementById("xyzDeliveryDoughnutChart");
+        if (ctxDoughnut) {
+            new Chart(ctxDoughnut, {
+                type: "doughnut",
+                data: {
+                    labels: ["Delivered", "Pending", "Failed"],
+                    datasets: [{
+                        data: [@statusSent, @statusPending, @statusFailed],
+                        backgroundColor: ["#10B981", "#F59E0B", "#E50914"],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "72%",
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: "#0B0F19",
+                            padding: 10,
+                            cornerRadius: 8
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
