@@ -1,11 +1,14 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Exwhyzee Messaging API",
-    "description": "Welcome to the Exwhyzee Messaging API Documentation.\nHere you will find everything you need to know about integrating with our messaging platform.\n\n## Authentication\nAll API endpoints require authentication using a **Bearer Token**.\nYou must include your API key in the `Authorization` header of every request.\n\n```http\nAuthorization: Bearer xyz_key_XXXXXXXXXXXXXXXXXXXXXXXXXXX\n```\n\nIf the token is missing or invalid, you will receive a `401 Unauthorized` response.\n",
-    "version": "1.0.0"
+    "title": "XYZSMS Developer API",
+    "description": "Welcome to the **XYZSMS Developer REST API Documentation**.\nProgrammatically dispatch single and bulk SMS messages, query real-time unit balances, inspect message delivery history with pagination, check sender ID verification status, and retrieve network carrier rates.\n\n## 🔐 Authentication\nAll endpoints require authentication using your account API Key.\nYou can provide your API key via any of the following methods:\n\n1. **Custom Header (Recommended)**:\n```http\nX-Api-Key: xyz_key_YOUR_ACTUAL_KEY\n```\n\n2. **Standard Authorization Bearer Header**:\n```http\nAuthorization: Bearer xyz_key_YOUR_ACTUAL_KEY\n```\n\n3. **Query Parameter**:\n```http\nhttps://api.xyzsms.com/api/sms/balance?apikey=xyz_key_YOUR_ACTUAL_KEY\n```\n",
+    "version": "1.1.0"
   },
   "security": [
+    {
+      "ApiKeyAuth": []
+    },
     {
       "BearerAuth": []
     }
@@ -13,10 +16,10 @@
   "paths": {
     "/api/sms/send": {
       "post": {
-        "summary": "Send an SMS Message",
-        "description": "Sends an SMS message to one or more recipients.",
+        "summary": "Dispatch Single or Bulk SMS",
+        "description": "Sends an SMS message to one or more recipient phone numbers. Supports comma-separated or newline-separated numbers.",
         "tags": [
-          "SMS"
+          "Messaging"
         ],
         "requestBody": {
           "required": true,
@@ -30,7 +33,7 @@
         },
         "responses": {
           "200": {
-            "description": "Message was successfully queued/sent.",
+            "description": "Message was successfully queued/dispatched.",
             "content": {
               "application/json": {
                 "schema": {
@@ -40,26 +43,25 @@
             }
           },
           "400": {
-            "description": "Bad Request (Invalid parameters or insufficient balance)",
+            "description": "Bad Request (e.g. Invalid recipients, insufficient unit balance, or blacklisted words)",
             "content": {
-              "text/plain": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "example": "Insufficient Units to send message."
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
           },
           "401": {
-            "description": "Unauthorized (Invalid or missing ApiKey)"
+            "description": "Unauthorized (Missing or invalid API Key)"
           }
         }
       }
     },
     "/api/sms/balance": {
       "get": {
-        "summary": "Check Account Balance",
-        "description": "Retrieves the current available SMS units for your account.",
+        "summary": "Check Live Unit Balance",
+        "description": "Queries the real-time available SMS messaging units for the authenticated client account.",
         "tags": [
           "Account"
         ],
@@ -69,46 +71,134 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "balance": {
-                      "type": "number",
-                      "example": 1542.5
-                    }
-                  }
+                  "$ref": "#/components/schemas/BalanceResponse"
                 }
               }
             }
           },
           "401": {
-            "description": "Unauthorized (Invalid or missing ApiKey)"
+            "description": "Unauthorized (Invalid or missing API Key)"
           }
         }
       }
     },
     "/api/sms/history": {
       "get": {
-        "summary": "View Transaction History",
-        "description": "Retrieves a list of your most recent transactions (up to 50 records).",
+        "summary": "Delivery Logs & Message History",
+        "description": "Retrieves outbound SMS delivery history with server-side pagination and optional filters by sender ID, recipient number, or status.",
         "tags": [
-          "Account"
+          "History & Analytics"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (1-based index).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "Number of records per page (default: 50, max: 200).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "senderId",
+            "in": "query",
+            "description": "Filter by sender ID (e.g. XYZSMS).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recipient",
+            "in": "query",
+            "description": "Filter by recipient phone number.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by status (e.g. Sent, Delivered, Failed).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
-            "description": "Successfully retrieved history.",
+            "description": "Successfully retrieved paginated history.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/TransactionRecord"
-                  }
+                  "$ref": "#/components/schemas/PaginatedHistoryResponse"
                 }
               }
             }
           },
           "401": {
-            "description": "Unauthorized (Invalid or missing ApiKey)"
+            "description": "Unauthorized (Invalid or missing API Key)"
+          }
+        }
+      }
+    },
+    "/api/sms/senderids": {
+      "get": {
+        "summary": "Retrieve Sender IDs & Approval Status",
+        "description": "Returns all registered Sender IDs for the authenticated client along with their telecommunication approval status.",
+        "tags": [
+          "Sender IDs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved sender IDs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SenderIdsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (Invalid or missing API Key)"
+          }
+        }
+      }
+    },
+    "/api/sms/pricing": {
+      "get": {
+        "summary": "Network Rates & Base Unit Pricing",
+        "description": "Retrieves the platform base unit price, flat rates, and individual telecommunication carrier rates and dial codes.",
+        "tags": [
+          "Pricing"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved pricing list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (Invalid or missing API Key)"
           }
         }
       }
@@ -116,11 +206,17 @@
   },
   "components": {
     "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key",
+        "description": "Custom API Key Header: `X-Api-Key: xyz_key_XXXXXXXXXXXXXXXXXXXXXXXXXXX`"
+      },
       "BearerAuth": {
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "API Key",
-        "description": "Enter your API Key below"
+        "description": "Standard Bearer Token: `Authorization: Bearer xyz_key_XXXXXXXXXXXXXXXXXXXXXXXXXXX`"
       }
     },
     "schemas": {
@@ -129,23 +225,34 @@
         "required": [
           "recipients",
           "senderId",
-          "content"
+          "messageContent"
         ],
         "properties": {
-          "recipients": {
-            "type": "string",
-            "description": "Comma-separated list of recipient phone numbers.",
-            "example": "08012345678,08123456789"
-          },
           "senderId": {
             "type": "string",
-            "description": "The sender ID or brand name (e.g., MyBrand). Maximum 11 characters.",
-            "example": "MyBrand"
+            "description": "Your registered and approved Sender ID (maximum 11 alphanumeric characters).",
+            "example": "XYZSMS"
           },
-          "content": {
+          "recipients": {
             "type": "string",
-            "description": "The actual text content of the SMS message.",
-            "example": "Hello! This is a test message from my API."
+            "description": "Comma-separated or newline-separated recipient phone numbers.",
+            "example": "08012345678,08123456789"
+          },
+          "messageContent": {
+            "type": "string",
+            "description": "The SMS text message body to deliver.",
+            "example": "Your verification code is 849201. Valid for 10 minutes."
+          },
+          "isFlash": {
+            "type": "boolean",
+            "description": "Set to true for flash SMS (appears directly on recipient screen).",
+            "example": false
+          },
+          "scheduledDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Optional future dispatch time (ISO 8601 string).",
+            "example": "2026-08-25T09:00:00Z"
           }
         }
       },
@@ -158,42 +265,230 @@
           },
           "message": {
             "type": "string",
-            "example": "Message has been sent successfully."
+            "example": "Message dispatched successfully."
           },
-          "description": {
-            "type": "string",
-            "example": "Total Units used is 2."
-          },
-          "responseCode": {
-            "type": "string",
-            "example": ""
-          }
-        }
-      },
-      "TransactionRecord": {
-        "type": "object",
-        "properties": {
-          "dateCreated": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2023-10-25T14:30:00Z"
-          },
-          "amount": {
+          "totalUnitsUsed": {
             "type": "number",
-            "example": 5.5
+            "example": 3.0
           },
-          "status": {
-            "type": "integer",
-            "description": "The status of the transaction",
-            "example": 1
-          },
-          "transactionType": {
+          "recipientsCount": {
             "type": "integer",
             "example": 2
           },
-          "note": {
+          "batchReference": {
             "type": "string",
-            "example": "Sent SMS to 08012345678"
+            "example": "XYZ-TXN-9402104"
+          }
+        }
+      },
+      "BalanceResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "username": {
+            "type": "string",
+            "example": "john_doe"
+          },
+          "email": {
+            "type": "string",
+            "example": "john@example.com"
+          },
+          "unitsBalance": {
+            "type": "number",
+            "example": 2450.75
+          },
+          "currency": {
+            "type": "string",
+            "example": "NGN"
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-08-21T08:15:00Z"
+          }
+        }
+      },
+      "PaginatedHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "example": 50
+          },
+          "totalRecords": {
+            "type": "integer",
+            "example": 142
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 3
+          },
+          "hasNextPage": {
+            "type": "boolean",
+            "example": true
+          },
+          "hasPreviousPage": {
+            "type": "boolean",
+            "example": false
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoryRecord"
+            }
+          }
+        }
+      },
+      "HistoryRecord": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "integer",
+            "example": 1054
+          },
+          "senderId": {
+            "type": "string",
+            "example": "XYZSMS"
+          },
+          "recipients": {
+            "type": "string",
+            "example": "08012345678"
+          },
+          "messageContent": {
+            "type": "string",
+            "example": "Your OTP code is 492104"
+          },
+          "unitsUsed": {
+            "type": "number",
+            "example": 1.5
+          },
+          "status": {
+            "type": "string",
+            "example": "Sent"
+          },
+          "dateSent": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-08-21T07:30:00Z"
+          }
+        }
+      },
+      "SenderIdsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "count": {
+            "type": "integer",
+            "example": 2
+          },
+          "senderIds": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "example": 10
+                },
+                "senderId": {
+                  "type": "string",
+                  "example": "XYZSMS"
+                },
+                "status": {
+                  "type": "string",
+                  "example": "Approved"
+                },
+                "isApproved": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "message": {
+                  "type": "string",
+                  "nullable": true,
+                  "example": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "PricingResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "currency": {
+            "type": "string",
+            "example": "NGN"
+          },
+          "basePricePerUnit": {
+            "type": "number",
+            "example": 2.0
+          },
+          "flatUnitsPerSms": {
+            "type": "number",
+            "example": 1.0
+          },
+          "count": {
+            "type": "integer",
+            "example": 4
+          },
+          "rates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "country": {
+                  "type": "string",
+                  "example": "Nigeria"
+                },
+                "networkProvider": {
+                  "type": "string",
+                  "example": "MTN"
+                },
+                "unitsPerSms": {
+                  "type": "number",
+                  "example": 1.5
+                },
+                "estimatedCostPerSms": {
+                  "type": "number",
+                  "example": 3.0
+                },
+                "internationalDialCode": {
+                  "type": "string",
+                  "example": "234"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Insufficient units to complete SMS broadcast."
           }
         }
       }
