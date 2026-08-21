@@ -160,7 +160,7 @@ namespace Exwhyzee.Messaging.Api.Controllers
             int totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
 
             var messages = await query
-                .OrderByDescending(m => m.DeliveredDate ?? m.DateCreated)
+                .OrderByDescending(m => m.DeliveredDate ?? m.Scheduleddate)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(m => new
@@ -171,7 +171,7 @@ namespace Exwhyzee.Messaging.Api.Controllers
                     messageContent = m.MessageContent,
                     unitsUsed = m.UnitsUsed,
                     status = m.Status.ToString(),
-                    dateSent = m.DeliveredDate ?? m.DateCreated
+                    dateSent = m.DeliveredDate ?? m.Scheduleddate
                 })
                 .ToListAsync();
 
