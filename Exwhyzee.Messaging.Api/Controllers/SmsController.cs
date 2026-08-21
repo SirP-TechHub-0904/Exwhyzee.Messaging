@@ -153,7 +153,7 @@ namespace Exwhyzee.Messaging.Api.Controllers
         }
 
         /// <summary>
-        /// Retrieve all distinct active sender IDs used by the authenticated account.
+        /// Retrieve all registered sender IDs for the authenticated account with their approval status.
         /// </summary>
         [HttpGet("senderids")]
         [ProducesResponseType(200)]
@@ -166,10 +166,16 @@ namespace Exwhyzee.Messaging.Api.Controllers
                 return Unauthorized(new { success = false, message = "Unauthorized: Invalid API Key." });
             }
 
-            var senderIds = await _db.Messages
-                .Where(m => m.UserId == userId && !string.IsNullOrEmpty(m.SenderId))
-                .Select(m => m.SenderId)
-                .Distinct()
+            var senderIds = await _db.XyzSenderIDs
+                .Where(s => s.ClientId == client.ClientId)
+                .Select(s => new
+                {
+                    id = s.Id,
+                    senderId = s.SenderId,
+                    status = s.XYZ_status ?? "Pending",
+                    isApproved = (s.XYZ_status == "Approved" || s.XYZ_status == "Active"),
+                    message = s.Verify_msg ?? s.XYZ_msg
+                })
                 .ToListAsync();
 
             return Ok(new
@@ -181,7 +187,7 @@ namespace Exwhyzee.Messaging.Api.Controllers
         }
 
         /// <summary>
-        /// Retrieve real-time network SMS pricing and dial codes.
+        /// Retrieve base unit price, flat SMS rates, and real-time network pricing with dial codes.
         /// </summary>
         [HttpGet("pricing")]
         [ProducesResponseType(200)]
@@ -194,12 +200,17 @@ namespace Exwhyzee.Messaging.Api.Controllers
                 return Unauthorized(new { success = false, message = "Unauthorized: Invalid API Key." });
             }
 
+            var adminSetting = await _db.AdminSettings.FirstOrDefaultAsync();
+            var basePricePerUnit = adminSetting?.PricePerUnit ?? 2.0m;
+            var flatUnitsPerSms = adminSetting?.FlatUnitsPerSms ?? 1.0m;
+
             var prices = await _db.PriceSettings
                 .Select(p => new
                 {
                     country = p.Country,
                     networkProvider = p.NetworkProvider,
                     unitsPerSms = p.UnitsPerSms,
+                    estimatedCostPerSms = p.UnitsPerSms * basePricePerUnit,
                     internationalDialCode = p.InternationalDialCode
                 })
                 .ToListAsync();
@@ -207,6 +218,9 @@ namespace Exwhyzee.Messaging.Api.Controllers
             return Ok(new
             {
                 success = true,
+                currency = "NGN",
+                basePricePerUnit = basePricePerUnit,
+                flatUnitsPerSms = flatUnitsPerSms,
                 count = prices.Count,
                 rates = prices
             });
