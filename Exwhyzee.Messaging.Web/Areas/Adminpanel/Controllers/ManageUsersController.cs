@@ -28,7 +28,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         private RoleManager<IdentityRole> RoleManager;
         private IClientService _clientService;
         private ITransactionService _transactionService = new TransactionService();
-        private IPayStackApi _paystack = new PayStackApi(AppConfig.PayStackSecretKey);
+        private IPayStackApi _paystack => new PayStackApi(AppConfig.PayStackSecretKey);
 
         public ManageUsersController(ApplicationDbContext _db, UserManager<ApplicationUser> _userManager, RoleManager<IdentityRole> _roleManager, IClientService clientService)
         {
