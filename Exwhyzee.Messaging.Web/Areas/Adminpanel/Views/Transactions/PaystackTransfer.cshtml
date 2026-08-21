@@ -134,13 +134,11 @@
 
                     <div class="form-group" style="margin-bottom:14px;">
                         <label style="font-weight:700; font-size:0.85rem; color:#334155;">NUBAN Account Number (10 Digits)</label>
-                        <div class="input-group" style="display:flex; width:100%;">
-                            <input type="text" name="accountNumber" id="xyzAccountNumberInput" class="form-control" placeholder="e.g. 0123456789" maxlength="10" style="border-top-left-radius:8px; border-bottom-left-radius:8px; border-top-right-radius:0; border-bottom-right-radius:0; height:42px; font-weight:600; border:1px solid #CBD5E1; border-right:none; flex:1;" required />
-                            <span class="input-group-btn" style="display:inline-flex; vertical-align:top;">
-                                <button type="button" id="xyzVerifyBankBtn" class="btn btn-info" style="font-weight:800; border-top-right-radius:8px; border-bottom-right-radius:8px; border-top-left-radius:0; border-bottom-left-radius:0; height:42px; padding:0 18px; background:#0284C7; border:1px solid #0284C7; display:inline-flex; align-items:center; gap:6px;">
-                                    <i class="fa fa-search"></i> Verify Account
-                                </button>
-                            </span>
+                        <div style="display:flex; width:100%; align-items:stretch;">
+                            <input type="text" name="accountNumber" id="xyzAccountNumberInput" class="form-control" placeholder="e.g. 0123456789" maxlength="10" style="border-top-left-radius:8px; border-bottom-left-radius:8px; border-top-right-radius:0; border-bottom-right-radius:0; height:42px; font-weight:600; border:1px solid #CBD5E1; border-right:none; flex:1; min-width:0;" required />
+                            <button type="button" id="xyzVerifyBankBtn" class="btn btn-info" style="font-weight:800; border-top-right-radius:8px; border-bottom-right-radius:8px; border-top-left-radius:0; border-bottom-left-radius:0; height:42px; padding:0 16px; background:#0284C7; border:1px solid #0284C7; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; flex-shrink:0;">
+                                <i class="fa fa-search"></i> Verify Account
+                            </button>
                         </div>
                     </div>
 
