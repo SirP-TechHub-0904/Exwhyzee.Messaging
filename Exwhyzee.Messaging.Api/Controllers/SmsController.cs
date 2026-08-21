@@ -111,13 +111,22 @@ namespace Exwhyzee.Messaging.Api.Controllers
         }
 
         /// <summary>
-        /// Retrieve recent outbound message delivery logs for the authenticated account.
+        /// Retrieve outbound message delivery history with full pagination and optional filtering.
         /// </summary>
-        /// <param name="limit">Max number of records to retrieve (default: 50, max: 200).</param>
+        /// <param name="page">Page number (1-based index, default: 1).</param>
+        /// <param name="pageSize">Number of records per page (default: 50, max: 200).</param>
+        /// <param name="senderId">Optional filter by sender ID.</param>
+        /// <param name="recipient">Optional filter by recipient phone number.</param>
+        /// <param name="status">Optional filter by delivery status (e.g. Sent, Delivered, Failed).</param>
         [HttpGet("history")]
         [ProducesResponseType(200)]
         [ProducesResponseType(401)]
-        public async Task<IActionResult> ViewHistory([FromQuery] int limit = 50)
+        public async Task<IActionResult> ViewHistory(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50,
+            [FromQuery] string senderId = null,
+            [FromQuery] string recipient = null,
+            [FromQuery] string status = null)
         {
             var (userId, client) = AuthenticateClient();
             if (string.IsNullOrEmpty(userId))
@@ -125,13 +134,35 @@ namespace Exwhyzee.Messaging.Api.Controllers
                 return Unauthorized(new { success = false, message = "Unauthorized: Invalid API Key." });
             }
 
-            if (limit <= 0) limit = 50;
-            if (limit > 200) limit = 200;
+            if (page < 1) page = 1;
+            if (pageSize <= 0) pageSize = 50;
+            if (pageSize > 200) pageSize = 200;
 
-            var messages = await _db.Messages
-                .Where(m => m.UserId == userId && m.Status != MessageStatus.Draft)
-                .OrderByDescending(m => m.DeliveredDate)
-                .Take(limit)
+            var query = _db.Messages
+                .Where(m => m.UserId == userId && m.Status != MessageStatus.Draft);
+
+            if (!string.IsNullOrWhiteSpace(senderId))
+            {
+                query = query.Where(m => m.SenderId == senderId.Trim());
+            }
+
+            if (!string.IsNullOrWhiteSpace(recipient))
+            {
+                query = query.Where(m => m.Recipients.Contains(recipient.Trim()));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<MessageStatus>(status, true, out var parsedStatus))
+            {
+                query = query.Where(m => m.Status == parsedStatus);
+            }
+
+            int totalRecords = await query.CountAsync();
+            int totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
+
+            var messages = await query
+                .OrderByDescending(m => m.DeliveredDate ?? m.DateCreated)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(m => new
                 {
                     messageId = m.MessageId,
@@ -140,14 +171,19 @@ namespace Exwhyzee.Messaging.Api.Controllers
                     messageContent = m.MessageContent,
                     unitsUsed = m.UnitsUsed,
                     status = m.Status.ToString(),
-                    dateSent = m.DeliveredDate
+                    dateSent = m.DeliveredDate ?? m.DateCreated
                 })
                 .ToListAsync();
 
             return Ok(new
             {
                 success = true,
-                count = messages.Count,
+                page = page,
+                pageSize = pageSize,
+                totalRecords = totalRecords,
+                totalPages = totalPages,
+                hasNextPage = page < totalPages,
+                hasPreviousPage = page > 1,
                 records = messages
             });
         }
