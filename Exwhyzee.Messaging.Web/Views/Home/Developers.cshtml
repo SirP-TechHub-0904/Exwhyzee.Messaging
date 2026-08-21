@@ -4,48 +4,54 @@
 
 <!-- Developer Hero -->
 <section class="xyz-hero" style="background:radial-gradient(circle at 80% 20%, rgba(99,102,241,0.08) 0%, transparent 60%), var(--xyz-white); padding:50px 0 60px;">
-    <div class="xyz-container" style="text-align:center; max-width:800px;">
+    <div class="xyz-container" style="text-align:center; max-width:850px;">
         <span class="xyz-hero-badge" style="background:var(--xyz-indigo-light); color:var(--xyz-indigo); border-color:rgba(99,102,241,0.2);">
-            <i class="fa fa-terminal"></i> REST API v1.0
+            <i class="fa fa-terminal"></i> REST API v1.1.0
         </span>
         <h1 class="xyz-hero-title">
             Programmatic Messaging for <span class="gradient-text">Developers</span>
         </h1>
         <p class="xyz-hero-subtitle" style="margin:0 auto 28px;">
-            Send transactional alerts, dynamic notices, and high-volume broadcasts directly from your code with our lightning-fast, high-deliverability JSON REST API.
+            Send transactional alerts, OTPs, balance queries, sender ID checks, and high-volume broadcasts directly from your code with our lightning-fast, high-deliverability JSON REST API.
         </p>
-        <div style="display:flex; justify-content:center; gap:14px;">
+        <div style="display:flex; justify-content:center; gap:14px; flex-wrap:wrap;">
             <a href="@Url.Action("Register", "Account")" class="xyz-btn xyz-btn-primary">
                 <i class="fa fa-key"></i> Get Your Free API Key
             </a>
             <a href="#endpoints" class="xyz-btn xyz-btn-outline">
-                <i class="fa fa-book-open"></i> Explore Endpoints
+                <i class="fa fa-book-open"></i> Explore 5 Endpoints
+            </a>
+            <a href="@Url.Action("Documentation", "ApiSettings", new { area = "ClientPanel" })" target="_blank" class="xyz-btn" style="background:#0F172A; color:#FFFFFF; border:1px solid #1E293B;">
+                <i class="fa fa-bolt" style="color:#F59E0B;"></i> Interactive Studio
             </a>
         </div>
     </div>
 </section>
 
 <!-- Authentication Guide -->
-<section class="xyz-section" style="padding-top:20px;">
+<section class="xyz-section" style="padding-top:20px; padding-bottom:30px;">
     <div class="xyz-container">
         <div class="xyz-feature-card" style="border-left:4px solid var(--xyz-primary);">
             <h3 class="xyz-feature-title" style="display:flex; align-items:center; gap:10px;">
-                <i class="fa fa-lock" style="color:var(--xyz-primary);"></i> Authentication
+                <i class="fa fa-shield-halved" style="color:var(--xyz-primary);"></i> Authentication Methods
             </h3>
             <p class="xyz-feature-desc" style="margin-bottom:16px;">
-                Authenticate all API requests by providing your custom API token generated in your client dashboard. You can pass the key in either the <code>ApiKey</code> custom header or as a standard <code>Bearer</code> token:
+                Authenticate your API requests by providing the API Key generated in your <a href="@Url.Action("Index", "ApiSettings", new { area = "ClientPanel" })" style="font-weight:700; color:var(--xyz-primary);">Client Dashboard</a>. We support 3 flexible methods:
             </p>
-            <div style="background:var(--xyz-dark-900); padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.88rem; color:#E2E8F0; overflow-x:auto;">
-                <code>ApiKey: YOUR_API_TOKEN_HERE</code><br/>
-                <span style="color:var(--xyz-gray-500);"># OR</span><br/>
-                <code>Authorization: Bearer YOUR_API_TOKEN_HERE</code>
+            <div style="background:var(--xyz-dark-900); padding:18px 22px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.88rem; color:#E2E8F0; overflow-x:auto;">
+                <span style="color:#94A3B8;"># Method 1: Custom Header (Recommended)</span><br/>
+                <code>X-Api-Key: xyz_key_YOUR_API_KEY_HERE</code><br/><br/>
+                <span style="color:#94A3B8;"># Method 2: Standard Bearer Token Header</span><br/>
+                <code>Authorization: Bearer xyz_key_YOUR_API_KEY_HERE</code><br/><br/>
+                <span style="color:#94A3B8;"># Method 3: Query Parameter</span><br/>
+                <code>https://api.xyzsms.com/api/sms/balance?apikey=xyz_key_YOUR_API_KEY_HERE</code>
             </div>
         </div>
     </div>
 </section>
 
 <!-- Endpoints Section -->
-<section class="xyz-section" id="endpoints" style="background:var(--xyz-gray-100);">
+<section class="xyz-section" id="endpoints" style="background:var(--xyz-gray-100); padding:50px 0 80px;">
     <div class="xyz-container">
         <div class="xyz-section-header">
             <span class="xyz-section-tag">API Reference</span>
@@ -55,94 +61,394 @@
             </p>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:30px;">
-            <!-- Endpoint 1: Send SMS with Multi-Language Code Switcher -->
+        <div style="display:flex; flex-direction:column; gap:36px;">
+
+            <!-- ========================================== -->
+            <!-- ENDPOINT 1: SEND SMS (Single & Bulk)       -->
+            <!-- ========================================== -->
             <div class="xyz-feature-card" style="padding:32px;">
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
-                    <span style="background:var(--xyz-success); color:white; font-weight:800; font-size:0.8rem; padding:4px 10px; border-radius:6px; font-family:var(--xyz-font-mono);">POST</span>
-                    <h3 style="margin:0; font-size:1.3rem; font-family:var(--xyz-font-mono); color:var(--xyz-dark-900);">/api/sms/send</h3>
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="background:#10B981; color:white; font-weight:800; font-size:0.8rem; padding:4px 10px; border-radius:6px; font-family:var(--xyz-font-mono);">POST</span>
+                        <h3 style="margin:0; font-size:1.35rem; font-family:var(--xyz-font-mono); color:var(--xyz-dark-900);">/api/sms/send</h3>
+                    </div>
+                    <span style="background:#EEF2FF; color:#4F46E5; font-size:0.82rem; font-weight:700; padding:4px 12px; border-radius:100px;">Single & Bulk Dispatch</span>
                 </div>
-                <p style="color:var(--xyz-gray-600); margin-bottom:20px;">
-                    Dispatches a single message or bulk broadcast to one or multiple comma-separated recipient numbers.
+                <p style="color:var(--xyz-gray-600); margin-bottom:20px; font-size:1.02rem;">
+                    Dispatches a single message or high-volume bulk broadcast to one or multiple recipient phone numbers (comma or newline separated). Units are automatically debited in real-time.
                 </p>
 
-                <!-- Interactive Code Tabs Switcher -->
+                <!-- Code Switcher Box -->
                 <div class="xyz-code-block-wrapper" style="margin-bottom:24px;">
-                    <div class="xyz-code-header">
-                        <div class="xyz-code-tabs">
-                            <button class="xyz-code-tab active" data-lang="curl">cURL</button>
-                            <button class="xyz-code-tab" data-lang="csharp">C# (.NET)</button>
-                            <button class="xyz-code-tab" data-lang="python">Python</button>
-                            <button class="xyz-code-tab" data-lang="node">Node.js</button>
-                            <button class="xyz-code-tab" data-lang="php">PHP</button>
+                    <div class="xyz-code-header" style="background:#0F172A; padding:10px 16px; border-top-left-radius:10px; border-top-right-radius:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div class="xyz-code-tabs" style="display:flex; gap:6px;">
+                            <button class="xyz-code-tab active" onclick="switchSnippet(this, 'send-curl')" style="background:transparent; border:none; color:#CBD5E1; font-weight:700; padding:6px 12px; border-radius:6px; cursor:pointer;">cURL</button>
+                            <button class="xyz-code-tab" onclick="switchSnippet(this, 'send-csharp')" style="background:transparent; border:none; color:#94A3B8; font-weight:700; padding:6px 12px; border-radius:6px; cursor:pointer;">C# (.NET)</button>
+                            <button class="xyz-code-tab" onclick="switchSnippet(this, 'send-python')" style="background:transparent; border:none; color:#94A3B8; font-weight:700; padding:6px 12px; border-radius:6px; cursor:pointer;">Python</button>
+                            <button class="xyz-code-tab" onclick="switchSnippet(this, 'send-node')" style="background:transparent; border:none; color:#94A3B8; font-weight:700; padding:6px 12px; border-radius:6px; cursor:pointer;">Node.js</button>
+                            <button class="xyz-code-tab" onclick="switchSnippet(this, 'send-php')" style="background:transparent; border:none; color:#94A3B8; font-weight:700; padding:6px 12px; border-radius:6px; cursor:pointer;">PHP</button>
                         </div>
-                        <button class="xyz-copy-btn">
-                            <i class="fa fa-copy"></i> Copy Code
+                        <button type="button" onclick="copySnippet(this)" style="background:#1E293B; border:none; color:#94A3B8; font-weight:700; font-size:0.8rem; padding:6px 12px; border-radius:6px; cursor:pointer;">
+                            <i class="fa fa-copy"></i> Copy
                         </button>
                     </div>
-                    <pre class="xyz-code-content"><code>curl -X POST "https://api.xyzsms.com/api/sms/send" \
-  -H "ApiKey: YOUR_API_TOKEN_HERE" \
+
+                    <pre id="send-curl" class="snippet-pane" style="margin:0; background:#020617; color:#E2E8F0; padding:20px; font-family:var(--xyz-font-mono); font-size:0.88rem; border-bottom-left-radius:10px; border-bottom-right-radius:10px; overflow-x:auto;"><code>curl -X POST "https://api.xyzsms.com/api/sms/send" \
+  -H "X-Api-Key: xyz_key_YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "senderId": "YourBrand",
-    "recipients": "2348012345678,2348098765432",
-    "content": "Dear Customer, thank you for your patronage! Enjoy 10% off with code THANKYOU."
+    "senderId": "XYZSMS",
+    "recipients": "08012345678,08123456789",
+    "messageContent": "Hello! Your one-time verification code is 849201. Valid for 10 minutes."
   }'</code></pre>
+
+                    <pre id="send-csharp" class="snippet-pane" style="display:none; margin:0; background:#020617; color:#E2E8F0; padding:20px; font-family:var(--xyz-font-mono); font-size:0.88rem; border-bottom-left-radius:10px; border-bottom-right-radius:10px; overflow-x:auto;"><code>using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+
+using var client = new HttpClient();
+client.DefaultRequestHeaders.Add("X-Api-Key", "xyz_key_YOUR_API_KEY");
+
+var payload = new
+{
+    senderId = "XYZSMS",
+    recipients = "08012345678,08123456789",
+    messageContent = "Hello! Your one-time verification code is 849201. Valid for 10 minutes."
+};
+
+var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+var response = await client.PostAsync("https://api.xyzsms.com/api/sms/send", content);
+string result = await response.Content.ReadAsStringAsync();
+Console.WriteLine(result);</code></pre>
+
+                    <pre id="send-python" class="snippet-pane" style="display:none; margin:0; background:#020617; color:#E2E8F0; padding:20px; font-family:var(--xyz-font-mono); font-size:0.88rem; border-bottom-left-radius:10px; border-bottom-right-radius:10px; overflow-x:auto;"><code>import requests
+
+url = "https://api.xyzsms.com/api/sms/send"
+headers = {
+    "X-Api-Key": "xyz_key_YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+payload = {
+    "senderId": "XYZSMS",
+    "recipients": "08012345678,08123456789",
+    "messageContent": "Hello! Your one-time verification code is 849201. Valid for 10 minutes."
+}
+
+response = requests.post(url, json=payload, headers=headers)
+print(response.json())</code></pre>
+
+                    <pre id="send-node" class="snippet-pane" style="display:none; margin:0; background:#020617; color:#E2E8F0; padding:20px; font-family:var(--xyz-font-mono); font-size:0.88rem; border-bottom-left-radius:10px; border-bottom-right-radius:10px; overflow-x:auto;"><code>const response = await fetch("https://api.xyzsms.com/api/sms/send", {
+  method: "POST",
+  headers: {
+    "X-Api-Key": "xyz_key_YOUR_API_KEY",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    senderId: "XYZSMS",
+    recipients: "08012345678,08123456789",
+    messageContent: "Hello! Your one-time verification code is 849201. Valid for 10 minutes."
+  })
+});
+const data = await response.json();
+console.log(data);</code></pre>
+
+                    <pre id="send-php" class="snippet-pane" style="display:none; margin:0; background:#020617; color:#E2E8F0; padding:20px; font-family:var(--xyz-font-mono); font-size:0.88rem; border-bottom-left-radius:10px; border-bottom-right-radius:10px; overflow-x:auto;"><code>&lt;?php
+$payload = [
+    "senderId" => "XYZSMS",
+    "recipients" => "08012345678,08123456789",
+    "messageContent" => "Hello! Your one-time verification code is 849201. Valid for 10 minutes."
+];
+
+$ch = curl_init("https://api.xyzsms.com/api/sms/send");
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    "X-Api-Key: xyz_key_YOUR_API_KEY",
+    "Content-Type: application/json"
+]);
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+
+$response = curl_exec($ch);
+curl_close($ch);
+echo $response;
+?&gt;</code></pre>
                 </div>
 
-                <h4 style="font-size:0.95rem; font-weight:700; text-transform:uppercase; color:var(--xyz-gray-500); margin-bottom:8px;">Response (200 OK)</h4>
+                <h4 style="font-size:0.95rem; font-weight:700; text-transform:uppercase; color:var(--xyz-gray-500); margin-bottom:8px;">Sample JSON Response (200 OK)</h4>
                 <div style="background:var(--xyz-dark-900); padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.85rem; color:#10B981; overflow-x:auto;">
 <pre style="margin:0; color:inherit;">{
   "success": true,
-  "responseCode": "200",
-  "message": "Message queued and dispatched successfully",
-  "description": "2 message(s) sent. 2 units deducted."
+  "message": "Message dispatched successfully",
+  "totalUnitsUsed": 3.0,
+  "recipientsCount": 2,
+  "batchReference": "XYZ-TXN-840291"
 }</pre>
                 </div>
             </div>
 
-            <!-- Endpoint 2: Check Balance -->
+            <!-- ========================================== -->
+            <!-- ENDPOINT 2: CHECK BALANCE                  -->
+            <!-- ========================================== -->
             <div class="xyz-feature-card" style="padding:32px;">
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
-                    <span style="background:var(--xyz-indigo); color:white; font-weight:800; font-size:0.8rem; padding:4px 10px; border-radius:6px; font-family:var(--xyz-font-mono);">GET</span>
-                    <h3 style="margin:0; font-size:1.3rem; font-family:var(--xyz-font-mono); color:var(--xyz-dark-900);">/api/sms/balance</h3>
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="background:#6366F1; color:white; font-weight:800; font-size:0.8rem; padding:4px 10px; border-radius:6px; font-family:var(--xyz-font-mono);">GET</span>
+                        <h3 style="margin:0; font-size:1.35rem; font-family:var(--xyz-font-mono); color:var(--xyz-dark-900);">/api/sms/balance</h3>
+                    </div>
+                    <span style="background:#F0FDF4; color:#16A34A; font-size:0.82rem; font-weight:700; padding:4px 12px; border-radius:100px;">Real-Time Wallet</span>
                 </div>
-                <p style="color:var(--xyz-gray-600); margin-bottom:20px;">
-                    Returns the available messaging credit units remaining in your account.
+                <p style="color:var(--xyz-gray-600); margin-bottom:20px; font-size:1.02rem;">
+                    Queries your available SMS messaging unit balance, associated username, email, and currency.
                 </p>
 
-                <h4 style="font-size:0.95rem; font-weight:700; text-transform:uppercase; color:var(--xyz-gray-500); margin-bottom:8px;">Response (200 OK)</h4>
+                <div style="background:#0F172A; padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.88rem; color:#E2E8F0; margin-bottom:20px; overflow-x:auto;">
+                    <code>curl -X GET "https://api.xyzsms.com/api/sms/balance" -H "X-Api-Key: xyz_key_YOUR_API_KEY"</code>
+                </div>
+
+                <h4 style="font-size:0.95rem; font-weight:700; text-transform:uppercase; color:var(--xyz-gray-500); margin-bottom:8px;">Sample JSON Response (200 OK)</h4>
                 <div style="background:var(--xyz-dark-900); padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.85rem; color:#10B981; overflow-x:auto;">
 <pre style="margin:0; color:inherit;">{
-  "balance": 4820.50
+  "success": true,
+  "username": "peter_onwuka",
+  "email": "peter@example.com",
+  "unitsBalance": 15240.50,
+  "currency": "NGN",
+  "serverTime": "2026-08-21T08:30:00Z"
 }</pre>
                 </div>
             </div>
 
-            <!-- Endpoint 3: View History -->
+            <!-- ========================================== -->
+            <!-- ENDPOINT 3: DELIVERY HISTORY & LOGS        -->
+            <!-- ========================================== -->
             <div class="xyz-feature-card" style="padding:32px;">
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
-                    <span style="background:var(--xyz-indigo); color:white; font-weight:800; font-size:0.8rem; padding:4px 10px; border-radius:6px; font-family:var(--xyz-font-mono);">GET</span>
-                    <h3 style="margin:0; font-size:1.3rem; font-family:var(--xyz-font-mono); color:var(--xyz-dark-900);">/api/sms/history</h3>
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="background:#6366F1; color:white; font-weight:800; font-size:0.8rem; padding:4px 10px; border-radius:6px; font-family:var(--xyz-font-mono);">GET</span>
+                        <h3 style="margin:0; font-size:1.35rem; font-family:var(--xyz-font-mono); color:var(--xyz-dark-900);">/api/sms/history</h3>
+                    </div>
+                    <span style="background:#FEF3C7; color:#D97706; font-size:0.82rem; font-weight:700; padding:4px 12px; border-radius:100px;">Paginated & Filterable</span>
                 </div>
-                <p style="color:var(--xyz-gray-600); margin-bottom:20px;">
-                    Retrieves the 50 most recent message records dispatched via your account.
+                <p style="color:var(--xyz-gray-600); margin-bottom:16px; font-size:1.02rem;">
+                    Retrieves outbound message delivery logs with complete server-side pagination, total counts, and multi-parameter filters.
                 </p>
 
-                <h4 style="font-size:0.95rem; font-weight:700; text-transform:uppercase; color:var(--xyz-gray-500); margin-bottom:8px;">Response (200 OK)</h4>
+                <!-- Query Parameters Table -->
+                <div style="margin-bottom:20px; overflow-x:auto;">
+                    <table class="table" style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:8px; width:100%; font-size:0.9rem;">
+                        <thead>
+                            <tr style="background:#F8FAFC; color:#475569;">
+                                <th style="padding:10px 14px;">Parameter</th>
+                                <th style="padding:10px 14px;">Type</th>
+                                <th style="padding:10px 14px;">Default</th>
+                                <th style="padding:10px 14px;">Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding:10px 14px; font-family:var(--xyz-font-mono); font-weight:700; color:#6366F1;">page</td>
+                                <td style="padding:10px 14px;">integer</td>
+                                <td style="padding:10px 14px;">1</td>
+                                <td style="padding:10px 14px;">Page number (1-based index).</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 14px; font-family:var(--xyz-font-mono); font-weight:700; color:#6366F1;">pageSize</td>
+                                <td style="padding:10px 14px;">integer</td>
+                                <td style="padding:10px 14px;">50</td>
+                                <td style="padding:10px 14px;">Number of records per page (max: 200).</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 14px; font-family:var(--xyz-font-mono); font-weight:700; color:#6366F1;">senderId</td>
+                                <td style="padding:10px 14px;">string</td>
+                                <td style="padding:10px 14px;">null</td>
+                                <td style="padding:10px 14px;">Optional filter by Sender ID (e.g. <code>XYZSMS</code>).</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 14px; font-family:var(--xyz-font-mono); font-weight:700; color:#6366F1;">recipient</td>
+                                <td style="padding:10px 14px;">string</td>
+                                <td style="padding:10px 14px;">null</td>
+                                <td style="padding:10px 14px;">Optional filter by recipient phone number.</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:10px 14px; font-family:var(--xyz-font-mono); font-weight:700; color:#6366F1;">status</td>
+                                <td style="padding:10px 14px;">string</td>
+                                <td style="padding:10px 14px;">null</td>
+                                <td style="padding:10px 14px;">Optional filter by status (<code>Sent</code>, <code>Delivered</code>, <code>Failed</code>).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="background:#0F172A; padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.88rem; color:#E2E8F0; margin-bottom:20px; overflow-x:auto;">
+                    <code>curl -X GET "https://api.xyzsms.com/api/sms/history?page=1&pageSize=20&senderId=XYZSMS" -H "X-Api-Key: xyz_key_YOUR_API_KEY"</code>
+                </div>
+
+                <h4 style="font-size:0.95rem; font-weight:700; text-transform:uppercase; color:var(--xyz-gray-500); margin-bottom:8px;">Sample JSON Response (200 OK)</h4>
                 <div style="background:var(--xyz-dark-900); padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.85rem; color:#10B981; overflow-x:auto;">
-<pre style="margin:0; color:inherit;">[
-  {
-    "senderId": "YourBrand",
-    "recipients": "2348012345678",
-    "messageContent": "Dear Customer, thank you for your patronage! Enjoy 10% off with code THANKYOU.",
-    "unitsUsed": 1.0,
-    "status": "Sent",
-    "deliveredDate": "2026-08-19T10:14:22Z"
-  }
-]</pre>
+<pre style="margin:0; color:inherit;">{
+  "success": true,
+  "page": 1,
+  "pageSize": 20,
+  "totalRecords": 184,
+  "totalPages": 10,
+  "hasNextPage": true,
+  "hasPreviousPage": false,
+  "records": [
+    {
+      "messageId": 2048,
+      "senderId": "XYZSMS",
+      "recipients": "08012345678",
+      "messageContent": "Your security OTP is 492193",
+      "unitsUsed": 1.5,
+      "status": "Sent",
+      "dateSent": "2026-08-21T07:50:00Z"
+    }
+  ]
+}</pre>
                 </div>
             </div>
+
+            <!-- ========================================== -->
+            <!-- ENDPOINT 4: SENDER IDS & APPROVAL STATUS   -->
+            <!-- ========================================== -->
+            <div class="xyz-feature-card" style="padding:32px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="background:#6366F1; color:white; font-weight:800; font-size:0.8rem; padding:4px 10px; border-radius:6px; font-family:var(--xyz-font-mono);">GET</span>
+                        <h3 style="margin:0; font-size:1.35rem; font-family:var(--xyz-font-mono); color:var(--xyz-dark-900);">/api/sms/senderids</h3>
+                    </div>
+                    <span style="background:#F3E8FF; color:#9333EA; font-size:0.82rem; font-weight:700; padding:4px 12px; border-radius:100px;">Sender Verification</span>
+                </div>
+                <p style="color:var(--xyz-gray-600); margin-bottom:20px; font-size:1.02rem;">
+                    Retrieves all Sender IDs registered under your client account along with telecommunication operator KYC approval states.
+                </p>
+
+                <div style="background:#0F172A; padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.88rem; color:#E2E8F0; margin-bottom:20px; overflow-x:auto;">
+                    <code>curl -X GET "https://api.xyzsms.com/api/sms/senderids" -H "X-Api-Key: xyz_key_YOUR_API_KEY"</code>
+                </div>
+
+                <h4 style="font-size:0.95rem; font-weight:700; text-transform:uppercase; color:var(--xyz-gray-500); margin-bottom:8px;">Sample JSON Response (200 OK)</h4>
+                <div style="background:var(--xyz-dark-900); padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.85rem; color:#10B981; overflow-x:auto;">
+<pre style="margin:0; color:inherit;">{
+  "success": true,
+  "count": 2,
+  "senderIds": [
+    {
+      "id": 10,
+      "senderId": "XYZSMS",
+      "status": "Approved",
+      "isApproved": true,
+      "message": null
+    },
+    {
+      "id": 12,
+      "senderId": "MYSTORE",
+      "status": "Pending",
+      "isApproved": false,
+      "message": "Awaiting telecommunication operator KYC documentation review"
+    }
+  ]
+}</pre>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- ENDPOINT 5: NETWORK PRICING & BASE RATES   -->
+            <!-- ========================================== -->
+            <div class="xyz-feature-card" style="padding:32px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="background:#6366F1; color:white; font-weight:800; font-size:0.8rem; padding:4px 10px; border-radius:6px; font-family:var(--xyz-font-mono);">GET</span>
+                        <h3 style="margin:0; font-size:1.35rem; font-family:var(--xyz-font-mono); color:var(--xyz-dark-900);">/api/sms/pricing</h3>
+                    </div>
+                    <span style="background:#ECFDF5; color:#059669; font-size:0.82rem; font-weight:700; padding:4px 12px; border-radius:100px;">Live Rates & Carriers</span>
+                </div>
+                <p style="color:var(--xyz-gray-600); margin-bottom:20px; font-size:1.02rem;">
+                    Retrieves base unit costs, default page rates, and real-time network pricing with international dial codes.
+                </p>
+
+                <div style="background:#0F172A; padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.88rem; color:#E2E8F0; margin-bottom:20px; overflow-x:auto;">
+                    <code>curl -X GET "https://api.xyzsms.com/api/sms/pricing" -H "X-Api-Key: xyz_key_YOUR_API_KEY"</code>
+                </div>
+
+                <h4 style="font-size:0.95rem; font-weight:700; text-transform:uppercase; color:var(--xyz-gray-500); margin-bottom:8px;">Sample JSON Response (200 OK)</h4>
+                <div style="background:var(--xyz-dark-900); padding:16px 20px; border-radius:var(--xyz-radius-md); font-family:var(--xyz-font-mono); font-size:0.85rem; color:#10B981; overflow-x:auto;">
+<pre style="margin:0; color:inherit;">{
+  "success": true,
+  "currency": "NGN",
+  "basePricePerUnit": 2.0,
+  "flatUnitsPerSms": 1.0,
+  "count": 4,
+  "rates": [
+    {
+      "country": "Nigeria",
+      "networkProvider": "MTN",
+      "unitsPerSms": 1.5,
+      "estimatedCostPerSms": 3.0,
+      "internationalDialCode": "234"
+    },
+    {
+      "country": "Nigeria",
+      "networkProvider": "Airtel",
+      "unitsPerSms": 1.5,
+      "estimatedCostPerSms": 3.0,
+      "internationalDialCode": "234"
+    },
+    {
+      "country": "Nigeria",
+      "networkProvider": "Glo",
+      "unitsPerSms": 1.5,
+      "estimatedCostPerSms": 3.0,
+      "internationalDialCode": "234"
+    },
+    {
+      "country": "Nigeria",
+      "networkProvider": "9mobile",
+      "unitsPerSms": 1.5,
+      "estimatedCostPerSms": 3.0,
+      "internationalDialCode": "234"
+    }
+  ]
+}</pre>
+                </div>
+            </div>
+
         </div>
     </div>
 </section>
+
+<!-- Interactive Language Switcher Script -->
+<script>
+    function switchSnippet(btn, paneId) {
+        var wrapper = btn.closest('.xyz-code-block-wrapper');
+        wrapper.querySelectorAll('.xyz-code-tab').forEach(function(tab) {
+            tab.classList.remove('active');
+            tab.style.color = '#94A3B8';
+        });
+        btn.classList.add('active');
+        btn.style.color = '#CBD5E1';
+
+        wrapper.querySelectorAll('.snippet-pane').forEach(function(pane) {
+            pane.style.display = 'none';
+        });
+        var targetPane = document.getElementById(paneId);
+        if (targetPane) {
+            targetPane.style.display = 'block';
+        }
+    }
+
+    function copySnippet(btn) {
+        var wrapper = btn.closest('.xyz-code-block-wrapper');
+        var activePane = wrapper.querySelector('.snippet-pane:not([style*="display: none"])') || wrapper.querySelector('.snippet-pane');
+        if (activePane) {
+            var text = activePane.innerText;
+            navigator.clipboard.writeText(text).then(function() {
+                var orig = btn.innerHTML;
+                btn.innerHTML = '<i class="fa fa-check" style="color:#10B981;"></i> Copied!';
+                setTimeout(function() {
+                    btn.innerHTML = orig;
+                }, 2000);
+            });
+        }
+    }
+</script>
