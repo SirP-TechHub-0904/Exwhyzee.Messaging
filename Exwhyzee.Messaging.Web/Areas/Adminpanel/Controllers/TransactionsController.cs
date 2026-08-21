@@ -366,7 +366,40 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             decimal availableFund = clearedTxns.Sum(t => t.AmountPaid ?? t.Amount);
 
             var paystackService = new PaystackTransferService();
+
+            // Ensure recipient code exists or generate a fresh one
+            if (string.IsNullOrWhiteSpace(adminSetting.PaystackRecipientCode))
+            {
+                var recipientRes = await paystackService.CreateTransferRecipientAsync(
+                    adminSetting.OutflowAccountName,
+                    adminSetting.OutflowAccountNumber,
+                    adminSetting.OutflowBankCode);
+
+                if (recipientRes.Success)
+                {
+                    adminSetting.PaystackRecipientCode = recipientRes.RecipientCode;
+                    await db.SaveChangesAsync();
+                }
+            }
+
             var transferRes = await paystackService.InitiateTransferAsync(availableFund, adminSetting.PaystackRecipientCode, $"Gateway Outflow Settlement ({User.Identity.Name})");
+
+            // Auto-recovery: If recipient code was invalid/expired on current Paystack environment, re-create and retry
+            if (!transferRes.Success && transferRes.Message != null && transferRes.Message.ToLower().Contains("recipient"))
+            {
+                var recipientRes = await paystackService.CreateTransferRecipientAsync(
+                    adminSetting.OutflowAccountName,
+                    adminSetting.OutflowAccountNumber,
+                    adminSetting.OutflowBankCode);
+
+                if (recipientRes.Success)
+                {
+                    adminSetting.PaystackRecipientCode = recipientRes.RecipientCode;
+                    await db.SaveChangesAsync();
+
+                    transferRes = await paystackService.InitiateTransferAsync(availableFund, adminSetting.PaystackRecipientCode, $"Gateway Outflow Settlement ({User.Identity.Name})");
+                }
+            }
 
             if (!transferRes.Success)
             {

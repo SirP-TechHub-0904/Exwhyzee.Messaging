@@ -36,7 +36,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         private ISendEmail _email = new SendEmail();
         private IZeptoMailService _zeptoMail = new ZeptoMailService();
 
-        private IPayStackApi _paystack = new PayStackApi(AppConfig.PayStackSecretKey);
+        private IPayStackApi _paystack => new PayStackApi(AppConfig.PayStackSecretKey);
         private ITransactionService _transactions = new TransactionService();
         private IDashboardService _dashboardService = new DashboardService();
         private IPaystackTransactionService _paystackTransactionService = new PaystackTransactionService();

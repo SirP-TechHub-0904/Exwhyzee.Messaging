@@ -37,6 +37,8 @@ namespace Exwhyzee.Messaging.Core.Services
         {
             try
             {
+                var builder = new ConfigurationBuilder();
+
                 string jsonPath = System.IO.Path.Combine(AppContext.BaseDirectory, "appsettings.json");
                 if (!System.IO.File.Exists(jsonPath))
                 {
@@ -44,16 +46,55 @@ namespace Exwhyzee.Messaging.Core.Services
                 }
                 if (System.IO.File.Exists(jsonPath))
                 {
-                    return new ConfigurationBuilder()
-                        .AddJsonFile(jsonPath, optional: true, reloadOnChange: true)
-                        .Build();
+                    builder.AddJsonFile(jsonPath, optional: true, reloadOnChange: true);
                 }
+
+                // Check .env files
+                var possibleEnvPaths = new[]
+                {
+                    System.IO.Path.Combine(AppContext.BaseDirectory, ".env"),
+                    System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), ".env"),
+                    System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "..", "Exwhyzee.Messaging.Web", ".env")
+                };
+
+                foreach (var envPath in possibleEnvPaths)
+                {
+                    if (System.IO.File.Exists(envPath))
+                    {
+                        foreach (var rawLine in System.IO.File.ReadAllLines(envPath))
+                        {
+                            var line = rawLine.Trim();
+                            if (!string.IsNullOrEmpty(line) && !line.StartsWith("#") && line.Contains('='))
+                            {
+                                var parts = line.Split(new[] { '=' }, 2);
+                                Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                builder.AddEnvironmentVariables();
+                return builder.Build();
             }
             catch { }
             return null;
         }
 
-        private string SecretKey => _configuration?["PaystackSettings:SecretKey"] ?? "sk_test_8f91d590f63da0677e1bbd5f47f9f0a8b2bc5119";
+        private string SecretKey
+        {
+            get
+            {
+                var key = _configuration?["PaystackSettings:SecretKey"];
+                if (!string.IsNullOrWhiteSpace(key)) return key;
+
+                key = Environment.GetEnvironmentVariable("PaystackSettings__SecretKey")
+                    ?? Environment.GetEnvironmentVariable("PayStackSecretKey");
+                if (!string.IsNullOrWhiteSpace(key)) return key;
+
+                return "sk_test_8f91d590f63da0677e1bbd5f47f9f0a8b2bc5119";
+            }
+        }
 
         private void SetAuthHeader()
         {

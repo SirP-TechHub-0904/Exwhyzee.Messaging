@@ -38,7 +38,9 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 
         public ActionResult Documentation()
         {
-            ViewBag.ApiBaseUrl = _configuration["AppSettings:ApiBaseUrl"];
+            ViewBag.ApiBaseUrl = _configuration["AppSettings:ApiBaseUrl"] 
+                ?? Environment.GetEnvironmentVariable("AppSettings__ApiBaseUrl") 
+                ?? $"{Request.Scheme}://{Request.Host}";
             return View();
         }
 

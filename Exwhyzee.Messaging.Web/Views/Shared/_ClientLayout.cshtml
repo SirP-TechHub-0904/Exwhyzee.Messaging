@@ -26,15 +26,22 @@
     <!-- Web App Manifest for iOS/Android Push Notifications -->
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- OneSignal Web Push SDK (Auto-initializes when AppId is configured in appsettings.json) -->
-    @if (!string.IsNullOrEmpty(Configuration["OneSignal:AppId"]) && !Configuration["OneSignal:AppId"].Contains("YOUR_ONESIGNAL"))
+    <!-- OneSignal Web Push SDK (Auto-initializes when AppId is configured in .env / appsettings) -->
+    @{
+        var oneSignalAppId = Configuration["OneSignal:AppId"];
+        if (string.IsNullOrWhiteSpace(oneSignalAppId))
+        {
+            oneSignalAppId = Environment.GetEnvironmentVariable("OneSignal__AppId");
+        }
+    }
+    @if (!string.IsNullOrEmpty(oneSignalAppId) && !oneSignalAppId.Contains("YOUR_ONESIGNAL"))
     {
         <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
         <script>
             window.OneSignalDeferred = window.OneSignalDeferred || [];
             OneSignalDeferred.push(async function(OneSignal) {
                 await OneSignal.init({
-                    appId: "@Configuration["OneSignal:AppId"]",
+                    appId: "@oneSignalAppId",
                     allowLocalhostAsSecureOrigin: true,
                     notifyButton: {
                         enable: false

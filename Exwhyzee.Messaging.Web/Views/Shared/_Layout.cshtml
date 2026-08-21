@@ -37,14 +37,21 @@
 
     <!-- OneSignal Web Push SDK -->
     @inject Microsoft.Extensions.Configuration.IConfiguration Configuration
-    @if (!string.IsNullOrEmpty(Configuration["OneSignal:AppId"]) && !Configuration["OneSignal:AppId"].Contains("YOUR_ONESIGNAL"))
+    @{
+        var publicOneSignalAppId = Configuration["OneSignal:AppId"];
+        if (string.IsNullOrWhiteSpace(publicOneSignalAppId))
+        {
+            publicOneSignalAppId = Environment.GetEnvironmentVariable("OneSignal__AppId");
+        }
+    }
+    @if (!string.IsNullOrEmpty(publicOneSignalAppId) && !publicOneSignalAppId.Contains("YOUR_ONESIGNAL"))
     {
         <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
         <script>
             window.OneSignalDeferred = window.OneSignalDeferred || [];
             OneSignalDeferred.push(async function(OneSignal) {
                 await OneSignal.init({
-                    appId: "@Configuration["OneSignal:AppId"]",
+                    appId: "@publicOneSignalAppId",
                     allowLocalhostAsSecureOrigin: true,
                 });
             });

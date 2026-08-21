@@ -137,8 +137,11 @@ namespace Exwhyzee.Messaging.Core.Services
         {
             try
             {
-                string appId = _configuration["OneSignal:AppId"];
-                string restKey = _configuration["OneSignal:RestApiKey"];
+                string appId = _configuration?["OneSignal:AppId"];
+                if (string.IsNullOrWhiteSpace(appId)) appId = Environment.GetEnvironmentVariable("OneSignal__AppId");
+
+                string restKey = _configuration?["OneSignal:RestApiKey"];
+                if (string.IsNullOrWhiteSpace(restKey)) restKey = Environment.GetEnvironmentVariable("OneSignal__RestApiKey");
 
                 if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(restKey) || appId.Contains("YOUR_ONESIGNAL"))
                 {

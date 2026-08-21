@@ -44,6 +44,8 @@ namespace Exwhyzee.Messaging.Core.Services
         {
             try
             {
+                var builder = new ConfigurationBuilder();
+
                 string jsonPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
                 if (!File.Exists(jsonPath))
                 {
@@ -51,17 +53,52 @@ namespace Exwhyzee.Messaging.Core.Services
                 }
                 if (File.Exists(jsonPath))
                 {
-                    return new ConfigurationBuilder()
-                        .AddJsonFile(jsonPath, optional: true, reloadOnChange: true)
-                        .Build();
+                    builder.AddJsonFile(jsonPath, optional: true, reloadOnChange: true);
                 }
+
+                var possibleEnvPaths = new[]
+                {
+                    Path.Combine(AppContext.BaseDirectory, ".env"),
+                    Path.Combine(Directory.GetCurrentDirectory(), ".env"),
+                    Path.Combine(Directory.GetCurrentDirectory(), "..", "Exwhyzee.Messaging.Web", ".env")
+                };
+
+                foreach (var envPath in possibleEnvPaths)
+                {
+                    if (File.Exists(envPath))
+                    {
+                        foreach (var rawLine in File.ReadAllLines(envPath))
+                        {
+                            var line = rawLine.Trim();
+                            if (!string.IsNullOrEmpty(line) && !line.StartsWith("#") && line.Contains('='))
+                            {
+                                var parts = line.Split(new[] { '=' }, 2);
+                                Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                builder.AddEnvironmentVariables();
+                return builder.Build();
             }
             catch { }
             return null;
         }
 
-        private string[] TicketSupportEmails => (_configuration?["AppSettings:TicketSupportEmails"] ?? string.Empty)
-            .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+        private string[] TicketSupportEmails
+        {
+            get
+            {
+                var val = _configuration?["AppSettings:TicketSupportEmails"];
+                if (string.IsNullOrWhiteSpace(val))
+                {
+                    val = Environment.GetEnvironmentVariable("AppSettings__TicketSupportEmails");
+                }
+                return (val ?? string.Empty).Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            }
+        }
 
         public async Task<SupportTicket> CreateTicketAsync(SupportTicket ticket)
         {
