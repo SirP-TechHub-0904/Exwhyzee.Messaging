@@ -365,18 +365,36 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
         public async Task<ActionResult> ClientDetails(string id)
         {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                TempData["error"] = "User ID is required.";
+                return RedirectToAction("Index");
+            }
+
+            var user = await UserManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                TempData["error"] = "User account not found.";
+                return RedirectToAction("Index");
+            }
+
             var clientDetails = await _clientService.GetClientDetailsByUserId(id);
             if (clientDetails == null)
             {
-                TempData["error"] = "User Registration Not Completed";
-                return RedirectToAction("Index");
+                var settings = await db.AdminSettings.FirstOrDefaultAsync();
+                clientDetails = new Client
+                {
+                    UserId = user.Id,
+                    Units = settings?.UnitPerNewMember ?? 10m,
+                    FirstName = user.UserName,
+                    Surname = ""
+                };
+                db.Clients.Add(clientDetails);
+                await db.SaveChangesAsync();
             }
-            else
-            {
-                var user = await UserManager.FindByIdAsync(id);
-                ViewBag.Details = user;
-                return View(clientDetails);
-            }
+
+            ViewBag.Details = user;
+            return View(clientDetails);
         }
 
         [HttpPost]
@@ -628,6 +646,206 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             }
 
             return RedirectToAction("ManageRoles", new { id = userId });
+        }
+
+        #endregion
+
+        #region ADMIN PASSWORD RESET STUDIO
+
+        // GET: Adminpanel/ManageUsers/AdminResetPassword/{id}
+        public async Task<IActionResult> AdminResetPassword(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return RedirectToAction("Index");
+            }
+
+            var user = await UserManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                TempData["error"] = "User account not found.";
+                return RedirectToAction("Index");
+            }
+
+            ViewBag.User = user;
+            return View();
+        }
+
+        // POST: Adminpanel/ManageUsers/AdminResetPassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AdminResetPassword(string userId, string newPassword, bool sendEmailNotification)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(newPassword))
+            {
+                TempData["error"] = "User ID and New Password are required.";
+                return RedirectToAction("Index");
+            }
+
+            if (newPassword.Length < 6)
+            {
+                TempData["error"] = "Password must be at least 6 characters long.";
+                return RedirectToAction("AdminResetPassword", new { id = userId });
+            }
+
+            var user = await UserManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                TempData["error"] = "User account not found.";
+                return RedirectToAction("Index");
+            }
+
+            if (await UserManager.HasPasswordAsync(user))
+            {
+                var removeResult = await UserManager.RemovePasswordAsync(user);
+                if (!removeResult.Succeeded)
+                {
+                    TempData["error"] = "Error clearing previous password: " + string.Join(", ", removeResult.Errors.Select(e => e.Description));
+                    return RedirectToAction("AdminResetPassword", new { id = userId });
+                }
+            }
+
+            var addResult = await UserManager.AddPasswordAsync(user, newPassword);
+            if (!addResult.Succeeded)
+            {
+                TempData["error"] = "Failed to set new password: " + string.Join(", ", addResult.Errors.Select(e => e.Description));
+                return RedirectToAction("AdminResetPassword", new { id = userId });
+            }
+
+            await UserManager.UpdateSecurityStampAsync(user);
+
+            string emailStatusNote = "";
+            if (sendEmailNotification && !string.IsNullOrWhiteSpace(user.Email))
+            {
+                var zeptoMail = HttpContext.RequestServices.GetService<Exwhyzee.Messaging.Core.Services.IZeptoMailService>();
+                if (zeptoMail != null)
+                {
+                    var subject = "Your Account Password Has Been Reset by Admin";
+                    var body = $@"
+<div style=""font-family: 'Segoe UI', Arial, sans-serif; max-width: 580px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.06);"">
+    <div style=""background: #0B0F19; padding: 24px 28px; text-align: center; border-bottom: 3px solid #E50914;"">
+        <div style=""display: inline-block; background: #ffffff; padding: 8px 18px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); margin-bottom: 12px;"">
+            <img src=""{{LogoUrl}}"" alt=""Exwhyzee Bulk SMS"" style=""height: 38px; width: auto; display: block; margin: 0 auto;"" />
+        </div>
+        <h1 style=""color: #ffffff; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.3px;"">
+            Password Update Notice
+        </h1>
+    </div>
+    <div style=""padding: 32px 28px; color: #1e293b; line-height: 1.6;"">
+        <p style=""font-size: 15px; margin-top: 0;"">Hello <strong>{user.UserName}</strong>,</p>
+        <p style=""color: #475569; font-size: 14px;"">
+            Your <strong>Exwhyzee Bulk SMS</strong> account password has been reset by a system administrator.
+        </p>
+        <div style=""background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 18px; margin: 20px 0; text-align: center;"">
+            <small style=""display:block; color:#64748B; font-weight:700; text-transform:uppercase; margin-bottom:6px;"">Your New Temporary Password</small>
+            <div style=""font-family: monospace; font-size: 20px; font-weight: 800; color: #0F172A; letter-spacing: 2px;"">
+                {newPassword}
+            </div>
+        </div>
+        <p style=""color: #64748B; font-size: 13px;"">
+            For security, please log in and change your password immediately from your profile settings.
+        </p>
+        <div style=""text-align: center; margin-top: 24px;"">
+            <a href=""https://xyzsms.com/Account/Login"" style=""display: inline-block; background: #E50914; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-weight: 700; font-size: 14px;"">
+                Log In Now
+            </a>
+        </div>
+    </div>
+    <div style=""background: #f8fafc; padding: 14px 28px; font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9;"">
+        &copy; {DateTime.UtcNow.Year} xyzsms.com
+    </div>
+</div>";
+                    var sent = await zeptoMail.SendEmailAsync(body, user.Email, subject);
+                    emailStatusNote = sent ? " A notification email with the new credentials was dispatched to the user." : " (Email notification could not be delivered).";
+                }
+            }
+
+            TempData["success"] = $"Password for user @{user.UserName} was successfully reset.{emailStatusNote}";
+            return RedirectToAction("ClientDetails", new { id = userId });
+        }
+
+        // POST: Adminpanel/ManageUsers/QuickResetPassword (AJAX)
+        [HttpPost]
+        public async Task<IActionResult> QuickResetPassword(string userId, string newPassword, bool sendEmailNotification)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(newPassword))
+            {
+                return Json(new { success = false, message = "User ID and New Password are required." });
+            }
+
+            if (newPassword.Length < 6)
+            {
+                return Json(new { success = false, message = "Password must be at least 6 characters long." });
+            }
+
+            var user = await UserManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return Json(new { success = false, message = "User account not found." });
+            }
+
+            if (await UserManager.HasPasswordAsync(user))
+            {
+                var removeResult = await UserManager.RemovePasswordAsync(user);
+                if (!removeResult.Succeeded)
+                {
+                    return Json(new { success = false, message = "Error clearing old password: " + string.Join(", ", removeResult.Errors.Select(e => e.Description)) });
+                }
+            }
+
+            var addResult = await UserManager.AddPasswordAsync(user, newPassword);
+            if (!addResult.Succeeded)
+            {
+                return Json(new { success = false, message = "Error setting new password: " + string.Join(", ", addResult.Errors.Select(e => e.Description)) });
+            }
+
+            await UserManager.UpdateSecurityStampAsync(user);
+
+            bool emailSent = false;
+            if (sendEmailNotification && !string.IsNullOrWhiteSpace(user.Email))
+            {
+                var zeptoMail = HttpContext.RequestServices.GetService<Exwhyzee.Messaging.Core.Services.IZeptoMailService>();
+                if (zeptoMail != null)
+                {
+                    var subject = "Your Account Password Has Been Reset by Admin";
+                    var body = $@"
+<div style=""font-family: 'Segoe UI', Arial, sans-serif; max-width: 580px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.06);"">
+    <div style=""background: #0B0F19; padding: 24px 28px; text-align: center; border-bottom: 3px solid #E50914;"">
+        <div style=""display: inline-block; background: #ffffff; padding: 8px 18px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); margin-bottom: 12px;"">
+            <img src=""{{LogoUrl}}"" alt=""Exwhyzee Bulk SMS"" style=""height: 38px; width: auto; display: block; margin: 0 auto;"" />
+        </div>
+        <h1 style=""color: #ffffff; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.3px;"">
+            Password Update Notice
+        </h1>
+    </div>
+    <div style=""padding: 32px 28px; color: #1e293b; line-height: 1.6;"">
+        <p style=""font-size: 15px; margin-top: 0;"">Hello <strong>{user.UserName}</strong>,</p>
+        <p style=""color: #475569; font-size: 14px;"">
+            Your <strong>Exwhyzee Bulk SMS</strong> account password has been reset by an administrator.
+        </p>
+        <div style=""background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 18px; margin: 20px 0; text-align: center;"">
+            <small style=""display:block; color:#64748B; font-weight:700; text-transform:uppercase; margin-bottom:6px;"">Your New Password</small>
+            <div style=""font-family: monospace; font-size: 20px; font-weight: 800; color: #0F172A; letter-spacing: 2px;"">
+                {newPassword}
+            </div>
+        </div>
+        <p style=""color: #64748B; font-size: 13px;"">
+            Please log in and update your password if desired.
+        </p>
+    </div>
+    <div style=""background: #f8fafc; padding: 14px 28px; font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9;"">
+        &copy; {DateTime.UtcNow.Year} xyzsms.com
+    </div>
+</div>";
+                    emailSent = await zeptoMail.SendEmailAsync(body, user.Email, subject);
+                }
+            }
+
+            return Json(new
+            {
+                success = true,
+                message = $"Password for @{user.UserName} successfully reset!" + (sendEmailNotification ? (emailSent ? " Notification email dispatched." : " (Email could not be delivered).") : "")
+            });
         }
 
         #endregion

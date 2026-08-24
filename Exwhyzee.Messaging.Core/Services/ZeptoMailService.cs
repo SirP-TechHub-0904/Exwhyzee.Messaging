@@ -19,6 +19,7 @@ namespace Exwhyzee.Messaging.Core.Services
         Task<bool> SendWelcomeEmailAsync(string recipientEmail, string username, decimal freeUnits);
         Task<bool> SendPasswordResetOtpAsync(string recipientEmail, string username, string otpCode);
         Task<bool> SendPaymentSuccessReceiptAsync(string recipientEmail, string username, decimal unitsPurchased, decimal totalNewBalance, decimal amountPaid, string transactionRef, string paymentMethod = "Online (Paystack)");
+        Task<bool> SendTestEmailAsync(string recipientEmail);
     }
 
     public class ZeptoMailService : IZeptoMailService
@@ -83,7 +84,61 @@ namespace Exwhyzee.Messaging.Core.Services
             return null;
         }
 
-        private string LogoUrl => _configuration?["AppSettings:LogoUrl"] ?? "https://exwhyzee.ng/Content/image/SMS-LOGO.png";
+        private string GetSetting(string key, string defaultValue = "")
+        {
+            var val = _configuration?[key];
+            if (!string.IsNullOrWhiteSpace(val)) return val;
+
+            string envKey = key.Replace(":", "__");
+            val = Environment.GetEnvironmentVariable(envKey);
+            if (!string.IsNullOrWhiteSpace(val)) return val;
+
+            val = Environment.GetEnvironmentVariable(key);
+            if (!string.IsNullOrWhiteSpace(val)) return val;
+
+            // Fallback scan of all possible .env file locations
+            try
+            {
+                var possibleEnvPaths = new[]
+                {
+                    Path.Combine(AppContext.BaseDirectory, ".env"),
+                    Path.Combine(Directory.GetCurrentDirectory(), ".env"),
+                    Path.Combine(Directory.GetCurrentDirectory(), "Exwhyzee.Messaging.Web", ".env"),
+                    Path.Combine(Directory.GetCurrentDirectory(), "..", "Exwhyzee.Messaging.Web", ".env"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", ".env"),
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "Exwhyzee.Messaging.Web", ".env")
+                };
+
+                foreach (var envPath in possibleEnvPaths)
+                {
+                    if (File.Exists(envPath))
+                    {
+                        foreach (var rawLine in File.ReadAllLines(envPath))
+                        {
+                            var line = rawLine.Trim();
+                            if (line.StartsWith(envKey + "=") || line.StartsWith(key + "="))
+                            {
+                                int eqIdx = line.IndexOf('=');
+                                if (eqIdx > 0)
+                                {
+                                    var extracted = line.Substring(eqIdx + 1).Trim();
+                                    if (!string.IsNullOrWhiteSpace(extracted))
+                                    {
+                                        Environment.SetEnvironmentVariable(envKey, extracted);
+                                        return extracted;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return defaultValue;
+        }
+
+        private string LogoUrl => GetSetting("AppSettings:LogoUrl", "https://exwhyzee.ng/Content/image/SMS-LOGO.png");
 
         private string GetLogoFilePath()
         {
@@ -114,30 +169,39 @@ namespace Exwhyzee.Messaging.Core.Services
         {
             try
             {
-                var host = _configuration?["ZeptoMailSettings:Host"] ?? "smtp.zeptomail.com";
-                var portStr = _configuration?["ZeptoMailSettings:Port"] ?? "587";
+                var host = GetSetting("ZeptoMailSettings:Host", "smtp.zeptomail.com");
+                var portStr = GetSetting("ZeptoMailSettings:Port", "587");
                 int.TryParse(portStr, out int port);
                 if (port <= 0) port = 587;
 
-                var username = _configuration?["ZeptoMailSettings:UserName"] ?? "emailapikey";
-                var password = _configuration?["ZeptoMailSettings:Password"] ?? "";
-                var fromEmail = _configuration?["ZeptoMailSettings:FromEmail"] ?? "noreply@xyzsms.com";
-                var fromName = _configuration?["ZeptoMailSettings:FromName"] ?? "Exwhyzee Bulk SMS";
+                var username = GetSetting("ZeptoMailSettings:UserName", "emailapikey");
+                var password = GetSetting("ZeptoMailSettings:Password", "");
+                var fromEmail = GetSetting("ZeptoMailSettings:FromEmail", "noreply@xyzsms.com");
+                var fromName = GetSetting("ZeptoMailSettings:FromName", "Exwhyzee Bulk SMS");
+
+                var validRecipients = (recipients ?? Enumerable.Empty<string>())
+                    .Where(r => !string.IsNullOrWhiteSpace(r))
+                    .Select(r => r.Trim())
+                    .Distinct()
+                    .ToList();
+
+                var recipientSummary = string.Join(", ", validRecipients);
+
+                if (!validRecipients.Any())
+                {
+                    await LogEmailToDbAsync("N/A", subject, message, isSuccess: false, errorMessage: "No valid recipient email addresses provided.");
+                    return false;
+                }
 
                 var mimeMessage = new MimeMessage();
                 mimeMessage.From.Add(new MailboxAddress(fromName, fromEmail));
 
-                foreach (var rec in recipients.Where(r => !string.IsNullOrWhiteSpace(r)))
+                foreach (var rec in validRecipients)
                 {
-                    mimeMessage.To.Add(new MailboxAddress(rec.Trim(), rec.Trim()));
+                    mimeMessage.To.Add(new MailboxAddress(rec, rec));
                 }
 
-                if (!mimeMessage.To.Any())
-                {
-                    return false;
-                }
-
-                mimeMessage.Subject = subject;
+                mimeMessage.Subject = subject ?? "(No Subject)";
 
                 // Build HTML body with inline embedded logo (CID) so it renders in all email clients without proxy errors
                 var builder = new BodyBuilder();
@@ -147,11 +211,11 @@ namespace Exwhyzee.Messaging.Core.Services
                 {
                     var imageResource = builder.LinkedResources.Add(logoPath);
                     imageResource.ContentId = "sms-logo";
-                    message = message.Replace("{LogoUrl}", "cid:sms-logo");
+                    message = message?.Replace("{LogoUrl}", "cid:sms-logo") ?? "";
                 }
                 else
                 {
-                    message = message.Replace("{LogoUrl}", LogoUrl);
+                    message = message?.Replace("{LogoUrl}", LogoUrl) ?? "";
                 }
 
                 builder.HtmlBody = message;
@@ -170,16 +234,19 @@ namespace Exwhyzee.Messaging.Core.Services
                 await client.SendAsync(mimeMessage);
                 await client.DisconnectAsync(true);
 
-                var recipientSummary = string.Join(", ", recipients.Where(r => !string.IsNullOrWhiteSpace(r)).Select(r => r.Trim()));
                 await LogEmailToDbAsync(recipientSummary, subject, message, isSuccess: true, errorMessage: null);
-
                 return true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[ZeptoMail Exception]: {ex.Message}");
-                var recipientSummary = string.Join(", ", recipients.Where(r => !string.IsNullOrWhiteSpace(r)).Select(r => r.Trim()));
-                await LogEmailToDbAsync(recipientSummary, subject, message, isSuccess: false, errorMessage: ex.Message);
+                var validRecipients = (recipients ?? Enumerable.Empty<string>())
+                    .Where(r => !string.IsNullOrWhiteSpace(r))
+                    .Select(r => r.Trim())
+                    .ToList();
+                var recipientSummary = string.Join(", ", validRecipients);
+                if (string.IsNullOrWhiteSpace(recipientSummary)) recipientSummary = "N/A";
+                await LogEmailToDbAsync(recipientSummary, subject, message, isSuccess: false, errorMessage: $"{ex.GetType().Name}: {ex.Message}");
                 return false;
             }
         }
@@ -191,8 +258,8 @@ namespace Exwhyzee.Messaging.Core.Services
                 using var db = new ApplicationDbContext();
                 var log = new Exwhyzee.Messaging.Core.Models.EmailLog
                 {
-                    RecipientEmail = recipientEmail ?? "",
-                    Subject = subject ?? "",
+                    RecipientEmail = recipientEmail ?? "N/A",
+                    Subject = subject ?? "(No Subject)",
                     BodyHtml = bodyHtml ?? "",
                     DateSent = DateTime.UtcNow,
                     IsSuccess = isSuccess,
@@ -203,8 +270,53 @@ namespace Exwhyzee.Messaging.Core.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[EmailLog Exception]: {ex.Message}");
+                Console.WriteLine($"[EmailLog Exception]: {ex.Message} | Stack: {ex.StackTrace}");
             }
+        }
+
+        public async Task<bool> SendTestEmailAsync(string recipientEmail)
+        {
+            var subject = "[XYZSMS Test] SMTP & ZeptoMail Connection Test";
+            var html = $@"
+<div style=""font-family: 'Segoe UI', Arial, sans-serif; max-width: 580px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.06);"">
+    <div style=""background: #0B0F19; padding: 24px 28px; text-align: center; border-bottom: 3px solid #10B981;"">
+        <div style=""display: inline-block; background: #ffffff; padding: 8px 18px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); margin-bottom: 12px;"">
+            <img src=""{{LogoUrl}}"" alt=""Exwhyzee Bulk SMS"" style=""height: 38px; width: auto; display: block; margin: 0 auto;"" />
+        </div>
+        <h1 style=""color: #ffffff; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.3px;"">
+            ✓ ZeptoMail Live Test Delivery
+        </h1>
+    </div>
+    <div style=""padding: 32px 28px; color: #1e293b; line-height: 1.6;"">
+        <p style=""font-size: 15px; margin-top: 0; color: #0F172A; font-weight: 600;"">
+            Congratulations! Your email system is connected and working perfectly.
+        </p>
+        <div style=""background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px; margin: 20px 0; font-size: 13px;"">
+            <table style=""width: 100%; border-collapse: collapse;"">
+                <tr style=""border-bottom: 1px solid #E2E8F0;"">
+                    <td style=""padding: 8px 0; color: #64748B; font-weight: 600; width: 120px;"">Recipient:</td>
+                    <td style=""padding: 8px 0; color: #0F172A; font-weight: 700;"">{recipientEmail}</td>
+                </tr>
+                <tr style=""border-bottom: 1px solid #E2E8F0;"">
+                    <td style=""padding: 8px 0; color: #64748B; font-weight: 600;"">Timestamp:</td>
+                    <td style=""padding: 8px 0; color: #0F172A;"">{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</td>
+                </tr>
+                <tr>
+                    <td style=""padding: 8px 0; color: #64748B; font-weight: 600;"">Provider:</td>
+                    <td style=""padding: 8px 0; color: #10B981; font-weight: 700;"">ZeptoMail SMTP (TLS 1.2 / Port 587)</td>
+                </tr>
+            </table>
+        </div>
+        <p style=""color: #64748B; font-size: 13px; margin-bottom: 0;"">
+            This email was dispatched via the Admin Panel Email Logs test tool and has been logged into your live database.
+        </p>
+    </div>
+    <div style=""background: #f8fafc; padding: 14px 28px; font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9;"">
+        &copy; {DateTime.UtcNow.Year} Exwhyzee Bulk SMS (xyzsms.com)
+    </div>
+</div>";
+
+            return await SendEmailWithCustomRecipientAsync(html, new[] { recipientEmail }, subject);
         }
 
         public async Task<bool> SendEmailVerificationOtpAsync(string recipientEmail, string username, string otpCode)

@@ -3,17 +3,30 @@ using Microsoft.AspNetCore.Identity;
 using Exwhyzee.Messaging.Core.Models;
 
 // Load local .env file into environment variables if present
-var envFile = Path.Combine(Directory.GetCurrentDirectory(), ".env");
-if (File.Exists(envFile))
+var possibleEnvFiles = new[]
 {
-    foreach (var rawLine in File.ReadAllLines(envFile))
+    Path.Combine(Directory.GetCurrentDirectory(), ".env"),
+    Path.Combine(AppContext.BaseDirectory, ".env"),
+    Path.Combine(Directory.GetCurrentDirectory(), "Exwhyzee.Messaging.Web", ".env"),
+    Path.Combine(Directory.GetCurrentDirectory(), "..", "Exwhyzee.Messaging.Web", ".env"),
+    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", ".env"),
+    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "Exwhyzee.Messaging.Web", ".env")
+};
+
+foreach (var envFile in possibleEnvFiles)
+{
+    if (File.Exists(envFile))
     {
-        var line = rawLine.Trim();
-        if (!string.IsNullOrEmpty(line) && !line.StartsWith("#") && line.Contains('='))
+        foreach (var rawLine in File.ReadAllLines(envFile))
         {
-            var parts = line.Split(new[] { '=' }, 2);
-            Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
+            var line = rawLine.Trim();
+            if (!string.IsNullOrEmpty(line) && !line.StartsWith("#") && line.Contains('='))
+            {
+                var parts = line.Split(new[] { '=' }, 2);
+                Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
+            }
         }
+        break;
     }
 }
 

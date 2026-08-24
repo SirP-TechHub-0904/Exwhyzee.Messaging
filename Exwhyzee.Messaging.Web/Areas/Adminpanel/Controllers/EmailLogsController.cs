@@ -120,13 +120,81 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
                 {
                     db.EmailLogs.RemoveRange(oldLogs);
                     await db.SaveChangesAsync();
-                    TempData["success"] = $"Purged {count} email logs older than {days} days.";
-                }
-                else
-                {
                     TempData["Message"] = $"No email logs older than {days} days found.";
                 }
             }
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: Adminpanel/EmailLogs/SendTestEmail
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendTestEmail(string testRecipientEmail)
+        {
+            if (string.IsNullOrWhiteSpace(testRecipientEmail))
+            {
+                TempData["error"] = "Please provide a valid test recipient email address.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var zeptoMail = HttpContext.RequestServices.GetService<Exwhyzee.Messaging.Core.Services.IZeptoMailService>();
+            if (zeptoMail == null)
+            {
+                TempData["error"] = "ZeptoMail service is not registered.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                bool success = await zeptoMail.SendTestEmailAsync(testRecipientEmail.Trim());
+                if (success)
+                {
+                    TempData["success"] = $"Test email sent successfully to {testRecipientEmail}! Check the logs below.";
+                }
+                else
+                {
+                    TempData["error"] = $"Failed to send test email to {testRecipientEmail}. See the error log below for details.";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["error"] = $"Error sending test email: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: Adminpanel/EmailLogs/ResendEmail
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResendEmail(int id)
+        {
+            var log = await db.EmailLogs.FindAsync(id);
+            if (log == null)
+            {
+                TempData["error"] = "Email log entry not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var zeptoMail = HttpContext.RequestServices.GetService<Exwhyzee.Messaging.Core.Services.IZeptoMailService>();
+            if (zeptoMail == null)
+            {
+                TempData["error"] = "ZeptoMail service not available.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var recipients = log.RecipientEmail.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(e => e.Trim()).ToList();
+            bool sent = await zeptoMail.SendEmailWithCustomRecipientAsync(log.BodyHtml, recipients, log.Subject);
+
+            if (sent)
+            {
+                TempData["success"] = $"Email '{log.Subject}' was successfully re-dispatched to {log.RecipientEmail}.";
+            }
+            else
+            {
+                TempData["error"] = $"Failed to re-send email to {log.RecipientEmail}. Check latest log for failure reason.";
+            }
+
             return RedirectToAction(nameof(Index));
         }
     }
