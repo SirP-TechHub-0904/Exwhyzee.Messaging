@@ -111,7 +111,7 @@
                 <i class="fa fa-list-alt"></i> Transactions
             </a>
 
-            <a href="@Url.Action("ResetUserPassword", "Account", new { userId = Model.UserId, Area="" })" class="btn btn-warning" style="font-weight: 800; border-radius: 8px; padding: 10px 16px; color:#1E293B;">
+            <a href="@Url.Action("AdminResetPassword", "ManageUsers", new { area = "Adminpanel", id = Model.UserId })" class="btn btn-warning" style="font-weight: 800; border-radius: 8px; padding: 10px 16px; color:#1E293B; background: #F59E0B; border: none;">
                 <i class="fa fa-key"></i> Reset Password
             </a>
 

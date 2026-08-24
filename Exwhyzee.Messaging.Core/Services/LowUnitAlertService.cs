@@ -134,7 +134,7 @@ namespace Exwhyzee.Messaging.Core.Services
                 if (!string.IsNullOrWhiteSpace(recipientEmail))
                 {
                     var mailService = new ZeptoMailService();
-                    await mailService.SendEmailAsync(recipientEmail, subject, emailBody);
+                    await mailService.SendEmailAsync(emailBody, recipientEmail, subject);
                 }
             }
             catch (Exception ex)

@@ -34,7 +34,9 @@ namespace Exwhyzee.Messaging.Core.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
-                string connStr = Environment.GetEnvironmentVariable("ConnectionStrings__ZyxsmsDbConnection");
+                string connStr = Environment.GetEnvironmentVariable("ConnectionStrings__ZyxsmsDbConnection") 
+                    ?? Environment.GetEnvironmentVariable("ConnectionStrings:ZyxsmsDbConnection");
+
                 if (string.IsNullOrWhiteSpace(connStr))
                 {
                     try
@@ -43,7 +45,9 @@ namespace Exwhyzee.Messaging.Core.Models
                         {
                             Path.Combine(AppContext.BaseDirectory, ".env"),
                             Path.Combine(Directory.GetCurrentDirectory(), ".env"),
+                            Path.Combine(Directory.GetCurrentDirectory(), "Exwhyzee.Messaging.Web", ".env"),
                             Path.Combine(Directory.GetCurrentDirectory(), "..", "Exwhyzee.Messaging.Web", ".env"),
+                            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", ".env"),
                             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "Exwhyzee.Messaging.Web", ".env")
                         };
 
@@ -54,13 +58,52 @@ namespace Exwhyzee.Messaging.Core.Models
                                 foreach (var rawLine in File.ReadAllLines(envPath))
                                 {
                                     var line = rawLine.Trim();
-                                    if (line.StartsWith("ConnectionStrings__ZyxsmsDbConnection="))
+                                    if (line.StartsWith("ConnectionStrings__ZyxsmsDbConnection=") || line.StartsWith("ConnectionStrings:ZyxsmsDbConnection="))
                                     {
-                                        connStr = line.Substring("ConnectionStrings__ZyxsmsDbConnection=".Length).Trim();
-                                        break;
+                                        int eqIdx = line.IndexOf('=');
+                                        if (eqIdx > 0)
+                                        {
+                                            connStr = line.Substring(eqIdx + 1).Trim();
+                                            break;
+                                        }
                                     }
                                 }
                                 if (!string.IsNullOrEmpty(connStr)) break;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
+                // Fallback: Read appsettings.json directly with System.Text.Json
+                if (string.IsNullOrWhiteSpace(connStr))
+                {
+                    try
+                    {
+                        var possibleJsonPaths = new[]
+                        {
+                            Path.Combine(AppContext.BaseDirectory, "appsettings.Production.json"),
+                            Path.Combine(AppContext.BaseDirectory, "appsettings.json"),
+                            Path.Combine(Directory.GetCurrentDirectory(), "appsettings.Production.json"),
+                            Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json"),
+                            Path.Combine(Directory.GetCurrentDirectory(), "Exwhyzee.Messaging.Web", "appsettings.Production.json"),
+                            Path.Combine(Directory.GetCurrentDirectory(), "Exwhyzee.Messaging.Web", "appsettings.json"),
+                            Path.Combine(Directory.GetCurrentDirectory(), "..", "Exwhyzee.Messaging.Web", "appsettings.Production.json"),
+                            Path.Combine(Directory.GetCurrentDirectory(), "..", "Exwhyzee.Messaging.Web", "appsettings.json")
+                        };
+
+                        foreach (var jsonPath in possibleJsonPaths)
+                        {
+                            if (File.Exists(jsonPath))
+                            {
+                                var jsonContent = File.ReadAllText(jsonPath);
+                                using var doc = System.Text.Json.JsonDocument.Parse(jsonContent);
+                                if (doc.RootElement.TryGetProperty("ConnectionStrings", out var connSection) &&
+                                    connSection.TryGetProperty("ZyxsmsDbConnection", out var connProp))
+                                {
+                                    connStr = connProp.GetString();
+                                    if (!string.IsNullOrWhiteSpace(connStr)) break;
+                                }
                             }
                         }
                     }
