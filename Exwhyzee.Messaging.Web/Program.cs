@@ -36,8 +36,10 @@ builder.Configuration.AddEnvironmentVariables();
 Exwhyzee.Messaging.Web.AppConfig.Configuration = builder.Configuration;
 
 // Register Database Context
+var connString = builder.Configuration.GetConnectionString("ZyxsmsDbConnection") 
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("ZyxsmsDbConnection")));
+    options.UseSqlServer(connString));
 
 // Register Identity Services
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>

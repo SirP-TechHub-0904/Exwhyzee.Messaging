@@ -35,7 +35,9 @@ namespace Exwhyzee.Messaging.Core.Models
             if (!optionsBuilder.IsConfigured)
             {
                 string connStr = Environment.GetEnvironmentVariable("ConnectionStrings__ZyxsmsDbConnection") 
-                    ?? Environment.GetEnvironmentVariable("ConnectionStrings:ZyxsmsDbConnection");
+                    ?? Environment.GetEnvironmentVariable("ConnectionStrings:ZyxsmsDbConnection")
+                    ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+                    ?? Environment.GetEnvironmentVariable("ConnectionStrings:DefaultConnection");
 
                 if (string.IsNullOrWhiteSpace(connStr))
                 {
