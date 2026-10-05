@@ -41,6 +41,7 @@ jobs:
           host: ${{ secrets.HOSTINGER_SERVER_IP }}
           username: ${{ secrets.HOSTINGER_SSH_USER }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
           port: ${{ secrets.HOSTINGER_SSH_PORT }}
           script: |
             mkdir -p ${{ env.REMOTE_APP_DIR }}
@@ -52,6 +53,7 @@ jobs:
           host: ${{ secrets.HOSTINGER_SERVER_IP }}
           username: ${{ secrets.HOSTINGER_SSH_USER }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
           port: ${{ secrets.HOSTINGER_SSH_PORT }}
           source: "./publish-web/*"
           target: "${{ env.REMOTE_APP_DIR }}/"
@@ -64,6 +66,7 @@ jobs:
           host: ${{ secrets.HOSTINGER_SERVER_IP }}
           username: ${{ secrets.HOSTINGER_SSH_USER }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
           port: ${{ secrets.HOSTINGER_SSH_PORT }}
           script: |
             if systemctl is-active --quiet ${{ env.SERVICE_NAME }}; then
