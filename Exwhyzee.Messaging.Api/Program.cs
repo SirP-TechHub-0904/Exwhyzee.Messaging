@@ -92,6 +92,7 @@ builder.Services.AddCors(options =>
 
 // Configure Database Connection from .env / Configuration
 var connectionString = builder.Configuration.GetConnectionString("ZyxsmsDbConnection")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
     ?? Environment.GetEnvironmentVariable("ConnectionStrings__ZyxsmsDbConnection");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -114,7 +115,7 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "XYZSMS API v1");
-    c.RoutePrefix = "swagger";
+    c.RoutePrefix = string.Empty; // Serves Swagger UI at application root (https://api.xyzsms.com/)
 });
 
 app.UseHttpsRedirection();
