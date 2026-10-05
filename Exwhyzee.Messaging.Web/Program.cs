@@ -109,6 +109,47 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+// Linux case-compatibility fallback providers
+var webRoot = app.Environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+var uploadsDir = Path.Combine(webRoot, "Uploads");
+if (Directory.Exists(uploadsDir))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsDir),
+        RequestPath = "/uploads"
+    });
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsDir),
+        RequestPath = "/Uploads"
+    });
+}
+
+var sliderDir = Path.Combine(webRoot, "Sliderimage");
+if (!Directory.Exists(sliderDir))
+{
+    sliderDir = Path.Combine(webRoot, "SliderImage");
+}
+if (Directory.Exists(sliderDir))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(sliderDir),
+        RequestPath = "/Sliderimage"
+    });
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(sliderDir),
+        RequestPath = "/SliderImage"
+    });
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(sliderDir),
+        RequestPath = "/sliderimage"
+    });
+}
+
 app.UseRouting();
 
 app.UseAuthentication(); // Must be before Authorization
