@@ -502,37 +502,63 @@ namespace Exwhyzee.Messaging.Core.Data.Services
 
         public async Task<GeneralResponse> SubmitSenderId(string senderId, string senderMessage)
         {
-            var clients = new HttpClient();
-            var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
-            string apiToken = getApi != null ? (getApi.Token ?? "") : "";
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/senderID");
-            var content = new MultipartFormDataContent();
-            content.Add(new StringContent(apiToken), "token");
-            content.Add(new StringContent(senderId), "senderID");
-            content.Add(new StringContent(senderMessage), "message");
-            request.Content = content;
-            var response = await clients.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-            var dataresponse = await response.Content.ReadAsStringAsync();
-            GeneralResponse outresponse = JsonConvert.DeserializeObject<GeneralResponse>(dataresponse);
-            return outresponse;
+            try
+            {
+                var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
+                string apiToken = getApi != null ? (getApi.Token ?? "") : "";
+
+                using var clients = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+                var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/senderID");
+                var content = new MultipartFormDataContent();
+                content.Add(new StringContent(apiToken), "token");
+                content.Add(new StringContent(senderId), "senderID");
+                content.Add(new StringContent(senderMessage ?? "Account verification and transactional alerts."), "message");
+                request.Content = content;
+
+                var response = await clients.SendAsync(request);
+                var dataresponse = await response.Content.ReadAsStringAsync();
+                
+                if (!string.IsNullOrWhiteSpace(dataresponse))
+                {
+                    GeneralResponse outresponse = JsonConvert.DeserializeObject<GeneralResponse>(dataresponse);
+                    return outresponse ?? new GeneralResponse { status = "error", msg = "Empty response from gateway." };
+                }
+                return new GeneralResponse { status = "error", msg = "No response from gateway." };
+            }
+            catch (Exception ex)
+            {
+                return new GeneralResponse { status = "error", msg = ex.Message };
+            }
         }
 
         public async Task<GeneralResponse> VerifySenderId(string senderId)
         {
-            var clients = new HttpClient();
-            var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
-            string apiToken = getApi != null ? (getApi.Token ?? "") : "";
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/check_senderID");
-            var content = new MultipartFormDataContent();
-            content.Add(new StringContent(apiToken), "token");
-            content.Add(new StringContent(senderId), "senderID");
-            request.Content = content;
-            var response = await clients.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-            var dataresponse = await response.Content.ReadAsStringAsync();
-            GeneralResponse outresponse = JsonConvert.DeserializeObject<GeneralResponse>(dataresponse);
-            return outresponse;
+            try
+            {
+                var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
+                string apiToken = getApi != null ? (getApi.Token ?? "") : "";
+
+                using var clients = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+                var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/check_senderID");
+                var content = new MultipartFormDataContent();
+                content.Add(new StringContent(apiToken), "token");
+                content.Add(new StringContent(senderId), "senderID");
+                request.Content = content;
+
+                var response = await clients.SendAsync(request);
+                var dataresponse = await response.Content.ReadAsStringAsync();
+
+                if (!string.IsNullOrWhiteSpace(dataresponse))
+                {
+                    GeneralResponse outresponse = JsonConvert.DeserializeObject<GeneralResponse>(dataresponse);
+                    return outresponse ?? new GeneralResponse { status = "error", msg = "Empty response from gateway." };
+                }
+                return new GeneralResponse { status = "error", msg = "No response from gateway." };
+            }
+            catch (Exception ex)
+            {
+                return new GeneralResponse { status = "error", msg = ex.Message };
+            }
         }
 
         public async Task<string> AddSender(string userId, string senderId, string message)
