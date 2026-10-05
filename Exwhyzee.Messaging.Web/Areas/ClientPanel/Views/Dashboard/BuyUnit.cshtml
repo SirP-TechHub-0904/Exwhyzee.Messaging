@@ -182,19 +182,24 @@
                 </div>
 
                 <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:0.92rem;">
-                    <span style="color:#64748B;">Gateway Fee:</span>
-                    <strong style="color:#10B981;">&#8358;0.00 (FREE)</strong>
+                    <span style="color:#64748B;">SMS Cost Subtotal:</span>
+                    <strong id="summarySubtotal" style="color:#0F172A;">&#8358;@((500 * pricePerUnit).ToString("N2"))</strong>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:0.92rem;">
+                    <span style="color:#64748B;">Charges:</span>
+                    <strong id="summaryCharges" style="color:#F59E0B;">&#8358;0.00</strong>
                 </div>
 
                 <hr style="border-color:#E2E8F0; margin:16px 0;" />
 
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                    <span style="font-weight:800; font-size:1.05rem; color:#1E293B;">Total Amount:</span>
+                    <span style="font-weight:800; font-size:1.05rem; color:#1E293B;">Total to Transfer:</span>
                     <strong id="summaryTotalNaira" style="font-weight:900; font-size:1.45rem; color:#10B981;">&#8358;@((500 * pricePerUnit).ToString("N2"))</strong>
                 </div>
 
                 <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:10px; padding:12px; font-size:0.85rem; color:#1E40AF;">
-                    <i class="fa fa-circle-info"></i> Your units will be credited immediately upon successful payment.
+                    <i class="fa fa-circle-info"></i> Your wallet will be credited with the full unit quantity immediately upon successful payment.
                 </div>
             </div>
         </div>
@@ -208,6 +213,23 @@
     <script>
         const unitRate = @pricePerUnit;
 
+        // Calculate Paystack Transaction Charges:
+        // Below 1,500: 1.5%
+        // 1,500 and Above: 1.5% + 100 Naira (Capped at 2,000 Naira)
+        function calculatePaystackCharges(amount) {
+            if (!amount || amount <= 0) return 0;
+            let fee = 0;
+            if (amount < 1500) {
+                fee = (amount * 0.015) / 0.985;
+            } else {
+                fee = ((amount + 100) * 0.015 + 100) / 0.985;
+                if (fee > 2000) {
+                    fee = 2000;
+                }
+            }
+            return Math.round(fee * 100) / 100;
+        }
+
         function selectPreset(units, el) {
             $('.xyz-preset-pill').removeClass('active');
             $(el).addClass('active');
@@ -217,13 +239,18 @@
 
         function updateOrderSummary(units) {
             const qty = parseFloat(units) || 0;
-            const total = qty * unitRate;
+            const subtotal = qty * unitRate;
+            const charges = calculatePaystackCharges(subtotal);
+            const totalPayable = subtotal + charges;
+
             $('#summaryUnits').text(qty.toLocaleString('en-US') + ' Units');
-            $('#summaryTotalNaira').html('&#8358;' + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-            $('#btnAmountDisplay').text(total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            $('#summarySubtotal').html('&#8358;' + subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            $('#summaryCharges').html('&#8358;' + charges.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            $('#summaryTotalNaira').html('&#8358;' + totalPayable.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+            $('#btnAmountDisplay').text(totalPayable.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         }
 
-        $('#customUnitsInput').on('input', function () {
+        $('#customUnitsInput').on('input keyup change paste', function () {
             $('.xyz-preset-pill').removeClass('active');
             updateOrderSummary($(this).val());
         });
@@ -237,12 +264,16 @@
                 return;
             }
 
+            const subtotal = units * unitRate;
+            const charges = calculatePaystackCharges(subtotal);
+            const totalPayable = subtotal + charges;
+
             const btn = $('#btnPayNowInline');
             btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Initializing Paystack...');
 
             // Step 1: Initialize transaction on server
             $.post('@Url.Action("InitializePaystackInline", "Dashboard", new { area = "ClientPanel" })', { units: units }, function (res) {
-                btn.prop('disabled', false).html('<i class="fa fa-lock"></i> Pay &#8358;' + (units * unitRate).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' via Paystack');
+                btn.prop('disabled', false).html('<i class="fa fa-lock"></i> Pay &#8358;<span id="btnAmountDisplay">' + totalPayable.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</span> via Paystack');
 
                 if (res && res.success) {
                     // Step 2: Open Paystack Popup Modal directly on page
@@ -265,6 +296,16 @@
                                     display_name: "Units",
                                     variable_name: "units",
                                     value: res.units
+                                },
+                                {
+                                    display_name: "Subtotal",
+                                    variable_name: "subtotal",
+                                    value: res.subtotal
+                                },
+                                {
+                                    display_name: "Charges",
+                                    variable_name: "charges",
+                                    value: res.charges
                                 }
                             ]
                         },
@@ -310,5 +351,10 @@
                 }
             });
         }
+
+        // Initialize order summary on page load
+        $(document).ready(function () {
+            updateOrderSummary($('#customUnitsInput').val() || 500);
+        });
     </script>
 }

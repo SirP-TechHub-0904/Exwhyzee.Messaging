@@ -24,9 +24,10 @@ namespace Exwhyzee.Messaging.Api.Controllers
         }
 
         /// <summary>
-        /// Resolves the authenticated client from the API Key headers.
+        /// Resolves the authenticated client asynchronously from API Key headers.
+        /// Supports X-Api-Key, ApiKey, Authorization: Bearer, and ?apikey= query parameters.
         /// </summary>
-        private (string UserId, Client Client) AuthenticateClient()
+        private async Task<(string UserId, Client Client)> AuthenticateClientAsync()
         {
             // 1. Check custom X-Api-Key or ApiKey header
             string token = Request.Headers["X-Api-Key"].FirstOrDefault()
@@ -50,7 +51,12 @@ namespace Exwhyzee.Messaging.Api.Controllers
 
             if (string.IsNullOrWhiteSpace(token)) return (null, null);
 
-            var client = _db.Clients.Include(c => c.User).FirstOrDefault(c => c.ApiKey == token.Trim());
+            var cleanToken = token.Trim().Trim('"', '\'');
+            var client = await _db.Clients
+                .AsNoTracking()
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.ApiKey == cleanToken);
+
             return (client?.UserId, client);
         }
 
@@ -64,25 +70,51 @@ namespace Exwhyzee.Messaging.Api.Controllers
         [ProducesResponseType(401)]
         public async Task<IActionResult> SendBulkMessage([FromBody] ComposeSmsDto model)
         {
+            if (model == null)
+            {
+                return BadRequest(new { success = false, message = "Request body cannot be empty." });
+            }
+
+            if (string.IsNullOrWhiteSpace(model.SenderId))
+            {
+                return BadRequest(new { success = false, message = "SenderId is required (maximum 11 alphanumeric characters)." });
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Recipients))
+            {
+                return BadRequest(new { success = false, message = "Recipients list is required (comma, space, or newline separated numbers)." });
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Content))
+            {
+                return BadRequest(new { success = false, message = "Message content is required." });
+            }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(new { success = false, message = "Invalid SMS payload.", errors = ModelState });
             }
 
-            var (userId, client) = AuthenticateClient();
-            if (string.IsNullOrEmpty(userId))
+            var (userId, client) = await AuthenticateClientAsync();
+            if (string.IsNullOrEmpty(userId) || client == null)
             {
-                return Unauthorized(new { success = false, message = "Unauthorized: Missing, inactive, or invalid API Key. Include 'X-Api-Key: YOUR_KEY' in the header." });
+                return Unauthorized(new { success = false, message = "Unauthorized: Missing, inactive, or invalid API Key. Include 'X-Api-Key: YOUR_KEY' in your headers." });
+            }
+
+            // Check if client has sufficient units balance
+            if (client.Units <= 0)
+            {
+                return BadRequest(new { success = false, message = "Insufficient SMS unit balance. Your current balance is " + client.Units.ToString("N2") + " units. Please top up your wallet." });
             }
 
             var response = await _clientService.ComposeSms(model, userId);
 
-            if (response.Success)
+            if (response != null && response.Success)
             {
                 return Ok(response);
             }
 
-            return BadRequest(response);
+            return BadRequest(response ?? new SendMessageResponseDto { Success = false, Message = "Unable to dispatch message." });
         }
 
         /// <summary>
@@ -93,7 +125,7 @@ namespace Exwhyzee.Messaging.Api.Controllers
         [ProducesResponseType(401)]
         public async Task<IActionResult> CheckBalance()
         {
-            var (userId, client) = AuthenticateClient();
+            var (userId, client) = await AuthenticateClientAsync();
             if (string.IsNullOrEmpty(userId) || client == null)
             {
                 return Unauthorized(new { success = false, message = "Unauthorized: Invalid API Key." });
@@ -107,6 +139,43 @@ namespace Exwhyzee.Messaging.Api.Controllers
                 unitsBalance = client.Units,
                 currency = "NGN",
                 serverTime = DateTime.UtcNow
+            });
+        }
+
+        /// <summary>
+        /// Check delivery status and response for a specific message by its Message ID.
+        /// </summary>
+        [HttpGet("status/{messageId:int}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(401)]
+        public async Task<IActionResult> CheckMessageStatus(int messageId)
+        {
+            var (userId, client) = await AuthenticateClientAsync();
+            if (string.IsNullOrEmpty(userId) || client == null)
+            {
+                return Unauthorized(new { success = false, message = "Unauthorized: Invalid API Key." });
+            }
+
+            var message = await _db.Messages
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.MessageId == messageId && m.UserId == userId);
+
+            if (message == null)
+            {
+                return NotFound(new { success = false, message = $"Message with ID {messageId} not found." });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                messageId = message.MessageId,
+                senderId = message.SenderId,
+                recipients = message.Recipients,
+                unitsUsed = message.UnitsUsed,
+                status = message.Status.ToString(),
+                response = message.Response,
+                dateSent = message.DeliveredDate ?? message.Scheduleddate
             });
         }
 
@@ -128,7 +197,7 @@ namespace Exwhyzee.Messaging.Api.Controllers
             [FromQuery] string recipient = null,
             [FromQuery] string status = null)
         {
-            var (userId, client) = AuthenticateClient();
+            var (userId, client) = await AuthenticateClientAsync();
             if (string.IsNullOrEmpty(userId))
             {
                 return Unauthorized(new { success = false, message = "Unauthorized: Invalid API Key." });
@@ -139,6 +208,7 @@ namespace Exwhyzee.Messaging.Api.Controllers
             if (pageSize > 200) pageSize = 200;
 
             var query = _db.Messages
+                .AsNoTracking()
                 .Where(m => m.UserId == userId && m.Status != MessageStatus.Draft);
 
             if (!string.IsNullOrWhiteSpace(senderId))
@@ -196,13 +266,14 @@ namespace Exwhyzee.Messaging.Api.Controllers
         [ProducesResponseType(401)]
         public async Task<IActionResult> GetSenderIds()
         {
-            var (userId, client) = AuthenticateClient();
+            var (userId, client) = await AuthenticateClientAsync();
             if (string.IsNullOrEmpty(userId) || client == null)
             {
                 return Unauthorized(new { success = false, message = "Unauthorized: Invalid API Key." });
             }
 
             var senderIds = await _db.XyzSenderIDs
+                .AsNoTracking()
                 .Where(s => s.ClientId == client.ClientId)
                 .Select(s => new
                 {
@@ -230,17 +301,18 @@ namespace Exwhyzee.Messaging.Api.Controllers
         [ProducesResponseType(401)]
         public async Task<IActionResult> GetPricing()
         {
-            var (userId, client) = AuthenticateClient();
+            var (userId, client) = await AuthenticateClientAsync();
             if (string.IsNullOrEmpty(userId) || client == null)
             {
                 return Unauthorized(new { success = false, message = "Unauthorized: Invalid API Key." });
             }
 
-            var adminSetting = await _db.AdminSettings.FirstOrDefaultAsync();
+            var adminSetting = await _db.AdminSettings.AsNoTracking().FirstOrDefaultAsync();
             var basePricePerUnit = adminSetting?.PricePerUnit ?? 2.0m;
             var flatUnitsPerSms = adminSetting?.FlatUnitsPerSms ?? 1.0m;
 
             var prices = await _db.PriceSettings
+                .AsNoTracking()
                 .Select(p => new
                 {
                     country = p.Country,

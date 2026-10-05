@@ -422,7 +422,7 @@
                 <small style="color:#94A3B8; display:block; font-size:0.75rem; line-height:1;">Available Units</small>
                 <strong style="color:#FFFFFF; font-size:1.05rem;">@walletBalance.ToString("N2")</strong>
             </div>
-            <a href="@Url.Action("MakePayment", "Dashboard", new { area = "ClientPanel" })" class="btn btn-xs btn-danger" style="background:#E50914; font-weight:800; border-radius:6px; margin-left:6px;">
+            <a href="@Url.Action("BuyUnit", "Dashboard", new { area = "ClientPanel" })" class="btn btn-xs btn-danger" style="background:#E50914; font-weight:800; border-radius:6px; margin-left:6px;">
                 + Top Up
             </a>
         </div>
@@ -460,9 +460,11 @@
                     {
                         <label style="font-size:0.85rem; color:var(--xyz-dash-muted); margin-bottom:6px; display:block;">Quick-Select Approved Sender ID:</label>
                         <div class="xyz-sender-pills">
-                            @foreach (var sId in approvedSenderIds)
+                            @for (int i = 0; i < approvedSenderIds.Count; i++)
                             {
-                                <span class="xyz-sender-pill" onclick="selectSenderId('@sId', this)">
+                                var sId = approvedSenderIds[i];
+                                var isActive = (i == 0);
+                                <span class="xyz-sender-pill @(isActive ? "active" : "")" onclick="selectSenderId('@sId', this)">
                                     <i class="fa fa-circle-check" style="color:#10B981; font-size:0.8rem;"></i> @sId
                                 </span>
                             }
@@ -470,7 +472,7 @@
                     }
 
                     <div style="position:relative;">
-                        <input type="text" name="SenderId" id="senderIdInput" maxlength="11" class="form-control" placeholder="e.g. EXWHYZEE (Max 11 alphanumeric characters)" required value="@(approvedSenderIds.FirstOrDefault() ?? "")" style="font-weight:800; font-size:1.05rem; letter-spacing:0.5px; text-transform:uppercase;" />
+                        <input type="text" name="SenderId" id="senderIdInput" maxlength="11" class="form-control" placeholder="e.g. SENDER ID (Max 11 alphanumeric characters)" required value="@(approvedSenderIds.FirstOrDefault() ?? "")" style="font-weight:800; font-size:1.05rem; letter-spacing:0.5px; text-transform:uppercase;" />
                         <span id="senderCharCounter" style="position:absolute; right:12px; top:10px; font-size:0.78rem; font-weight:700; color:#94A3B8;">0/11</span>
                     </div>
                     @Html.ValidationMessageFor(model => model.SenderId, "", new { @class = "text-danger" })
@@ -497,7 +499,7 @@
                             <select id="GroupId" name="GroupId" multiple="multiple" style="width:100%;">
                                 @foreach (var g in groupList)
                                 {
-                                    <option value="@g.GroupId">@g.Name (@g.ContactCount contacts)</option>
+                                    <option value="@g.GroupId" data-count="@g.ContactCount">@g.Name (@g.ContactCount contacts)</option>
                                 }
                             </select>
                         </div>
@@ -717,7 +719,7 @@
                     </div>
 
                     <div class="xyz-phone-header">
-                        <h5 class="xyz-phone-sender" id="phonePreviewSender">EXWHYZEE</h5>
+                        <h5 class="xyz-phone-sender" id="phonePreviewSender">@(approvedSenderIds.FirstOrDefault() ?? "No Sender ID")</h5>
                         <p class="xyz-phone-sub">Text Message &bull; Today</p>
                     </div>
 
@@ -735,67 +737,30 @@
 }
 
 @section Scripts {
-    <script src="~/Content/multiple-select.js"></script>
-    <script src="~/Scripts/moment.js"></script>
-    <script type="text/javascript" src="/scripts/bootstrap-datetimepicker.js"></script>
+    <script src="/Content/multiple-select.js"></script>
+    <script src="/Scripts/moment.min.js"></script>
+    <script src="/Scripts/bootstrap-datetimepicker.min.js"></script>
 
     <script>
         const hasGeminiKey = @(hasGeminiKey ? "true" : "false");
         const userWalletBalance = @walletBalance;
+        const baseUnitsPerSms = @(ViewBag.BaseUnitsPerSms ?? 4.0m);
+        const tariffRules = @Html.Raw(ViewBag.TariffRulesJson ?? "[]");
 
-        $(document).ready(function () {
-            // Initialize Multi-Select for Address Book
-            if ($('#GroupId').length) {
-                $('#GroupId').multipleSelect({
-                    width: '100%',
-                    placeholder: "Select Address Book Groups",
-                    selectAll: false,
-                    onClick: function () { calculateRecipients(); },
-                    onCheckAll: function () { calculateRecipients(); },
-                    onUncheckAll: function () { calculateRecipients(); }
-                });
-            }
+        // Sync Phone Sender Preview
+        function updatePhoneSender() {
+            const rawVal = ($('#senderIdInput').val() || '').trim().toUpperCase();
+            $('#senderCharCounter').text(rawVal.length + '/11');
+            $('#phonePreviewSender').text(rawVal || 'No Sender ID');
+        }
 
-            // Initialize DateTimePicker
-            if ($('#datetimepicker1').length) {
-                $('#datetimepicker1').datetimepicker({
-                    format: 'DD/MM/YYYY HH:mm',
-                    minDate: moment()
-                });
-            }
-
-            // Sync Sender ID
-            $('#senderIdInput').on('input', function () {
-                const val = $(this).val().toUpperCase();
-                $(this).val(val);
-                $('#senderCharCounter').text(val.length + '/11');
-                $('#phonePreviewSender').text(val || 'SENDER');
-            });
-
-            // Live Content Sync & Calculator
-            $('#Content').on('input', function () {
-                updateSmsMetrics();
-            });
-
-            // Live Recipients Sync
-            $('#Recipients').on('input', function () {
-                calculateRecipients();
-            });
-
-            // File picker change
-            $('#composeFileInput').on('change', function () {
-                if (this.files && this.files[0]) {
-                    $('#fileAttachmentName').html('<span style="color:#10B981; font-weight:700;">' + this.files[0].name + '</span> attached.');
-                    if (window.xyzToast) xyzToast.success('File attached: ' + this.files[0].name, 'File Attached');
-                }
-            });
-
-            // Initial calculations
-            updatePhoneTime();
-            setInterval(updatePhoneTime, 30000);
-            updateSmsMetrics();
-            calculateRecipients();
-        });
+        // Quick Sender ID Pill click
+        function selectSenderId(name, elem) {
+            $('.xyz-sender-pill').removeClass('active');
+            if (elem) $(elem).addClass('active');
+            $('#senderIdInput').val(name);
+            updatePhoneSender();
+        }
 
         // Update Phone Header Clock
         function updatePhoneTime() {
@@ -803,13 +768,6 @@
             const hours = now.getHours().toString().padStart(2, '0');
             const mins = now.getMinutes().toString().padStart(2, '0');
             $('#phoneClock').text(hours + ':' + mins);
-        }
-
-        // Quick Sender ID Pill click
-        function selectSenderId(name, elem) {
-            $('.xyz-sender-pill').removeClass('active');
-            $(elem).addClass('active');
-            $('#senderIdInput').val(name).trigger('input');
         }
 
         // Live SMS Metrics, GSM vs Unicode, and Page Calculator
@@ -860,18 +818,21 @@
             const manualText = $('#Recipients').val() || '';
             const numbers = manualText.split(/[\s,;\n\r]+/).filter(function (n) { return n && n.trim().length >= 8; });
             const uniqueNumbers = [...new Set(numbers)];
-            const count = uniqueNumbers.length;
 
-            $('#recipientsCountBadge').text(count + ' Numbers');
-            $('#statRecipients').text(count);
+            let groupContactsCount = 0;
+            $('#GroupId option:selected').each(function () {
+                const c = parseInt($(this).data('count')) || 0;
+                groupContactsCount += c;
+            });
+
+            const totalCount = uniqueNumbers.length + groupContactsCount;
+            $('#recipientsCountBadge').text(totalCount + ' Numbers');
+            $('#statRecipients').text(totalCount);
 
             updateTotalCostEstimate();
         }
 
         // Dynamic Real-Time Cost Estimator (Prefix-Aware)
-        const baseUnitsPerSms = @(ViewBag.BaseUnitsPerSms ?? 4.0m);
-        const tariffRules = @Html.Raw(ViewBag.TariffRulesJson ?? "[]");
-
         function getUnitRateForNumber(numStr) {
             if (!numStr || !tariffRules || !tariffRules.length) return baseUnitsPerSms;
             
@@ -905,15 +866,21 @@
             const uniqueNumbers = [...new Set(numbers)];
             const pages = parseInt($('#statPages').text()) || 1;
 
+            let groupContactsCount = 0;
+            $('#GroupId option:selected').each(function () {
+                const c = parseInt($(this).data('count')) || 0;
+                groupContactsCount += c;
+            });
+
             let totalUnitsCalc = 0;
             if (uniqueNumbers.length > 0) {
                 for (let i = 0; i < uniqueNumbers.length; i++) {
                     let rate = getUnitRateForNumber(uniqueNumbers[i]);
                     totalUnitsCalc += rate * pages;
                 }
+                totalUnitsCalc += (groupContactsCount * pages * baseUnitsPerSms);
             } else {
-                const recipientCount = parseInt($('#statRecipients').text()) || 0;
-                totalUnitsCalc = recipientCount * pages * baseUnitsPerSms;
+                totalUnitsCalc = (groupContactsCount * pages * baseUnitsPerSms);
             }
 
             const totalUnitsStr = totalUnitsCalc.toFixed(2);
@@ -1024,14 +991,83 @@
 
         // Schedule Presets
         function setSchedulePreset(hours) {
-            const d = moment().add(hours, 'hours');
-            $('#scheduleDateInput').val(d.format('DD/MM/YYYY HH:mm'));
+            if (typeof moment === 'function') {
+                const d = moment().add(hours, 'hours');
+                $('#scheduleDateInput').val(d.format('DD/MM/YYYY HH:mm'));
+            }
         }
 
         function setSchedulePresetTomorrow() {
-            const d = moment().add(1, 'days').set({ hour: 9, minute: 0 });
-            $('#scheduleDateInput').val(d.format('DD/MM/YYYY HH:mm'));
+            if (typeof moment === 'function') {
+                const d = moment().add(1, 'days').set({ hour: 9, minute: 0 });
+                $('#scheduleDateInput').val(d.format('DD/MM/YYYY HH:mm'));
+            }
         }
+
+        $(document).ready(function () {
+            // 1. Safe Multi-Select for Address Book
+            try {
+                if ($('#GroupId').length && typeof $.fn.multipleSelect === 'function') {
+                    $('#GroupId').multipleSelect({
+                        width: '100%',
+                        placeholder: "Select Address Book Groups",
+                        selectAll: false,
+                        onClick: function () { calculateRecipients(); },
+                        onCheckAll: function () { calculateRecipients(); },
+                        onUncheckAll: function () { calculateRecipients(); },
+                        onOptgroupClick: function () { calculateRecipients(); }
+                    });
+                }
+            } catch (e) {
+                console.warn('MultipleSelect init bypassed:', e);
+            }
+
+            // 2. Safe DateTimePicker
+            try {
+                if ($('#datetimepicker1').length && typeof $.fn.datetimepicker === 'function') {
+                    $('#datetimepicker1').datetimepicker({
+                        format: 'DD/MM/YYYY HH:mm',
+                        minDate: (typeof moment === 'function') ? moment() : false
+                    });
+                }
+            } catch (e) {
+                console.warn('DateTimePicker init bypassed:', e);
+            }
+
+            // 3. Bind Event Listeners
+            $('#senderIdInput').on('input keyup change paste', function () {
+                const val = $(this).val().toUpperCase();
+                $(this).val(val);
+                updatePhoneSender();
+            });
+
+            $('#Content').on('input keyup change paste', function () {
+                updateSmsMetrics();
+            });
+
+            $('#Recipients').on('input keyup change paste', function () {
+                calculateRecipients();
+            });
+
+            $('#GroupId').on('change', function () {
+                calculateRecipients();
+            });
+
+            // File picker change
+            $('#composeFileInput').on('change', function () {
+                if (this.files && this.files[0]) {
+                    $('#fileAttachmentName').html('<span style="color:#10B981; font-weight:700;">' + this.files[0].name + '</span> attached.');
+                    if (window.xyzToast) xyzToast.success('File attached: ' + this.files[0].name, 'File Attached');
+                }
+            });
+
+            // 4. Initial calculations & preview sync
+            updatePhoneTime();
+            setInterval(updatePhoneTime, 30000);
+            updatePhoneSender();
+            updateSmsMetrics();
+            calculateRecipients();
+        });
     </script>
 }
 
