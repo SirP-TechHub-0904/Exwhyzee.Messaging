@@ -638,6 +638,9 @@ STRICT NON-NEGOTIABLE RULES:
                         }
                     }
 
+                    // Normalize newlines to GSM 1-char standard
+                    model.Content = (model.Content ?? "").Replace("\r\n", "\n").Trim();
+
                     // Count pages
                     int pageCount = SmsServices.CountPage(model.Content);
 
