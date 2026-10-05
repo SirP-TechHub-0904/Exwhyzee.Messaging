@@ -1526,6 +1526,28 @@ STRICT NON-NEGOTIABLE RULES:
             return View();
         }
 
+        // Helper to calculate Paystack transaction charges (1.5% below 1500, 1.5% + 100 capped at 2000 above 1500)
+        private decimal CalculatePaystackCharge(decimal amount)
+        {
+            if (amount <= 0) return 0;
+            decimal fee;
+            if (amount < 1500m)
+            {
+                // 1.5% charge
+                fee = (amount * 0.015m) / 0.985m;
+            }
+            else
+            {
+                // 1.5% + 100 naira, capped at 2000 naira
+                fee = ((amount + 100m) * 0.015m + 100m) / 0.985m;
+                if (fee > 2000m)
+                {
+                    fee = 2000m;
+                }
+            }
+            return Math.Round(fee, 2);
+        }
+
         // POST: ClientPanel/Dashboard/InitializePaystackInline
         [HttpPost]
         public async Task<IActionResult> InitializePaystackInline(decimal units)
@@ -1537,7 +1559,9 @@ STRICT NON-NEGOTIABLE RULES:
 
             var adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
             decimal pricePerUnit = adminSetting?.PricePerUnit ?? 2.0m;
-            decimal totalAmount = units * pricePerUnit;
+            decimal subtotal = units * pricePerUnit;
+            decimal charges = CalculatePaystackCharge(subtotal);
+            decimal totalPayable = subtotal + charges;
 
             var user = await UserManager.FindByNameAsync(User.Identity.Name);
             var client = await _clientService.GetClientDetailsByUserId(user.Id);
@@ -1545,8 +1569,8 @@ STRICT NON-NEGOTIABLE RULES:
             Transaction transaction = new Transaction
             {
                 Units = units,
-                Amount = totalAmount,
-                AmountPaid = totalAmount,
+                Amount = subtotal,
+                AmountPaid = totalPayable,
                 ClientId = client.ClientId,
                 UserId = user.Id,
                 TransactionType = TransactionType.OnlinePayment,
@@ -1555,18 +1579,20 @@ STRICT NON-NEGOTIABLE RULES:
                 IsAdminTransferred = false,
                 Status = TransactionStatus.Pending,
                 DateCreated = DateTime.UtcNow.AddHours(1),
-                Note = $"Paystack Top-Up of {units:N2} units at NGN {pricePerUnit:N2}/unit"
+                Note = $"Paystack Top-Up of {units:N2} units. SMS Cost: NGN {subtotal:N2}, Charges: NGN {charges:N2}, Total: NGN {totalPayable:N2}"
             };
 
             await _transactions.AddTransaction(transaction);
 
-            int amountInKobo = (int)Math.Round(totalAmount * 100);
+            int amountInKobo = (int)Math.Round(totalPayable * 100);
 
             return Json(new
             {
                 success = true,
                 transactionId = transaction.TransactionId,
-                amount = totalAmount,
+                subtotal = subtotal,
+                charges = charges,
+                amount = totalPayable,
                 amountInKobo = amountInKobo,
                 units = units,
                 pricePerUnit = pricePerUnit,

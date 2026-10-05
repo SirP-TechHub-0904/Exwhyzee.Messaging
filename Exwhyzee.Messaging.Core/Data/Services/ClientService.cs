@@ -322,9 +322,9 @@ namespace Exwhyzee.Messaging.Core.Data.Services
                 return new SendMessageResponseDto
                 {
                     Message = "Error.",
-                    Description = "Something wrong happened.",
-                    Success = true,
-                    ResponseCode = er.Message
+                    Description = "Something wrong happened: " + er.Message,
+                    Success = false,
+                    ResponseCode = "500"
                 };
             }
 
@@ -332,7 +332,7 @@ namespace Exwhyzee.Messaging.Core.Data.Services
             {
                 Message = "Error.",
                 Description = "Something wrong happened.",
-                Success = true,
+                Success = false,
                 ResponseCode = "500"
             };
 
@@ -384,69 +384,89 @@ namespace Exwhyzee.Messaging.Core.Data.Services
             SmsResponse responsed = new SmsResponse();
             
             var messageHistory = await db.Messages.FindAsync(messageHistoryId);
+            if (messageHistory == null)
+            {
+                responsed.msg = "Message record not found.";
+                responsed.status = "fail";
+                return responsed;
+            }
+
             var getApi = await db.ApiSettings.FirstOrDefaultAsync(x => x.IsDefault == true);
             if (getApi == null)
             {
-                responsed.msg = "No Default API configured";
+                responsed.msg = "No Default SMS Gateway API configured in system.";
                 responsed.status = "fail";
                 return responsed;
             }
             string apiToken = getApi.Token ?? "";
-            
-            var clientbal = new HttpClient();
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/balance");
-            var content = new MultipartFormDataContent();
-            content.Add(new StringContent(apiToken), "token");
-            request.Content = content;
-            var balresponse = await clientbal.SendAsync(request);
-            balresponse.EnsureSuccessStatusCode();
-            var balanceresponse = await balresponse.Content.ReadAsStringAsync();
-            BalanceResponse balresponsed = JsonConvert.DeserializeObject<BalanceResponse>(balanceresponse);
-
-            decimal AdminBal = Convert.ToDecimal(balresponsed.msg);
-            if (units > AdminBal)
-            {
-                responsed.BalanceResponse = "message unit is greater than balance error 88009-8899-333";
-                responsed.status = "fail";
-                return responsed;
-            }
-            //get cost of message
-
-            //end balance
-            //
-            string response = "";
-            string chunknumbersSend = "";
-            string SenderIdEncode = System.Web.HttpUtility.UrlEncode(messageHistory.SenderId);
-            List<string> smsnumbers = new List<string>(SmsServices.RemoveDuplicates(messageHistory.Recipients));
 
             try
             {
-                var clientsend = new HttpClient();
-                var smsrequest = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/sms");
-                var smscontent = new MultipartFormDataContent();
-                smscontent.Add(new StringContent(apiToken), "token");
-                smscontent.Add(new StringContent(messageHistory.SenderId), "senderID");
-                smscontent.Add(new StringContent(messageHistory.Recipients), "recipients");
-                smscontent.Add(new StringContent(messageHistory.MessageContent), "message");
-                smscontent.Add(new StringContent("1"), "gateway");
-                smsrequest.Content = smscontent;
-                var xresponse = await clientsend.SendAsync(smsrequest);
-                xresponse.EnsureSuccessStatusCode();
-                string responseBody = await xresponse.Content.ReadAsStringAsync();
-                responsed = JsonConvert.DeserializeObject<SmsResponse>(responseBody);
-                return responsed;
+                using (var clientbal = new HttpClient { Timeout = TimeSpan.FromSeconds(15) })
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/balance");
+                    var content = new MultipartFormDataContent();
+                    content.Add(new StringContent(apiToken), "token");
+                    request.Content = content;
+                    var balresponse = await clientbal.SendAsync(request);
+                    if (balresponse.IsSuccessStatusCode)
+                    {
+                        var balanceresponse = await balresponse.Content.ReadAsStringAsync();
+                        BalanceResponse balresponsed = JsonConvert.DeserializeObject<BalanceResponse>(balanceresponse);
+
+                        if (balresponsed != null && decimal.TryParse(balresponsed.msg, out decimal AdminBal))
+                        {
+                            if (units > AdminBal)
+                            {
+                                responsed.BalanceResponse = "Admin gateway balance insufficient.";
+                                responsed.msg = "Gateway route temporarily unavailable. Please contact support.";
+                                responsed.status = "fail";
+                                return responsed;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ExceptionUtility.LogException(ex, "Gateway Balance Check Warning");
+            }
+
+            try
+            {
+                using (var clientsend = new HttpClient { Timeout = TimeSpan.FromSeconds(30) })
+                {
+                    var smsrequest = new HttpRequestMessage(HttpMethod.Post, "https://my.kudisms.net/api/sms");
+                    var smscontent = new MultipartFormDataContent();
+                    smscontent.Add(new StringContent(apiToken), "token");
+                    smscontent.Add(new StringContent(messageHistory.SenderId ?? ""), "senderID");
+                    smscontent.Add(new StringContent(messageHistory.Recipients ?? ""), "recipients");
+                    smscontent.Add(new StringContent(messageHistory.MessageContent ?? ""), "message");
+                    smscontent.Add(new StringContent("1"), "gateway");
+                    smsrequest.Content = smscontent;
+                    var xresponse = await clientsend.SendAsync(smsrequest);
+                    if (xresponse.IsSuccessStatusCode)
+                    {
+                        string responseBody = await xresponse.Content.ReadAsStringAsync();
+                        responsed = JsonConvert.DeserializeObject<SmsResponse>(responseBody);
+                        return responsed ?? new SmsResponse { status = "fail", msg = "Empty response from gateway" };
+                    }
+                    else
+                    {
+                        responsed.status = "fail";
+                        responsed.msg = $"Gateway HTTP error: {(int)xresponse.StatusCode}";
+                        return responsed;
+                    }
+                }
             }
             catch (Exception c)
             {
-                ExceptionUtility.LogException(c, "");
+                ExceptionUtility.LogException(c, "SMS Gateway Send Error");
+                responsed.msg = "Network error communicating with SMS gateway: " + c.Message;
+                responsed.status = "fail";
             }
-            //response = "ok";
-            responsed.msg = "Unable to send message";
 
             return responsed;
-
-
-
         }
 
 
