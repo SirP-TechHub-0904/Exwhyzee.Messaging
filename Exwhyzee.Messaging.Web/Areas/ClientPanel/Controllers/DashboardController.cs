@@ -784,7 +784,8 @@ STRICT NON-NEGOTIABLE RULES:
                             }
 
                             TempData["error"] = errMessage;
-                            return RedirectToAction("Compose");
+                            await PopulateComposeViewBagAsync(userId, client);
+                            return View(model);
                         }
                     }
                     else if (model.SendOption == "SendLater")
@@ -805,7 +806,8 @@ STRICT NON-NEGOTIABLE RULES:
             catch (Exception ex)
             {
                 TempData["error"] = "Error sending message: " + ex.Message;
-                return RedirectToAction("Compose");
+                await PopulateComposeViewBagAsync(userId, client);
+                return View(model);
             }
         }
 
