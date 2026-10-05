@@ -592,9 +592,9 @@ STRICT NON-NEGOTIABLE RULES:
                         return View(model);
                     }
 
-                    // Clean and sanitize Sender ID (alphanumeric, max 11)
+                    // Clean and sanitize Sender ID (alphanumeric + spaces, max 11)
                     string rawSenderId = model.SenderId?.Trim() ?? "";
-                    string cleanSenderId = System.Text.RegularExpressions.Regex.Replace(rawSenderId, @"[^a-zA-Z0-9]", "").ToUpper();
+                    string cleanSenderId = System.Text.RegularExpressions.Regex.Replace(rawSenderId, @"[^a-zA-Z0-9 ]", "").ToUpper();
                     if (cleanSenderId.Length > 11)
                     {
                         cleanSenderId = cleanSenderId.Substring(0, 11);
@@ -604,7 +604,7 @@ STRICT NON-NEGOTIABLE RULES:
                     if (string.IsNullOrEmpty(cleanSenderId))
                     {
                         await PopulateComposeViewBagAsync(userId, client);
-                        ModelState.AddModelError("", "Please enter a valid alphanumeric Sender ID (max 11 characters, no spaces or symbols).");
+                        ModelState.AddModelError("", "Please enter a valid Sender ID (max 11 characters).");
                         return View(model);
                     }
 

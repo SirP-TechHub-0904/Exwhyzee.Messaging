@@ -754,9 +754,8 @@
         function updatePhoneSender() {
             let rawVal = ($('#senderIdInput').val() || '').trim().toUpperCase();
             
-            // Check for invalid characters (spaces or symbols)
-            const hasInvalidChars = /[^A-Z0-9]/.test(rawVal);
-            const cleanVal = rawVal.replace(/[^A-Z0-9]/g, '');
+            // Allow alphanumeric and spaces (up to 11 chars)
+            const cleanVal = rawVal.replace(/[^A-Z0-9 ]/g, '');
 
             $('#senderCharCounter').text(rawVal.length + '/11');
             $('#phonePreviewSender').text(cleanVal || 'No Sender ID');
@@ -768,13 +767,8 @@
                 return;
             }
 
-            if (hasInvalidChars) {
-                feedbackElem.html('<span style="color:#EF4444;"><i class="fa fa-triangle-exclamation"></i> Only letters & numbers allowed. Spaces & symbols will be removed.</span>');
-                return;
-            }
-
             // Check if in user approved list
-            const isApproved = approvedSenderIdsList.includes(cleanVal);
+            const isApproved = approvedSenderIdsList.some(s => s.toUpperCase() === cleanVal);
             if (isApproved) {
                 feedbackElem.html('<span style="color:#10B981;"><i class="fa fa-circle-check"></i> <strong>Approved</strong> & Ready for instant SMS delivery.</span>');
                 return;

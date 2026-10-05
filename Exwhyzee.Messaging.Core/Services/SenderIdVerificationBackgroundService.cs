@@ -96,12 +96,10 @@ namespace Exwhyzee.Messaging.Core.Services
             {
                 if (cancellationToken.IsCancellationRequested) break;
 
-                if (string.IsNullOrWhiteSpace(sid.SenderId)) continue;
-
                 string rawId = sid.SenderId.Trim();
-                
-                // Ensure alphanumeric formatting
-                string cleanId = Regex.Replace(rawId, @"[^a-zA-Z0-9]", "");
+
+                // Ensure alphanumeric and space formatting (up to 11 chars)
+                string cleanId = Regex.Replace(rawId, @"[^a-zA-Z0-9 ]", "").Trim();
                 if (cleanId.Length > 11)
                 {
                     cleanId = cleanId.Substring(0, 11);
