@@ -112,19 +112,21 @@ namespace Exwhyzee.Messaging.Core.Services
 
         public static int CountPage(string input)
         {
-            int pageCount = 0;
-            int remainder, inputCount = Math.DivRem(input.Length, 160, out remainder);
+            if (string.IsNullOrEmpty(input)) return 0;
+            
+            // Normalize HTTP \r\n to standard SMS \n (1 character)
+            input = input.Replace("\r\n", "\n");
 
-            if (remainder > 0)
+            bool isUnicode = System.Text.RegularExpressions.Regex.IsMatch(input, @"[^\u0000-\u007F]");
+            int pageLimit = isUnicode ? 70 : 160;
+            int pageLimitConcat = isUnicode ? 67 : 153;
+
+            if (input.Length <= pageLimit)
             {
-                pageCount = inputCount + 1;
-            }
-            else
-            {
-                pageCount = inputCount;
+                return 1;
             }
 
-            return pageCount;
+            return (int)Math.Ceiling((double)input.Length / pageLimitConcat);
         }
     }
 }
