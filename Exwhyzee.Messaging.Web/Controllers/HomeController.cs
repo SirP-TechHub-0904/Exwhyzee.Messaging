@@ -15,15 +15,54 @@ namespace Exwhyzee.Messaging.Web.Controllers
 {
     public class HomeController : Controller
     {
+        private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment _env;
+
+        public HomeController(Microsoft.AspNetCore.Hosting.IWebHostEnvironment env)
+        {
+            _env = env;
+        }
+
         private ApplicationDbContext db => HttpContext.RequestServices.GetService<ApplicationDbContext>();
+
+        private IEnumerable<string> GetSliderImages()
+        {
+            try
+            {
+                var webRoot = _env?.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                var sliderPath = Path.Combine(webRoot, "Sliderimage");
+                if (!Directory.Exists(sliderPath))
+                {
+                    sliderPath = Path.Combine(webRoot, "SliderImage");
+                }
+
+                if (Directory.Exists(sliderPath))
+                {
+                    return Directory.EnumerateFiles(sliderPath)
+                                    .Select(fn => "~/Sliderimage/" + Path.GetFileName(fn))
+                                    .ToList();
+                }
+            }
+            catch
+            {
+                // Fallback to empty list if directory is missing
+            }
+            return new List<string>();
+        }
 
         [HttpGet]
         public async Task<ActionResult> Index()
         {
-            var adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
-            ViewBag.AdminSetting = adminSetting;
-            ViewBag.slides = Directory.EnumerateFiles(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "SliderImage"))
-                                      .Select(fn => "~/SliderImage/" + Path.GetFileName(fn));
+            try
+            {
+                var adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
+                ViewBag.AdminSetting = adminSetting;
+            }
+            catch
+            {
+                ViewBag.AdminSetting = null;
+            }
+
+            ViewBag.slides = GetSliderImages();
             return View();
         }
 
@@ -57,8 +96,7 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
         public ActionResult _slider()
         {
-            ViewBag.slides = Directory.EnumerateFiles(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "SliderImage"))
-                                     .Select(fn => "~/SliderImage/" + Path.GetFileName(fn));
+            ViewBag.slides = GetSliderImages();
             return PartialView();
         }
 
@@ -85,7 +123,13 @@ namespace Exwhyzee.Messaging.Web.Controllers
                     IFormFile file = Request.Form.Files[0];
                     if (file.Length > 0 && (file.ContentType.ToUpper().Contains("JPEG") || file.ContentType.ToUpper().Contains("PNG") || file.ContentType.ToUpper().Contains("JPG")))
                     {
-                        string fileName = Path.Combine(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "SliderImage"), Path.GetFileName(genNumber + file.FileName));
+                        var webRoot = _env?.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                        var sliderFolder = Path.Combine(webRoot, "Sliderimage");
+                        if (!Directory.Exists(sliderFolder))
+                        {
+                            Directory.CreateDirectory(sliderFolder);
+                        }
+                        string fileName = Path.Combine(sliderFolder, Path.GetFileName(genNumber + file.FileName));
                         using (var stream = new FileStream(fileName, FileMode.Create)) { file.CopyTo(stream); }
                         slider.ImageUrl = Path.GetFileName(genNumber + file.FileName);
                     }
@@ -124,7 +168,8 @@ namespace Exwhyzee.Messaging.Web.Controllers
             if (slide != null)
             {
                 var slidename = slide.ImageUrl;
-                var delName = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "SliderImage", slidename ?? "");
+                var webRoot = _env?.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                var delName = Path.Combine(webRoot, "Sliderimage", slidename ?? "");
                 if (System.IO.File.Exists(delName))
                 {
                     System.IO.File.Delete(delName);
