@@ -39,9 +39,9 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOSTINGER_SERVER_IP }}
-          username: ${{ secrets.HOSTINGER_SSH_USER }}
+          username: ${{ secrets.HOSTINGER_SSH_USER || 'root' }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          port: ${{ secrets.HOSTINGER_SSH_PORT }}
+          port: ${{ secrets.HOSTINGER_SSH_PORT || 22 }}
           script: |
             mkdir -p ${{ env.REMOTE_APP_DIR }}
             mkdir -p ${{ env.REMOTE_APP_DIR }}/wwwroot/uploads/modals
@@ -50,9 +50,9 @@ jobs:
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOSTINGER_SERVER_IP }}
-          username: ${{ secrets.HOSTINGER_SSH_USER }}
+          username: ${{ secrets.HOSTINGER_SSH_USER || 'root' }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          port: ${{ secrets.HOSTINGER_SSH_PORT }}
+          port: ${{ secrets.HOSTINGER_SSH_PORT || 22 }}
           source: "./publish-web/*"
           target: "${{ env.REMOTE_APP_DIR }}/"
           strip_components: 1
@@ -62,9 +62,9 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOSTINGER_SERVER_IP }}
-          username: ${{ secrets.HOSTINGER_SSH_USER }}
+          username: ${{ secrets.HOSTINGER_SSH_USER || 'root' }}
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          port: ${{ secrets.HOSTINGER_SSH_PORT }}
+          port: ${{ secrets.HOSTINGER_SSH_PORT || 22 }}
           script: |
             if systemctl is-active --quiet ${{ env.SERVICE_NAME }}; then
               systemctl restart ${{ env.SERVICE_NAME }}
