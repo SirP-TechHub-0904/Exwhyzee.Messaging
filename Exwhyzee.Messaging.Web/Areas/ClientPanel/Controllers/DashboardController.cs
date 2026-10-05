@@ -395,11 +395,13 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
                 .Distinct()
                 .ToList();
 
-            if (!approvedList.Any() && userSenderIds.Any())
-            {
-                approvedList = userSenderIds.Select(x => x.SenderId?.Trim()).Where(s => !string.IsNullOrEmpty(s)).Distinct().ToList();
-            }
             ViewBag.ApprovedSenderIds = approvedList;
+            var sidStatusList = userSenderIds.Select(x => new
+            {
+                SenderId = x.SenderId?.Trim() ?? "",
+                Status = x.XYZ_status ?? "Pending Approval"
+            }).ToList();
+            ViewBag.SenderIdsStatusJson = System.Text.Json.JsonSerializer.Serialize(sidStatusList);
 
             // 2. Address Book Groups with Member Count
             var groups = await db.Groups
@@ -588,6 +590,52 @@ STRICT NON-NEGOTIABLE RULES:
                         await PopulateComposeViewBagAsync(userId, client);
                         ModelState.AddModelError("", "Message sending failed. No recipient was added or selected.");
                         return View(model);
+                    }
+
+                    // Clean and sanitize Sender ID (alphanumeric, max 11)
+                    string rawSenderId = model.SenderId?.Trim() ?? "";
+                    string cleanSenderId = System.Text.RegularExpressions.Regex.Replace(rawSenderId, @"[^a-zA-Z0-9]", "").ToUpper();
+                    if (cleanSenderId.Length > 11)
+                    {
+                        cleanSenderId = cleanSenderId.Substring(0, 11);
+                    }
+                    model.SenderId = cleanSenderId;
+
+                    if (string.IsNullOrEmpty(cleanSenderId))
+                    {
+                        await PopulateComposeViewBagAsync(userId, client);
+                        ModelState.AddModelError("", "Please enter a valid alphanumeric Sender ID (max 11 characters, no spaces or symbols).");
+                        return View(model);
+                    }
+
+                    // Auto-sync or verify Sender ID with Gateway
+                    if (client != null)
+                    {
+                        var existingSid = await db.XyzSenderIDs.FirstOrDefaultAsync(x => x.SenderId == cleanSenderId && x.ClientId == client.ClientId);
+                        if (existingSid == null)
+                        {
+                            // Auto-submit brand new Sender ID to KudiSMS in background
+                            try
+                            {
+                                await _clientService.AddSender(userId, cleanSenderId, "Account verification and transactional alerts.");
+                            }
+                            catch { }
+                        }
+                        else if (existingSid.XYZ_status != "Approved" && existingSid.XYZ_status != "Active")
+                        {
+                            // Quick on-the-fly live verification check
+                            try
+                            {
+                                var verifyRes = await _clientService.VerifySender(cleanSenderId);
+                                if (verifyRes == "Approved")
+                                {
+                                    existingSid.XYZ_status = "Approved";
+                                    existingSid.XYZ_msg = "Approved and active for SMS broadcasts.";
+                                    await db.SaveChangesAsync();
+                                }
+                            }
+                            catch { }
+                        }
                     }
 
                     // Count pages

@@ -475,6 +475,7 @@
                         <input type="text" name="SenderId" id="senderIdInput" maxlength="11" class="form-control" placeholder="e.g. SENDER ID (Max 11 alphanumeric characters)" required value="@(approvedSenderIds.FirstOrDefault() ?? "")" style="font-weight:800; font-size:1.05rem; letter-spacing:0.5px; text-transform:uppercase;" />
                         <span id="senderCharCounter" style="position:absolute; right:12px; top:10px; font-size:0.78rem; font-weight:700; color:#94A3B8;">0/11</span>
                     </div>
+                    <div id="senderIdStatusFeedback" style="margin-top:6px; font-size:0.82rem; font-weight:600;"></div>
                     @Html.ValidationMessageFor(model => model.SenderId, "", new { @class = "text-danger" })
                 </div>
             </div>
@@ -745,13 +746,55 @@
         const hasGeminiKey = @(hasGeminiKey ? "true" : "false");
         const userWalletBalance = @walletBalance;
         const baseUnitsPerSms = @(ViewBag.BaseUnitsPerSms ?? 4.0m);
+        const registeredSenderIds = @Html.Raw(ViewBag.SenderIdsStatusJson ?? "[]");
+        const approvedSenderIdsList = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(approvedSenderIds));
         const tariffRules = @Html.Raw(ViewBag.TariffRulesJson ?? "[]");
 
-        // Sync Phone Sender Preview
+        // Sync Phone Sender Preview & Real-Time Status Feedback
         function updatePhoneSender() {
-            const rawVal = ($('#senderIdInput').val() || '').trim().toUpperCase();
+            let rawVal = ($('#senderIdInput').val() || '').trim().toUpperCase();
+            
+            // Check for invalid characters (spaces or symbols)
+            const hasInvalidChars = /[^A-Z0-9]/.test(rawVal);
+            const cleanVal = rawVal.replace(/[^A-Z0-9]/g, '');
+
             $('#senderCharCounter').text(rawVal.length + '/11');
-            $('#phonePreviewSender').text(rawVal || 'No Sender ID');
+            $('#phonePreviewSender').text(cleanVal || 'No Sender ID');
+
+            const feedbackElem = $('#senderIdStatusFeedback');
+
+            if (!rawVal) {
+                feedbackElem.html('<span style="color:#94A3B8;"><i class="fa fa-info-circle"></i> Type a registered Sender ID or select an approved one above.</span>');
+                return;
+            }
+
+            if (hasInvalidChars) {
+                feedbackElem.html('<span style="color:#EF4444;"><i class="fa fa-triangle-exclamation"></i> Only letters & numbers allowed. Spaces & symbols will be removed.</span>');
+                return;
+            }
+
+            // Check if in user approved list
+            const isApproved = approvedSenderIdsList.includes(cleanVal);
+            if (isApproved) {
+                feedbackElem.html('<span style="color:#10B981;"><i class="fa fa-circle-check"></i> <strong>Approved</strong> & Ready for instant SMS delivery.</span>');
+                return;
+            }
+
+            // Check if registered in DB with another status
+            const foundInDb = registeredSenderIds.find(x => x.SenderId.toUpperCase() === cleanVal);
+            if (foundInDb) {
+                if (foundInDb.Status === "Approved" || foundInDb.Status === "Active") {
+                    feedbackElem.html('<span style="color:#10B981;"><i class="fa fa-circle-check"></i> <strong>Approved</strong> & Ready for instant SMS delivery.</span>');
+                } else if (foundInDb.Status === "Blocked") {
+                    feedbackElem.html('<span style="color:#EF4444;"><i class="fa fa-ban"></i> <strong>Blocked</strong> by operators. Please choose another Sender ID.</span>');
+                } else {
+                    feedbackElem.html('<span style="color:#F59E0B;"><i class="fa fa-clock"></i> <strong>Pending Operator Review</strong> (1–24h). Messages may be rejected until approved.</span>');
+                }
+                return;
+            }
+
+            // Brand new Sender ID
+            feedbackElem.html('<span style="color:#6366F1;"><i class="fa fa-paper-plane"></i> <strong>New Sender ID:</strong> Will be auto-submitted to operators for approval.</span>');
         }
 
         // Quick Sender ID Pill click

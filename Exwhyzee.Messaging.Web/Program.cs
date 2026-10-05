@@ -98,6 +98,9 @@ builder.Services.AddHostedService<Exwhyzee.Messaging.Core.Services.ScheduledMess
 builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.ILowUnitAlertService, Exwhyzee.Messaging.Core.Services.LowUnitAlertService>();
 builder.Services.AddHostedService<Exwhyzee.Messaging.Core.Services.DailyLowUnitCheckerBackgroundService>();
 
+// Register 1-Hour Automated Sender ID Verification & Gateway Sync Worker
+builder.Services.AddHostedService<Exwhyzee.Messaging.Core.Services.SenderIdVerificationBackgroundService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
