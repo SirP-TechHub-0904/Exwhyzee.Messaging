@@ -66,26 +66,34 @@ namespace Exwhyzee.Messaging.Core.Services
 
         public static decimal UnitsPerPage(List<string> numbers)
         {
+            if (numbers == null || !numbers.Any()) return 0;
+
+            var remainingNumbers = new List<string>(numbers);
             decimal units = 0;
             using (var db = new ApplicationDbContext())
             {
                 var settings = db.AdminSettings.AsNoTracking().FirstOrDefault();
-                var codes = db.DialCodes.Include(x => x.PriceSetting).ToList();
+                decimal flatRate = settings?.FlatUnitsPerSms ?? 4.0m;
+                var codes = db.DialCodes.Include(x => x.PriceSetting).AsNoTracking().ToList();
 
                 foreach (var item in codes)
                 {
-                    var selectNumbers = numbers.Where(x => x.StartsWith(item.PriceSetting.InternationalDialCode + RemoveZero(item.NumberPrefix)));
-                    units = units + (selectNumbers.Count() * item.PriceSetting.UnitsPerSms);
-
-                    foreach (var number in selectNumbers.ToList())
+                    if (item.PriceSetting == null) continue;
+                    string prefix = (item.PriceSetting.InternationalDialCode ?? "234") + RemoveZero(item.NumberPrefix);
+                    var matched = remainingNumbers.Where(x => x.StartsWith(prefix)).ToList();
+                    if (matched.Any())
                     {
-                        numbers.Remove(number);
+                        units += (matched.Count * item.PriceSetting.UnitsPerSms);
+                        foreach (var m in matched)
+                        {
+                            remainingNumbers.Remove(m);
+                        }
                     }
                 }
 
-                if (numbers.Count() > 0)
+                if (remainingNumbers.Count > 0)
                 {
-                    units = units + numbers.Count() * settings.FlatUnitsPerSms;
+                    units += remainingNumbers.Count * flatRate;
                 }
 
                 return units;

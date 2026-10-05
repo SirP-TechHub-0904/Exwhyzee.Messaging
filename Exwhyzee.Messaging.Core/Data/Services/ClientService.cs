@@ -414,14 +414,18 @@ namespace Exwhyzee.Messaging.Core.Data.Services
                         var balanceresponse = await balresponse.Content.ReadAsStringAsync();
                         BalanceResponse balresponsed = JsonConvert.DeserializeObject<BalanceResponse>(balanceresponse);
 
-                        if (balresponsed != null && decimal.TryParse(balresponsed.msg, out decimal AdminBal))
+                        if (balresponsed != null)
                         {
-                            if (units > AdminBal)
+                            string cleanBal = (balresponsed.msg ?? "").Replace(",", "").Replace("₦", "").Trim();
+                            if (decimal.TryParse(cleanBal, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal adminNairaBal))
                             {
-                                responsed.BalanceResponse = "Admin gateway balance insufficient.";
-                                responsed.msg = "Gateway route temporarily unavailable. Please contact support.";
-                                responsed.status = "fail";
-                                return responsed;
+                                if (adminNairaBal <= 0)
+                                {
+                                    responsed.BalanceResponse = "Admin gateway balance insufficient.";
+                                    responsed.msg = "Gateway route temporarily unavailable. Please contact support.";
+                                    responsed.status = "fail";
+                                    return responsed;
+                                }
                             }
                         }
                     }
