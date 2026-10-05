@@ -1032,7 +1032,14 @@
                         const bannerContainer = document.getElementById('xyzModalBannerContainer');
                         const bannerImg = document.getElementById('xyzModalBannerImg');
                         if (res.imageUrl) {
-                            bannerImg.src = res.imageUrl;
+                            let cleanUrl = res.imageUrl.trim();
+                            if (cleanUrl.startsWith('~')) {
+                                cleanUrl = cleanUrl.substring(1);
+                            }
+                            if (!cleanUrl.startsWith('/') && !cleanUrl.startsWith('http')) {
+                                cleanUrl = '/' + cleanUrl;
+                            }
+                            bannerImg.src = cleanUrl;
                             bannerContainer.style.display = 'block';
                         } else {
                             bannerContainer.style.display = 'none';
