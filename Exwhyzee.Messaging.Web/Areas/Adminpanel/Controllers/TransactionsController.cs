@@ -67,7 +67,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
             int pageSize = 25;
             int pageNumber = page ?? 1;
-            var items = query.OrderByDescending(x => x.TransactionId).ToPagedList(pageNumber, pageSize);
+            var items = query.OrderByDescending(x => x.DateCreated).ThenByDescending(x => x.TransactionId).ToPagedList(pageNumber, pageSize);
             return View(items);
         }
 

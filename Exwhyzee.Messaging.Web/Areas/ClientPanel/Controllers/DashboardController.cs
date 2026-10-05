@@ -263,7 +263,8 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 
             var recentTransactions = await db.Transactions
                 .Where(x => x.ClientId == userclient.ClientId)
-                .OrderByDescending(x => x.TransactionId)
+                .OrderByDescending(x => x.DateCreated)
+                .ThenByDescending(x => x.TransactionId)
                 .Take(10)
                 .ToListAsync();
 
@@ -1352,7 +1353,7 @@ STRICT NON-NEGOTIABLE RULES:
 
             int pageSize = 20;
             int pageNumber = page ?? 1;
-            var list = query.OrderByDescending(x => x.DateCreated).ToPagedList(pageNumber, pageSize);
+            var list = query.OrderByDescending(x => x.DateCreated).ThenByDescending(x => x.TransactionId).ToPagedList(pageNumber, pageSize);
 
             return View(list);
         }
