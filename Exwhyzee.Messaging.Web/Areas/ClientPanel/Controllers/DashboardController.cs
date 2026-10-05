@@ -383,12 +383,9 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         /// </summary>
         /// <returns></returns>
 
-        [HttpGet]
-        public async Task<ActionResult> Compose()
+        // Helper to populate all necessary ViewBag items for Compose view
+        private async Task PopulateComposeViewBagAsync(string userId, Client client)
         {
-            string userId = User.Identity.GetUserId();
-            var client = await _clientService.GetClientDetailsByUserId(userId);
-
             // 1. Registered & Approved Sender IDs
             var userSenderIds = await _clientService.GetAllSenderIdById(userId);
             var approvedList = userSenderIds
@@ -445,7 +442,14 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
             {
                 ViewBag.TariffRulesJson = "[]";
             }
+        }
 
+        [HttpGet]
+        public async Task<ActionResult> Compose()
+        {
+            string userId = User.Identity.GetUserId();
+            var client = await _clientService.GetClientDetailsByUserId(userId);
+            await PopulateComposeViewBagAsync(userId, client);
             return View();
         }
 
@@ -520,264 +524,238 @@ STRICT NON-NEGOTIABLE RULES:
         [HttpPost]
         public async Task<ActionResult> Compose(ComposeViewModel model, int[] GroupId, IFormFile file)
         {
-            var client = await _clientService.GetClientDetailsByUserId(User.Identity.GetUserId());
             string userId = User.Identity.GetUserId();
-            DateTime scheduleDate = DateTime.Now;
-            if (model.ScheduleDate != null)
-            {
-                scheduleDate = DateTime.ParseExact(model.ScheduleDate.ToString(), "dd/MM/yyyy hh:mm", null);
-            }
+            var client = await _clientService.GetClientDetailsByUserId(userId);
 
-            // Multi-Format File Ingestion (.xlsx, .xls, .docx, .txt, .csv)
-            if (file != null && file.Length > 0)
+            try
             {
-                try
+                // Multi-Format File Ingestion (.xlsx, .xls, .docx, .txt, .csv)
+                if (file != null && file.Length > 0)
                 {
-                    using var ms = new MemoryStream();
-                    await file.CopyToAsync(ms);
-                    byte[] fileBytes = ms.ToArray();
-                    var extracted = await _geminiExtractor.ExtractFromFileAsync(fileBytes, file.FileName, client?.GeminiApiKey);
-                    if (extracted != null && extracted.Any())
+                    try
                     {
-                        string numbers = string.Join(",", extracted.Select(c => c.Phone));
-                        model.Recipients = (model.Recipients ?? "") + "," + numbers;
+                        using var ms = new MemoryStream();
+                        await file.CopyToAsync(ms);
+                        byte[] fileBytes = ms.ToArray();
+                        var extracted = await _geminiExtractor.ExtractFromFileAsync(fileBytes, file.FileName, client?.GeminiApiKey);
+                        if (extracted != null && extracted.Any())
+                        {
+                            string numbers = string.Join(",", extracted.Select(c => c.Phone));
+                            model.Recipients = (model.Recipients ?? "") + "," + numbers;
+                        }
+                    }
+                    catch
+                    {
+                        // Fallback to basic text read
+                        if (file.FileName.ToLower().Contains("txt"))
+                        {
+                            using var reader = new StreamReader(file.OpenReadStream());
+                            string txtContent = await reader.ReadToEndAsync();
+                            string numbers = txtContent.Replace("\r\n", ",").Replace("\n", ",").Replace(" ", ",");
+                            model.Recipients = (model.Recipients ?? "") + "," + numbers;
+                        }
                     }
                 }
-                catch (Exception ex)
+
+                if (GroupId != null && GroupId.Length > 0)
                 {
-                    // Fallback to basic text read
-                    if (file.FileName.ToLower().Contains("txt"))
+                    string combined = "";
+                    foreach (var item in GroupId)
                     {
-                        using var reader = new StreamReader(file.OpenReadStream());
-                        string txtContent = await reader.ReadToEndAsync();
-                        string numbers = txtContent.Replace("\r\n", ",").Replace("\n", ",").Replace(" ", ",");
-                        model.Recipients = (model.Recipients ?? "") + "," + numbers;
+                        var itemContacts = await db.Contacts.Where(x => x.GroupId == item && x.IsActive).Select(x => x.PhoneNumber).ToListAsync();
+                        if (itemContacts.Any())
+                        {
+                            combined = combined + string.Join(",", itemContacts) + ",";
+                        }
                     }
-                }
-            }
+                    if (!string.IsNullOrEmpty(combined) && combined.EndsWith(","))
+                    {
+                        combined = combined.Remove(combined.Length - 1);
+                    }
 
-            var groups = db.Groups.OrderBy(x => x.Name).Where(x => x.Name != null && x.UserId == userId).Select(g => new
-            {
-                GroupId = g.GroupId,
-                Name = g.Name
-            }).ToList();
-            if (GroupId != null)
-            {
-                string contacts;
-                string combined = "";
-
-                foreach (var item in GroupId)
-                {
-                    var itemContacts = db.Contacts.Where(x => x.GroupId == item && x.IsActive != false).Select(x => x.PhoneNumber);
-                    contacts = string.Join(",", itemContacts.ToList());
-                    combined = combined + contacts + ",";
-
-                }
-                if (!string.IsNullOrEmpty(combined) && combined.EndsWith(","))
-                {
-                    combined = combined.Remove(combined.Length - 1);
+                    model.Recipients = (model.Recipients ?? "") + (string.IsNullOrEmpty(model.Recipients) ? "" : ",") + combined;
                 }
 
-                model.Recipients = model.Recipients + "," + combined;
-            }
-            
-            if (!string.IsNullOrEmpty(model.Recipients))
-            {
-                if (model.Recipients.EndsWith(","))
+                if (!string.IsNullOrEmpty(model.Recipients))
                 {
-                    model.Recipients = model.Recipients.Remove(model.Recipients.Length - 1);
-                }
-            }
-
-
-
-            if (ModelState.IsValid)
-            {
-                if (string.IsNullOrEmpty(model.Recipients))
-                {
-                    ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
-                    ModelState.AddModelError("", "Message Sending failed. No recipient was added or selected. And any number to Recipient to save as Draft.");
-                    return View(model);
-                }
-                //get page count
-                int pageCount = SmsServices.CountPage(model.Content);
-
-                //Remove duplicate Numbers
-                List<string> numbers = new List<string>(SmsServices.RemoveDuplicates(model.Recipients));
-
-                //Format Numbers with International dail codes
-                List<string> fNumbers = new List<string>(SmsServices.FormatNumbers(numbers.ToList()));
-
-                //units needed per page
-                decimal units = SmsServices.UnitsPerPage(fNumbers.ToList());
-
-                var nmb = string.Join(",", fNumbers.ToList());
-                //total units needed
-                decimal totalUnitsNeeded = pageCount * units;
-                
-
-                //Check if Client's Unit is sufficient
-                if (totalUnitsNeeded > client.Units)
-                {
-                    ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
-                    TempData["error"] = "Sending Message failed. You have insufficient unit balance. Your current balance is " + client.Units + "units, while total units required is " + totalUnitsNeeded + ".";
-                    return View(model);
+                    model.Recipients = model.Recipients.Trim().TrimEnd(',');
                 }
 
-                // Parse Schedule Date cleanly
-                DateTime parsedScheduleDate = DateTime.Now.AddMinutes(30);
-                if (model.ScheduleDate != null && !string.IsNullOrWhiteSpace(model.ScheduleDate.ToString()))
+                if (ModelState.IsValid)
                 {
-                    string sDateStr = model.ScheduleDate.ToString().Trim();
-                    string[] formats = new[] { 
-                        "dd/MM/yyyy HH:mm", "dd/MM/yyyy hh:mm tt", "dd/MM/yyyy h:mm tt", "dd/MM/yyyy HH:mm:ss", 
-                        "dd/MM/yyyy", "yyyy-MM-ddTHH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-ddTHH:mm:ss", 
-                        "d/M/yyyy HH:mm", "d/M/yyyy h:mm tt", "MM/dd/yyyy HH:mm", "MM/dd/yyyy hh:mm tt" 
+                    if (string.IsNullOrWhiteSpace(model.Recipients))
+                    {
+                        await PopulateComposeViewBagAsync(userId, client);
+                        ModelState.AddModelError("", "Message sending failed. No recipient was added or selected.");
+                        return View(model);
+                    }
+
+                    // Count pages
+                    int pageCount = SmsServices.CountPage(model.Content);
+
+                    // Deduplicate and format numbers
+                    List<string> rawNumbers = SmsServices.RemoveDuplicates(model.Recipients).ToList();
+                    List<string> fNumbers = SmsServices.FormatNumbers(rawNumbers).ToList();
+
+                    if (!fNumbers.Any())
+                    {
+                        await PopulateComposeViewBagAsync(userId, client);
+                        ModelState.AddModelError("", "Please enter at least one valid phone number.");
+                        return View(model);
+                    }
+
+                    // Units needed per page and total
+                    decimal units = SmsServices.UnitsPerPage(fNumbers);
+                    decimal totalUnitsNeeded = pageCount * units;
+
+                    // Check if Client's Unit balance is sufficient
+                    if (client == null || totalUnitsNeeded > client.Units)
+                    {
+                        await PopulateComposeViewBagAsync(userId, client);
+                        TempData["error"] = $"Insufficient unit balance. Your current balance is {client?.Units ?? 0} units, but {totalUnitsNeeded} units are required.";
+                        return View(model);
+                    }
+
+                    // Parse Schedule Date cleanly without throwing FormatException
+                    DateTime parsedScheduleDate = DateTime.Now.AddMinutes(30);
+                    if (model.ScheduleDate != null && !string.IsNullOrWhiteSpace(model.ScheduleDate.ToString()))
+                    {
+                        string sDateStr = model.ScheduleDate.ToString().Trim();
+                        string[] formats = new[] {
+                            "dd/MM/yyyy HH:mm", "dd/MM/yyyy hh:mm tt", "dd/MM/yyyy h:mm tt", "dd/MM/yyyy HH:mm:ss",
+                            "dd/MM/yyyy", "yyyy-MM-ddTHH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-ddTHH:mm:ss",
+                            "d/M/yyyy HH:mm", "d/M/yyyy h:mm tt", "MM/dd/yyyy HH:mm", "MM/dd/yyyy hh:mm tt",
+                            "yyyy-MM-dd", "M/d/yyyy", "d/M/yyyy"
+                        };
+
+                        if (DateTime.TryParseExact(sDateStr, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dExact))
+                        {
+                            parsedScheduleDate = dExact;
+                        }
+                        else if (DateTime.TryParse(sDateStr, CultureInfo.GetCultureInfo("en-GB"), DateTimeStyles.None, out var dGb))
+                        {
+                            parsedScheduleDate = dGb;
+                        }
+                        else if (DateTime.TryParse(sDateStr, out var d1))
+                        {
+                            parsedScheduleDate = d1;
+                        }
+                    }
+
+                    // Save message to History
+                    Message message = new Message
+                    {
+                        DeliveredDate = DateTime.UtcNow,
+                        MessageContent = model.Content,
+                        Recipients = string.Join(",", fNumbers),
+                        Response = "Pending",
+                        SenderId = model.SenderId?.ToString() ?? "",
+                        Scheduleddate = parsedScheduleDate,
+                        UnitsUsed = 0,
+                        UserId = userId
                     };
 
-                    if (DateTime.TryParseExact(sDateStr, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dExact))
+                    if (model.SendOption == "SendLater")
                     {
-                        parsedScheduleDate = dExact;
+                        message.Status = MessageStatus.Scheduled;
                     }
-                    else if (DateTime.TryParse(sDateStr, CultureInfo.GetCultureInfo("en-GB"), DateTimeStyles.None, out var dGb))
+                    else if (model.SendOption == "SaveDraft")
                     {
-                        parsedScheduleDate = dGb;
-                    }
-                    else if (DateTime.TryParse(sDateStr, out var d1))
-                    {
-                        parsedScheduleDate = d1;
-                    }
-                }
-
-                //Save message to History
-                Message message = new Message();
-                message.DeliveredDate = DateTime.UtcNow;
-                message.MessageContent = model.Content;
-                message.Recipients = string.Join(",", fNumbers.ToList());
-                message.Response = "Pending";
-                message.SenderId = model.SenderId.ToString();
-                message.Scheduleddate = parsedScheduleDate;
-
-                if (model.SendOption == "SendLater")
-                {
-                    message.Status = MessageStatus.Scheduled;
-                }
-                else if (model.SendOption == "SaveDraft")
-                {
-                    message.Status = MessageStatus.Draft;
-                }
-                else
-                {
-                    message.Status = MessageStatus.Pending;
-                }
-
-                message.UnitsUsed = 0;
-                message.UserId = User.Identity.GetUserId();
-
-                await _clientService.AddMessageToHistory(message);
-
-                if (model.SendOption == "SendNow")
-                {
-                    var response = await _clientService.SendSmsById(message.MessageId, totalUnitsNeeded);
-                    var sentMessage = await _clientService.GetMessage(message.MessageId);
-                    if (response.status.ToLower().Contains("success"))
-                    {
-                        //Update Client
-                        client.Units = client.Units - totalUnitsNeeded;
-                        await _clientService.UpdateClient(client);
-
-                        // Asynchronous Low Unit Alert Trigger (ASAP)
-                        try
-                        {
-                            var lowUnitService = new LowUnitAlertService();
-                            _ = Task.Run(() => lowUnitService.CheckAndTriggerLowUnitAlertAsync(userId, client.Units));
-                        }
-                        catch { }
-
-                        sentMessage.UnitsUsed = totalUnitsNeeded;
-                        sentMessage.Status = MessageStatus.Sent;
-                        sentMessage.Response = response.msg;
-                        sentMessage.Response_status = response.status;
-                        sentMessage.Response_error_code = response.error_code;
-                        sentMessage.Response_cost = response.cost;
-                        sentMessage.Response_data = response.data;
-                        sentMessage.Response_msg = response.msg;
-                        sentMessage.Response_length = response.length;
-                        sentMessage.Response_page = response.page;
-                        sentMessage.Response_balance = response.balance;
-                        sentMessage.Response_BalanceResponse = response.BalanceResponse;
-                        await _clientService.UpdateMessageStatus(sentMessage);
-
-                        ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
-                        TempData["success"] = "Message has been sent successfully. Total Units used is " + totalUnitsNeeded + ".";
-                        return RedirectToAction("Compose");
-                    }
-                    else if(response.status.ToLower().Contains("error"))
-                    {
-                        if(response.error_code == "106")
-                        {
-                            sentMessage.Response = response.msg;
-                            sentMessage.Response_status = response.status;
-                            sentMessage.Response_error_code = response.error_code;
-                            sentMessage.Response_cost = response.cost;
-                            sentMessage.Response_data = response.data;
-                            sentMessage.Response_msg = response.msg;
-                            sentMessage.Response_length = response.length;
-                            sentMessage.Response_page = response.page;
-                            sentMessage.Response_balance = response.balance;
-                            sentMessage.Response_BalanceResponse = response.BalanceResponse;
-                            await _clientService.UpdateMessageStatus(sentMessage);
-                            TempData["error"] = "The sender ID used do not exist or has not been approved.";
-                            ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
-                            return RedirectToAction("Compose");
-                            
-                        }
-                    }
-                    else if (response.status.ToLower().Contains("Blocked"))
-                    {
-                        if (response.error_code == "106")
-                        {
-                            sentMessage.Response = response.msg;
-                            sentMessage.Response_status = response.status;
-                            sentMessage.Response_error_code = response.error_code;
-                            sentMessage.Response_cost = response.cost;
-                            sentMessage.Response_data = response.data;
-                            sentMessage.Response_msg = response.msg;
-                            sentMessage.Response_length = response.length;
-                            sentMessage.Response_page = response.page;
-                            sentMessage.Response_balance = response.balance;
-                            sentMessage.Response_BalanceResponse = response.BalanceResponse;
-                            await _clientService.UpdateMessageStatus(sentMessage);
-                            TempData["error"] = response.msg;
-                            ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
-                            return RedirectToAction("Compose");
-
-                        }
+                        message.Status = MessageStatus.Draft;
                     }
                     else
                     {
-                        ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
-                        TempData["error"] = "Sending Message Failed. Please try again or Contact the Administrator...";
-                        return View(model);
+                        message.Status = MessageStatus.Pending;
+                    }
+
+                    await _clientService.AddMessageToHistory(message);
+
+                    if (model.SendOption == "SendNow")
+                    {
+                        var response = await _clientService.SendSmsById(message.MessageId, totalUnitsNeeded);
+                        var sentMessage = await _clientService.GetMessage(message.MessageId);
+
+                        if (response != null && response.status != null && response.status.ToLower().Contains("success"))
+                        {
+                            // Deduct units
+                            client.Units = client.Units - totalUnitsNeeded;
+                            await _clientService.UpdateClient(client);
+
+                            // Asynchronous Low Unit Alert Trigger
+                            try
+                            {
+                                var lowUnitService = new LowUnitAlertService();
+                                _ = Task.Run(() => lowUnitService.CheckAndTriggerLowUnitAlertAsync(userId, client.Units));
+                            }
+                            catch { }
+
+                            if (sentMessage != null)
+                            {
+                                sentMessage.UnitsUsed = totalUnitsNeeded;
+                                sentMessage.Status = MessageStatus.Sent;
+                                sentMessage.Response = response.msg;
+                                sentMessage.Response_status = response.status;
+                                sentMessage.Response_error_code = response.error_code;
+                                sentMessage.Response_cost = response.cost;
+                                sentMessage.Response_data = response.data;
+                                sentMessage.Response_msg = response.msg;
+                                sentMessage.Response_length = response.length;
+                                sentMessage.Response_page = response.page;
+                                sentMessage.Response_balance = response.balance;
+                                sentMessage.Response_BalanceResponse = response.BalanceResponse;
+                                await _clientService.UpdateMessageStatus(sentMessage);
+                            }
+
+                            TempData["success"] = $"Message sent successfully to {fNumbers.Count} recipient(s). Total units used: {totalUnitsNeeded}.";
+                            return RedirectToAction("Compose");
+                        }
+                        else
+                        {
+                            string errMessage = response?.msg ?? "Error from SMS Gateway.";
+                            if (response?.error_code == "106")
+                            {
+                                errMessage = "The sender ID used does not exist or has not been approved.";
+                            }
+
+                            if (sentMessage != null)
+                            {
+                                sentMessage.Response = response?.msg;
+                                sentMessage.Response_status = response?.status ?? "Failed";
+                                sentMessage.Response_error_code = response?.error_code;
+                                sentMessage.Response_cost = response?.cost;
+                                sentMessage.Response_data = response?.data;
+                                sentMessage.Response_msg = response?.msg;
+                                sentMessage.Response_length = response?.length ?? 0;
+                                sentMessage.Response_page = response?.page ?? 0;
+                                sentMessage.Response_balance = response?.balance;
+                                sentMessage.Response_BalanceResponse = response?.BalanceResponse;
+                                await _clientService.UpdateMessageStatus(sentMessage);
+                            }
+
+                            TempData["error"] = errMessage;
+                            return RedirectToAction("Compose");
+                        }
+                    }
+                    else if (model.SendOption == "SendLater")
+                    {
+                        TempData["success"] = $"Broadcast to {fNumbers.Count} recipient(s) has been successfully scheduled for {parsedScheduleDate:dd MMM yyyy, hh:mm tt}!";
+                        return RedirectToAction("ScheduledMessages");
+                    }
+                    else if (model.SendOption == "SaveDraft")
+                    {
+                        TempData["success"] = "Message has been saved as Draft successfully.";
+                        return RedirectToAction("DraftMessages");
                     }
                 }
-                else if (model.SendOption == "SendLater")
-                {
-                    TempData["success"] = $"Broadcast to {fNumbers.Count} recipient(s) has been successfully scheduled for {parsedScheduleDate:dd MMM yyyy, hh:mm tt}!";
-                    return RedirectToAction("ScheduledMessages");
-                }
-                else if (model.SendOption == "SaveDraft")
-                {
-                    TempData["success"] = "Message has been saved as Draft successfully.";
-                    return RedirectToAction("DraftMessages");
-                }
 
-                ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
-                TempData["error"] = "Sending Message Failed. Please Contact the Administrator.";
+                await PopulateComposeViewBagAsync(userId, client);
                 return View(model);
             }
-            ViewBag.GroupId = new MultiSelectList(groups, "GroupId", "Name");
-            return View(model);
+            catch (Exception ex)
+            {
+                TempData["error"] = "Error sending message: " + ex.Message;
+                return RedirectToAction("Compose");
+            }
         }
 
         // ========================================================
