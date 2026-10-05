@@ -138,16 +138,16 @@ namespace Exwhyzee.Messaging.Core.Services
             return defaultValue;
         }
 
-        private string LogoUrl => GetSetting("AppSettings:LogoUrl", "https://exwhyzee.ng/Content/image/SMS-LOGO.png");
+        private string LogoUrl => GetSetting("AppSettings:LogoUrl", "https://exwhyzee.ng/Content/image/EXWHYZEE-BULK-SMS.png");
 
         private string GetLogoFilePath()
         {
             var possiblePaths = new[]
             {
-                Path.Combine(AppContext.BaseDirectory, "wwwroot", "Content", "image", "SMS-LOGO.png"),
-                Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Content", "image", "SMS-LOGO.png"),
-                Path.Combine(Directory.GetCurrentDirectory(), "..", "Exwhyzee.Messaging.Web", "wwwroot", "Content", "image", "SMS-LOGO.png"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "Exwhyzee.Messaging.Web", "wwwroot", "Content", "image", "SMS-LOGO.png")
+                Path.Combine(AppContext.BaseDirectory, "wwwroot", "Content", "image", "EXWHYZEE-BULK-SMS.png"),
+                Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Content", "image", "EXWHYZEE-BULK-SMS.png"),
+                Path.Combine(Directory.GetCurrentDirectory(), "..", "Exwhyzee.Messaging.Web", "wwwroot", "Content", "image", "EXWHYZEE-BULK-SMS.png"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "Exwhyzee.Messaging.Web", "wwwroot", "Content", "image", "EXWHYZEE-BULK-SMS.png")
             };
 
             foreach (var path in possiblePaths)
