@@ -1,60 +1,89 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-
+using System.Threading.Tasks;
+using Exwhyzee.Messaging.Core.Services;
 
 namespace Exwhyzee.Messaging.Core
 {
     public sealed class ExceptionUtility
     {
-        // All methods are static, so this can be private 
+        private static readonly IErrorLogService _errorLogService = new ErrorLogService();
+
         public ExceptionUtility()
         { }
 
-        // Log an Exception 
+        // Synchronous logging (backward compatibility) - fires async DB log & email alert
         public static void LogException(Exception exc, string source)
         {
-            // Include enterprise logic for logging exceptions 
-            // Get the absolute path to the log file 
-            string logFile = "~/App_Data/ErrorLog.txt";
-            logFile = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "App_Data", "ErrorLog.txt");
+            if (exc == null) return;
 
-            // Open the log file for append and write the log
-            StreamWriter sw = new StreamWriter(logFile, true);
-            sw.WriteLine("********** {0} **********", DateTime.Now);
-            if (exc.InnerException != null)
+            // 1. Try file log as local safety net
+            try
             {
-                sw.Write("Inner Exception Type: ");
-                sw.WriteLine(exc.InnerException.GetType().ToString());
-                sw.Write("Inner Exception: ");
-                sw.WriteLine(exc.InnerException.Message);
-                sw.Write("Inner Source: ");
-                sw.WriteLine(exc.InnerException.Source);
-                if (exc.InnerException.StackTrace != null)
+                string dir = Path.Combine(Directory.GetCurrentDirectory(), "App_Data");
+                if (!Directory.Exists(dir))
                 {
-                    sw.WriteLine("Inner Stack Trace: ");
-                    sw.WriteLine(exc.InnerException.StackTrace);
+                    Directory.CreateDirectory(dir);
                 }
-            }
-            sw.Write("Exception Type: ");
-            sw.WriteLine(exc.GetType().ToString());
-            sw.WriteLine("Exception: " + exc.Message);
-            sw.WriteLine("Source: " + source);
-            sw.WriteLine("Stack Trace: ");
-            if (exc.StackTrace != null)
-            {
-                sw.WriteLine(exc.StackTrace);
+                string logFile = Path.Combine(dir, "ErrorLog.txt");
+                using var sw = new StreamWriter(logFile, true);
+                sw.WriteLine("********** {0} **********", DateTime.UtcNow);
+                sw.WriteLine("Source: " + source);
+                sw.WriteLine("Exception Type: " + exc.GetType().FullName);
+                sw.WriteLine("Exception: " + exc.Message);
+                if (exc.InnerException != null)
+                {
+                    sw.WriteLine("Inner: " + exc.InnerException.Message);
+                }
+                sw.WriteLine("Stack: " + exc.StackTrace);
                 sw.WriteLine();
             }
-            sw.Close();
+            catch { }
+
+            // 2. Fire and forget DB logging & email alert
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _errorLogService.LogErrorAndAlertAsync(exc, source);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ExceptionUtility.LogException Alert Failure]: {ex.Message}");
+                }
+            });
+        }
+
+        // Asynchronous logging & alerting with diagnostic root-cause extraction
+        public static async Task<string> LogAndAlertAsync(
+            Exception exc, 
+            string source, 
+            string userId = null, 
+            string userName = null, 
+            string userEmail = null, 
+            string requestUrl = null, 
+            string requestMethod = null, 
+            string clientIp = null, 
+            object payload = null)
+        {
+            if (exc == null) return "Unknown Error";
+            return await _errorLogService.LogErrorAndAlertAsync(
+                exc, 
+                source, 
+                logLevel: "Critical",
+                userId: userId,
+                userName: userName,
+                userEmail: userEmail,
+                requestUrl: requestUrl,
+                requestMethod: requestMethod,
+                clientIp: clientIp,
+                payload: payload);
         }
 
         // Notify System Operators about an exception 
         public static void NotifySystemOps(Exception exc)
         {
-            // Include code for notifying IT system operators
+            LogException(exc, "SystemOpsNotification");
         }
     }
 }
-

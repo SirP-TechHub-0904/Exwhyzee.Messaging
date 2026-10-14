@@ -78,6 +78,10 @@ builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.Services.ApiSettings>();
 builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.IZeptoMailService, Exwhyzee.Messaging.Core.Services.ZeptoMailService>();
 builder.Services.AddScoped<Exwhyzee.Messaging.Core.Data.IServices.ISendEmail, Exwhyzee.Messaging.Core.Services.ZeptoMailService>();
 
+// Register Resilient Error Logging & Alerting Service
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.IErrorLogService, Exwhyzee.Messaging.Core.Services.ErrorLogService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.ErrorLogService>();
+
 // Register OTP Service
 builder.Services.AddSingleton<Exwhyzee.Messaging.Core.Services.IOtpService, Exwhyzee.Messaging.Core.Services.OtpService>();
 

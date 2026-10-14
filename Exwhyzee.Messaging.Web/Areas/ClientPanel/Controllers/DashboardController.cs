@@ -35,6 +35,7 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         private IClientService _clientService = new ClientService();
         private ISendEmail _email = new SendEmail();
         private IZeptoMailService _zeptoMail = new ZeptoMailService();
+        private IErrorLogService _errorLogService => HttpContext?.RequestServices?.GetService<IErrorLogService>() ?? new ErrorLogService();
 
         private IPayStackApi _paystack => new PayStackApi(AppConfig.PayStackSecretKey);
         private ITransactionService _transactions = new TransactionService();
@@ -805,7 +806,37 @@ STRICT NON-NEGOTIABLE RULES:
             }
             catch (Exception ex)
             {
-                TempData["error"] = "Error sending message: " + ex.Message;
+                string rootReason = "";
+                try
+                {
+                    rootReason = await _errorLogService.LogErrorAndAlertAsync(
+                        exception: ex,
+                        source: "ClientPanel.Dashboard.Compose",
+                        logLevel: "Critical",
+                        userId: userId,
+                        userName: User?.Identity?.Name,
+                        requestUrl: Request?.Path.Value,
+                        requestMethod: Request?.Method,
+                        clientIp: HttpContext?.Connection?.RemoteIpAddress?.ToString(),
+                        payload: new
+                        {
+                            SenderId = model?.SenderId,
+                            RecipientsCount = model?.Recipients?.Split(new[] { ',', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries).Length ?? 0,
+                            SendOption = model?.SendOption,
+                            ScheduleDate = model?.ScheduleDate
+                        }
+                    );
+                }
+                catch (Exception alertEx)
+                {
+                    Console.WriteLine($"[Compose Error Alert Exception]: {alertEx.Message}");
+                }
+
+                string displayReason = (!string.IsNullOrWhiteSpace(rootReason) && rootReason != ex.Message)
+                    ? $"{ex.Message} (Details: {rootReason})"
+                    : ex.Message;
+
+                TempData["error"] = "Error sending message: " + displayReason;
                 await PopulateComposeViewBagAsync(userId, client);
                 return View(model);
             }

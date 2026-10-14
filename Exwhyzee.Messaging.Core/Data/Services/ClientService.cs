@@ -489,19 +489,66 @@ namespace Exwhyzee.Messaging.Core.Data.Services
         {
             try
             {
-                db.Entry(item).State = EntityState.Modified;
-                await db.SaveChangesAsync();
+                var existing = await db.Clients.FirstOrDefaultAsync(x => x.ClientId == item.ClientId);
+                if (existing != null)
+                {
+                    existing.Units = item.Units;
+                    existing.Surname = item.Surname;
+                    existing.FirstName = item.FirstName;
+                    existing.OtherNames = item.OtherNames;
+                    existing.Discount = item.Discount;
+                    existing.AllowNotifications = item.AllowNotifications;
+                    existing.ApiKey = item.ApiKey;
+                    existing.GeminiApiKey = item.GeminiApiKey;
+                    existing.LowUnitReminderThreshold = item.LowUnitReminderThreshold;
+                    existing.LastLowUnitAlertDate = item.LastLowUnitAlertDate;
+                    await db.SaveChangesAsync();
+                }
+                else
+                {
+                    db.Entry(item).State = EntityState.Modified;
+                    await db.SaveChangesAsync();
+                }
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                ExceptionUtility.LogException(ex, "ClientService.UpdateClient");
+                throw;
             }
         }
 
         public async Task UpdateMessageStatus(Message item)
         {
-            db.Entry(item).State = EntityState.Modified;
-            await db.SaveChangesAsync();
+            try
+            {
+                var existing = await db.Messages.FirstOrDefaultAsync(x => x.MessageId == item.MessageId);
+                if (existing != null)
+                {
+                    existing.UnitsUsed = item.UnitsUsed;
+                    existing.Status = item.Status;
+                    existing.Response = item.Response;
+                    existing.Response_status = item.Response_status;
+                    existing.Response_error_code = item.Response_error_code;
+                    existing.Response_cost = item.Response_cost;
+                    existing.Response_data = item.Response_data;
+                    existing.Response_msg = item.Response_msg;
+                    existing.Response_length = item.Response_length;
+                    existing.Response_page = item.Response_page;
+                    existing.Response_balance = item.Response_balance;
+                    existing.Response_BalanceResponse = item.Response_BalanceResponse;
+                    await db.SaveChangesAsync();
+                }
+                else
+                {
+                    db.Entry(item).State = EntityState.Modified;
+                    await db.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                ExceptionUtility.LogException(ex, "ClientService.UpdateMessageStatus");
+                throw;
+            }
         }
 
         public async Task<GeneralResponse> SubmitSenderId(string senderId, string senderMessage)
