@@ -139,6 +139,7 @@ namespace Exwhyzee.Messaging.Core.Models
         public DbSet<SupportTicket> SupportTickets { get; set; }
         public DbSet<TicketResponse> TicketResponses { get; set; }
         public DbSet<EmailLog> EmailLogs { get; set; }
+        public DbSet<SystemErrorLog> SystemErrorLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

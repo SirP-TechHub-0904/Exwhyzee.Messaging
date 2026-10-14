@@ -107,6 +107,8 @@ builder.Services.AddScoped<IZeptoMailService, ZeptoMailService>();
 builder.Services.AddScoped<ZeptoMailService>();
 builder.Services.AddScoped<ISendEmail, SendEmail>();
 builder.Services.AddScoped<SendEmail>();
+builder.Services.AddScoped<IErrorLogService, ErrorLogService>();
+builder.Services.AddScoped<ErrorLogService>();
 
 var app = builder.Build();
 
