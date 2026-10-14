@@ -127,6 +127,9 @@ namespace Exwhyzee.Messaging.Core.Services
             bool dbLogged = false;
             string dbLoggingError = null;
 
+            // Generate guaranteed tracking Reference ID (e.g. ERR-20261014-9B3A1C)
+            string incidentId = $"ERR-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper()}";
+
             // ========================================================
             // STAGE 1: ATTEMPT TO PERSIST TO DATABASE (SystemErrorLog)
             // ========================================================
@@ -137,7 +140,7 @@ namespace Exwhyzee.Messaging.Core.Services
                 {
                     TimestampUtc = DateTime.UtcNow,
                     LogLevel = logLevel ?? "Error",
-                    Source = source ?? "System",
+                    Source = $"[{incidentId}] {source ?? "System"}",
                     Message = fullMessage,
                     InnerErrorMessage = innerDetails,
                     StackTrace = stackTrace,
@@ -196,8 +199,9 @@ namespace Exwhyzee.Messaging.Core.Services
                     recipientList.Add("exwhyzeesms@gmail.com");
                 }
 
-                string emailSubject = $"🚨 [{logLevel?.ToUpper() ?? "ERROR"}] {source}: {Truncate(rootCause, 60)}";
+                string emailSubject = $"🚨 [{logLevel?.ToUpper() ?? "ERROR"}] [{incidentId}] {source}: {Truncate(rootCause, 50)}";
                 string emailBodyHtml = BuildErrorAlertHtml(
+                    incidentId: incidentId,
                     logLevel: logLevel,
                     source: source,
                     exception: exception,
@@ -244,7 +248,7 @@ namespace Exwhyzee.Messaging.Core.Services
                 catch { }
             }
 
-            return rootCause;
+            return incidentId;
         }
 
         private static (string fullMessage, string innerDetails, string rootCause) ExtractExceptionDetails(Exception ex)
@@ -274,6 +278,7 @@ namespace Exwhyzee.Messaging.Core.Services
         }
 
         private string BuildErrorAlertHtml(
+            string incidentId,
             string logLevel,
             string source,
             Exception exception,
@@ -316,6 +321,15 @@ namespace Exwhyzee.Messaging.Core.Services
     <!-- Main Content -->
     <div style=""padding: 24px 28px; color: #1E293B; line-height: 1.5;"">
         
+        <!-- Incident Reference Badge -->
+        <div style=""background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;"">
+            <div>
+                <span style=""font-size: 11px; text-transform: uppercase; font-weight: 800; color: #991B1B; display: block;"">Developer Incident Reference ID</span>
+                <code style=""font-size: 16px; font-weight: 800; color: #B91C1C; font-family: Consolas, monospace;"">{incidentId}</code>
+            </div>
+            <span style=""font-size: 12px; color: #7F1D1D; font-weight: 600;"">User Facing Reference</span>
+        </div>
+
         <!-- Status & Source Banner -->
         <div style=""display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;"">
             {dbBadge}

@@ -806,10 +806,10 @@ STRICT NON-NEGOTIABLE RULES:
             }
             catch (Exception ex)
             {
-                string rootReason = "";
+                string incidentId = "";
                 try
                 {
-                    rootReason = await _errorLogService.LogErrorAndAlertAsync(
+                    incidentId = await _errorLogService.LogErrorAndAlertAsync(
                         exception: ex,
                         source: "ClientPanel.Dashboard.Compose",
                         logLevel: "Critical",
@@ -832,11 +832,11 @@ STRICT NON-NEGOTIABLE RULES:
                     Console.WriteLine($"[Compose Error Alert Exception]: {alertEx.Message}");
                 }
 
-                string displayReason = (!string.IsNullOrWhiteSpace(rootReason) && rootReason != ex.Message)
-                    ? $"{ex.Message} (Details: {rootReason})"
-                    : ex.Message;
+                string trackingRef = !string.IsNullOrWhiteSpace(incidentId)
+                    ? incidentId
+                    : $"ERR-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper()}";
 
-                TempData["error"] = "Error sending message: " + displayReason;
+                TempData["error"] = $"We were unable to send your message due to a temporary system issue. Our engineering team has been notified. Reference ID: {trackingRef}";
                 await PopulateComposeViewBagAsync(userId, client);
                 return View(model);
             }
