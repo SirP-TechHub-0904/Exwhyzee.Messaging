@@ -2,6 +2,8 @@ using Exwhyzee.Messaging.Core.Data.IServices;
 using Exwhyzee.Messaging.Core.Data.Services;
 using Exwhyzee.Messaging.Core.Services;
 using Exwhyzee.Messaging.Core.Models;
+using Exwhyzee.Messaging.Core.Paystack;
+using Exwhyzee.Messaging.Core.Paystack.Models;
 using X.PagedList;
 using System;
 using System.Collections.Generic;
@@ -23,6 +25,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         private ApplicationDbContext db = new ApplicationDbContext();
         private ITransactionService _transactionService = new TransactionService();
         private IDashboardService _dashboardService = new DashboardService();
+        private IPayStackApi _paystack => new PayStackApi(AppConfig.PayStackSecretKey);
         private Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
 
         public TransactionsController(Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager)
@@ -98,6 +101,44 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             {
                 if (status == "Approve")
                 {
+                    bool isPaystack = string.Equals(transaction.PaymentSource, "Paystack", StringComparison.OrdinalIgnoreCase)
+                        || transaction.TransactionType == TransactionType.OnlinePayment;
+
+                    if (isPaystack)
+                    {
+                        if (string.IsNullOrWhiteSpace(transaction.TransactionReference))
+                        {
+                            TempData["error"] = "Cannot approve: This Paystack transaction has no transaction reference and has not been verified.";
+                            return RedirectToAction("Details", new { id = id });
+                        }
+
+                        if (transaction.TransactionReference.StartsWith("EXZ_", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var parts = transaction.TransactionReference.Split('_');
+                            if (parts.Length >= 2 && int.TryParse(parts[1], out int refTxId) && refTxId != transaction.TransactionId)
+                            {
+                                TempData["error"] = $"Approval rejected: Reference mismatch! Reference {transaction.TransactionReference} belongs to Transaction #{refTxId}, not #{transaction.TransactionId}.";
+                                return RedirectToAction("Details", new { id = id });
+                            }
+                        }
+
+                        var verifyResult = await _paystack.Transactions.VerifyTransaction(transaction.TransactionReference.Trim());
+                        if (verifyResult == null || !verifyResult.status || verifyResult.data == null || !string.Equals(verifyResult.data.status, "success", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string failMsg = verifyResult?.data?.gateway_response ?? verifyResult?.message ?? "Transaction not completed on Paystack";
+                            TempData["error"] = $"Approval rejected: Paystack payment verification failed ({failMsg}).";
+                            return RedirectToAction("Details", new { id = id });
+                        }
+
+                        transaction.GatewayResponse = verifyResult.data.gateway_response ?? "Successful";
+                        if (verifyResult.data.amount > 0)
+                        {
+                            transaction.AmountPaid = (decimal)verifyResult.data.amount / 100m;
+                        }
+                        transaction.IsPaystackOutflow = true;
+                        transaction.PaymentSource = "Paystack";
+                    }
+
                     bool wasAlreadyApproved = transaction.Status == TransactionStatus.Approved;
                     transaction.Status = TransactionStatus.Approved;
                     transaction.DateApproved = DateTime.UtcNow;
@@ -122,7 +163,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
                                         username: client.User.UserName ?? client.FirstName,
                                         unitsPurchased: unitsToAdd,
                                         totalNewBalance: (decimal)client.Units,
-                                        amountPaid: transaction.Amount,
+                                        amountPaid: transaction.AmountPaid ?? transaction.Amount,
                                         transactionRef: transaction.TransactionReference ?? $"TXN-{transaction.TransactionId}",
                                         paymentMethod: transaction.TransactionType == TransactionType.BankDeposit ? "Bank Deposit / Manual Transfer" : transaction.TransactionType.ToString()
                                     );
@@ -163,6 +204,98 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             }
 
             return RedirectToAction("Details", new { id = id });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> VerifyPaystackTransaction(int id, string reference)
+        {
+            try
+            {
+                var transaction = await _transactionService.GetTransaction(id);
+                if (transaction == null)
+                {
+                    return Json(new { success = false, message = "Transaction record not found." });
+                }
+
+                string refToVerify = !string.IsNullOrWhiteSpace(reference) ? reference.Trim() : transaction.TransactionReference?.Trim();
+                if (string.IsNullOrWhiteSpace(refToVerify))
+                {
+                    return Json(new { success = false, message = "Please provide a valid Paystack reference to verify." });
+                }
+
+                // Reference ID Mismatch Protection (e.g. EXZ_17342_585500006)
+                if (refToVerify.StartsWith("EXZ_", StringComparison.OrdinalIgnoreCase))
+                {
+                    var parts = refToVerify.Split('_');
+                    if (parts.Length >= 2 && int.TryParse(parts[1], out int refTxId))
+                    {
+                        if (refTxId != transaction.TransactionId)
+                        {
+                            return Json(new
+                            {
+                                success = false,
+                                message = $"Reference Mismatch! This reference belongs to Transaction #{refTxId}, but you are currently auditing Transaction #{transaction.TransactionId}. Please verify the reference from Paystack."
+                            });
+                        }
+                    }
+                }
+
+                var response = await _paystack.Transactions.VerifyTransaction(refToVerify);
+                if (response == null || !response.status || response.data == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = response?.message ?? "Unable to find transaction on Paystack with this reference."
+                    });
+                }
+
+                bool isPaid = string.Equals(response.data.status, "success", StringComparison.OrdinalIgnoreCase);
+
+                // Update transaction with verified details
+                transaction.TransactionReference = refToVerify;
+                transaction.GatewayResponse = response.data.gateway_response ?? response.data.status;
+                transaction.PaymentSource = "Paystack";
+
+                if (isPaid)
+                {
+                    decimal paidAmount = (decimal)response.data.amount / 100m;
+                    transaction.AmountPaid = paidAmount;
+                    transaction.IsPaystackOutflow = true;
+                    await _transactionService.UpdateTransactionStatus(transaction);
+
+                    return Json(new
+                    {
+                        success = true,
+                        isPaid = true,
+                        status = response.data.status,
+                        reference = refToVerify,
+                        amountPaid = paidAmount,
+                        channel = response.data.channel ?? "Paystack",
+                        gatewayResponse = transaction.GatewayResponse,
+                        paidAt = response.data.transaction_date.ToString("MMM dd, yyyy hh:mm tt"),
+                        message = $"Payment verified successfully! Paystack confirmed ₦{paidAmount:N2} via {response.data.channel}. You can now approve this transaction."
+                    });
+                }
+                else
+                {
+                    await _transactionService.UpdateTransactionStatus(transaction);
+                    return Json(new
+                    {
+                        success = true,
+                        isPaid = false,
+                        status = response.data.status,
+                        reference = refToVerify,
+                        channel = response.data.channel,
+                        gatewayResponse = transaction.GatewayResponse,
+                        message = $"Paystack status is '{response.data.status}'. Gateway message: {response.data.gateway_response ?? "Payment was not completed"}."
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Verification error: " + ex.Message });
+            }
         }
 
         // GET: Adminpanel/Transactions/PaystackOutflow
