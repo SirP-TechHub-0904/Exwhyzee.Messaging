@@ -105,7 +105,7 @@
         <div class="col-md-4">
             <div class="xyz-stat-card">
                 <small style="color: #64748B; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; display: block;">Amount Paid</small>
-                <strong style="color: #059669; font-size: 1.3rem; font-family: 'JetBrains Mono', monospace;">&#8358;@paidAmt.ToString("N2")</strong>
+                <strong id="lblMetricAmountPaid" style="color: #059669; font-size: 1.3rem; font-family: 'JetBrains Mono', monospace;">&#8358;@paidAmt.ToString("N2")</strong>
             </div>
         </div>
 
@@ -147,7 +147,7 @@
 
                 <div class="xyz-field-row">
                     <span style="color: #64748B; font-weight: 600;">Transaction Reference</span>
-                    <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #334155;">@(string.IsNullOrEmpty(Model.TransactionReference) ? "N/A" : Model.TransactionReference)</span>
+                    <span id="lblLedgerReference" style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #334155;">@(string.IsNullOrEmpty(Model.TransactionReference) ? "N/A" : Model.TransactionReference)</span>
                 </div>
 
                 <div class="xyz-field-row">
@@ -167,7 +167,7 @@
 
                 <div class="xyz-field-row">
                     <span style="color: #64748B; font-weight: 600;">Gateway Response</span>
-                    <span style="color: #475569;">@(string.IsNullOrEmpty(Model.GatewayResponse) ? "Successful" : Model.GatewayResponse)</span>
+                    <span id="lblLedgerGatewayResponse" style="color: #475569;">@(string.IsNullOrEmpty(Model.GatewayResponse) ? "Successful" : Model.GatewayResponse)</span>
                 </div>
 
                 <div class="xyz-field-row">
@@ -179,28 +179,94 @@
 
         <!-- SIDEBAR CONTROLS -->
         <div class="col-md-4">
+            @{
+                bool isPaystack = string.Equals(Model.PaymentSource, "Paystack", StringComparison.OrdinalIgnoreCase) 
+                                  || Model.TransactionType == Exwhyzee.Messaging.Core.Models.TransactionType.OnlinePayment;
+                bool hasReference = !string.IsNullOrWhiteSpace(Model.TransactionReference) && Model.TransactionReference != "N/A";
+            }
 
-            <!-- STATUS UPDATE FORM CARD -->
             @if (Model.Status != Exwhyzee.Messaging.Core.Models.TransactionStatus.Approved)
             {
+                @if (isPaystack)
+                {
+                    <!-- PAYSTACK LIVE GATEWAY VERIFICATION CARD -->
+                    <div class="xyz-card" style="border-color: #38BDF8; background: #F0F9FF; margin-bottom: 20px;">
+                        <h4 style="font-weight: 800; color: #0369A1; margin: 0 0 10px 0; font-size: 1.05rem;">
+                            <i class="fa fa-shield-halved" style="color: #0284C7; margin-right: 6px;"></i> Paystack Gateway Verification
+                        </h4>
+
+                        <p style="font-size: 0.8rem; color: #475569; margin-bottom: 14px; line-height: 1.4;">
+                            Paystack payments must pass live verification. If paid, approval will be unlocked. If failed or unpaid, approval will remain blocked.
+                        </p>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label style="font-weight: 700; color: #0C4A6E; font-size: 0.8rem; display: block; margin-bottom: 6px;">
+                                Paystack Reference Code
+                            </label>
+
+                            @if (!hasReference)
+                            {
+                                <div class="input-group" style="margin-bottom: 6px;">
+                                    <input type="text" id="paystackRefInput" class="form-control" placeholder="e.g. EXZ_17342_585500006" value="" style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; height: 40px;" />
+                                    <span class="input-group-btn">
+                                        <button type="button" id="btnVerifyPaystack" class="btn btn-info" style="font-weight: 800; background: #0284C7; border-color: #0284C7; height: 40px; color: #FFF;">
+                                            <i class="fa fa-shield-halved"></i> Verify
+                                        </button>
+                                    </span>
+                                </div>
+                                <small style="color: #64748B; font-size: 0.75rem; display: block;">Paste the reference from your Paystack Dashboard to verify.</small>
+                            }
+                            else
+                            {
+                                <div style="background: #FFFFFF; border: 1px solid #BAE6FD; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;">
+                                    <div style="font-size: 0.72rem; color: #64748B; font-weight: 700; text-transform: uppercase;">Saved Paystack Reference</div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                        <code id="lblCurrentRef" style="font-size: 0.88rem; font-weight: 800; color: #0369A1;">@Model.TransactionReference</code>
+                                        <button type="button" id="btnToggleEditRef" class="btn btn-default btn-xs" style="color: #64748B; font-size: 0.75rem;">Edit</button>
+                                    </div>
+                                    <div id="editRefContainer" style="display: none; margin-top: 8px;">
+                                        <input type="text" id="paystackRefInput" class="form-control input-sm" placeholder="Paste Paystack Reference" value="@Model.TransactionReference" style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;" />
+                                    </div>
+                                </div>
+                                <button type="button" id="btnVerifyPaystack" class="btn btn-info btn-block" style="font-weight: 800; background: #0284C7; border-color: #0284C7; padding: 10px; border-radius: 8px; color: #FFF;">
+                                    <i class="fa fa-shield-halved"></i> Verify with Paystack
+                                </button>
+                            }
+                        </div>
+
+                        <!-- Live Verification Alert Container -->
+                        <div id="verificationAlertContainer" style="display: none; margin-top: 12px;"></div>
+                    </div>
+                }
+
+                <!-- STATUS UPDATE FORM CARD -->
                 <div class="xyz-card" style="border-color: #FCD34D; background: #FFFBEB;">
                     <h4 style="font-weight: 800; color: #92400E; margin: 0 0 12px 0;">
                         <i class="fa fa-pen-to-square"></i> Update Transaction Status
                     </h4>
 
-                    @using (Html.BeginForm("UpdateStatus", "Transactions", new { area = "Adminpanel", id = Model.TransactionId }, FormMethod.Post))
+                    @using (Html.BeginForm("UpdateStatus", "Transactions", new { area = "Adminpanel", id = Model.TransactionId }, FormMethod.Post, null, new { id = "frmUpdateStatus" }))
                     {
                         @Html.AntiForgeryToken()
                         <div class="form-group">
                             <label style="font-weight: 700; color: #78350F; font-size: 0.85rem;">Select New Status</label>
-                            <select name="status" class="form-control" style="height: 42px; border-radius: 8px;">
-                                <option value="Approve">Approve &amp; Credit Wallet</option>
-                                <option value="Revoke">Revoke Transaction</option>
-                                <option value="Cancel">Cancel Transaction</option>
+                            <select id="statusSelect" name="status" class="form-control" style="height: 42px; border-radius: 8px;">
+                                @if (isPaystack)
+                                {
+                                    <option value="Approve" id="optApprove" disabled>Approve &amp; Credit Wallet (Verification Required)</option>
+                                    <option value="Revoke">Revoke Transaction</option>
+                                    <option value="Cancel">Cancel Transaction</option>
+                                }
+                                else
+                                {
+                                    <option value="Approve">Approve &amp; Credit Wallet</option>
+                                    <option value="Revoke">Revoke Transaction</option>
+                                    <option value="Cancel">Cancel Transaction</option>
+                                }
                             </select>
                         </div>
 
-                        <button type="submit" class="btn btn-warning btn-block" style="font-weight: 800; border-radius: 8px; padding: 10px; color: #1E293B;">
+                        <button type="submit" id="btnSubmitStatus" class="btn btn-warning btn-block" style="font-weight: 800; border-radius: 8px; padding: 10px; color: #1E293B;">
                             Update Status
                         </button>
                     }
@@ -209,3 +275,110 @@
         </div>
     </div>
 </div>
+
+@section scripts {
+    <script>
+        $(function () {
+            var isPaystack = @(isPaystack ? "true" : "false");
+            var isVerifiedPaid = false;
+
+            $('#btnToggleEditRef').on('click', function () {
+                $('#editRefContainer').slideToggle(150);
+            });
+
+            $('#btnVerifyPaystack').on('click', function () {
+                var ref = $('#paystackRefInput').val();
+                if (!ref || !ref.trim()) {
+                    ref = $('#lblCurrentRef').text().trim();
+                }
+
+                if (!ref || !ref.trim()) {
+                    alert('Please enter or paste the Paystack reference to verify.');
+                    return;
+                }
+
+                var btn = $(this);
+                var originalHtml = btn.html();
+                btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Checking Paystack API...');
+
+                $.ajax({
+                    url: '@Url.Action("VerifyPaystackTransaction", "Transactions", new { area = "Adminpanel" })',
+                    type: 'POST',
+                    data: {
+                        id: @Model.TransactionId,
+                        reference: ref.trim(),
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (res) {
+                        btn.prop('disabled', false).html(originalHtml);
+                        $('#verificationAlertContainer').show();
+
+                        if (res && res.success) {
+                            if (res.isPaid) {
+                                isVerifiedPaid = true;
+
+                                // Build Green Banner
+                                var html = '<div class="alert alert-success" style="margin: 0; padding: 12px; border-radius: 8px; background: #ECFDF5; border: 1px solid #6EE7B7; color: #065F46;">' +
+                                    '<div style="font-weight: 800; font-size: 0.95rem; margin-bottom: 4px;"><i class="fa fa-circle-check" style="color: #059669;"></i> Paystack Payment Confirmed!</div>' +
+                                    '<div style="font-size: 0.85rem;"><strong>Paid:</strong> &#8358;' + Number(res.amountPaid).toLocaleString('en-US', {minimumFractionDigits: 2}) + ' &bull; <strong>Channel:</strong> ' + (res.channel || 'Paystack') + '</div>' +
+                                    '<div style="font-size: 0.8rem; margin-top: 4px; color: #047857;"><strong>Paid Date:</strong> ' + res.paidAt + '</div>' +
+                                    '<div style="margin-top: 8px; font-weight: 800; font-size: 0.85rem; color: #065F46;">&#10004; You can now safely Approve &amp; Credit the wallet.</div>' +
+                                    '</div>';
+                                $('#verificationAlertContainer').html(html);
+
+                                // Enable Approve in dropdown and select it
+                                $('#optApprove').prop('disabled', false).text('Approve & Credit Wallet (Paystack Verified)');
+                                $('#statusSelect').val('Approve');
+                                $('#btnSubmitStatus').removeClass('btn-warning').addClass('btn-success').html('<i class="fa fa-check"></i> Approve &amp; Credit Wallet');
+
+                                // Update live labels on page
+                                $('#lblLedgerReference').text(res.reference);
+                                $('#lblLedgerGatewayResponse').text(res.gatewayResponse);
+                                $('#lblMetricAmountPaid').html('&#8358;' + Number(res.amountPaid).toLocaleString('en-US', {minimumFractionDigits: 2}));
+                                if ($('#lblCurrentRef').length) {
+                                    $('#lblCurrentRef').text(res.reference);
+                                }
+                            } else {
+                                isVerifiedPaid = false;
+
+                                // Build Red Banner
+                                var html = '<div class="alert alert-danger" style="margin: 0; padding: 12px; border-radius: 8px; background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B;">' +
+                                    '<div style="font-weight: 800; font-size: 0.95rem; margin-bottom: 4px;"><i class="fa fa-circle-xmark" style="color: #DC2626;"></i> Paystack Payment NOT Paid</div>' +
+                                    '<div style="font-size: 0.85rem;"><strong>Status:</strong> <span class="badge" style="background: #DC2626; color: #FFF;">' + (res.status || 'Failed') + '</span></div>' +
+                                    '<div style="font-size: 0.82rem; margin-top: 4px;"><strong>Gateway Message:</strong> ' + (res.gatewayResponse || 'Incomplete / Abandoned') + '</div>' +
+                                    '<div style="margin-top: 8px; font-weight: 800; font-size: 0.85rem; color: #B91C1C;">&#10007; Approval is disabled. You can only Revoke or Cancel this transaction.</div>' +
+                                    '</div>';
+                                $('#verificationAlertContainer').html(html);
+
+                                // Disable Approve in dropdown
+                                $('#optApprove').prop('disabled', true).text('Approve & Credit Wallet (Blocked - Not Paid)');
+                                if ($('#statusSelect').val() === 'Approve') {
+                                    $('#statusSelect').val('Cancel');
+                                }
+                                $('#btnSubmitStatus').removeClass('btn-success').addClass('btn-warning').text('Update Status');
+                            }
+                        } else {
+                            var html = '<div class="alert alert-danger" style="margin: 0; padding: 10px; border-radius: 8px;">' +
+                                '<i class="fa fa-triangle-exclamation"></i> ' + (res.message || 'Verification failed') +
+                                '</div>';
+                            $('#verificationAlertContainer').html(html);
+                        }
+                    },
+                    error: function () {
+                        btn.prop('disabled', false).html(originalHtml);
+                        $('#verificationAlertContainer').show().html('<div class="alert alert-danger" style="margin: 0; padding: 10px; border-radius: 8px;">Network error communicating with server.</div>');
+                    }
+                });
+            });
+
+            $('#frmUpdateStatus').on('submit', function (e) {
+                var selected = $('#statusSelect').val();
+                if (isPaystack && selected === 'Approve' && !isVerifiedPaid) {
+                    e.preventDefault();
+                    alert('Paystack verification is required! Please click "Verify" and ensure Paystack confirms the transaction is paid before approving.');
+                    return false;
+                }
+            });
+        });
+    </script>
+}

@@ -282,7 +282,7 @@
                         email: res.email,
                         amount: res.amountInKobo,
                         currency: 'NGN',
-                        ref: 'EXZ_' + res.transactionId + '_' + Math.floor((Math.random() * 1000000000) + 1),
+                        ref: res.reference || ('EXZ_' + res.transactionId + '_' + Math.floor((Math.random() * 1000000000) + 1)),
                         firstname: res.firstName,
                         lastname: res.surname,
                         metadata: {

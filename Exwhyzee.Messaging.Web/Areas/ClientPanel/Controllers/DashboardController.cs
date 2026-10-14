@@ -1615,12 +1615,18 @@ STRICT NON-NEGOTIABLE RULES:
 
             await _transactions.AddTransaction(transaction);
 
+            // Pre-generate and store Paystack reference on the server immediately
+            string preGeneratedRef = $"EXZ_{transaction.TransactionId}_{new Random().Next(100000000, 999999999)}";
+            transaction.TransactionReference = preGeneratedRef;
+            await _transactions.UpdateTransactionStatus(transaction);
+
             int amountInKobo = (int)Math.Round(totalPayable * 100);
 
             return Json(new
             {
                 success = true,
                 transactionId = transaction.TransactionId,
+                reference = preGeneratedRef,
                 subtotal = subtotal,
                 charges = charges,
                 amount = totalPayable,
