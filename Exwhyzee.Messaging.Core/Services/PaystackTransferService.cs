@@ -14,7 +14,7 @@ namespace Exwhyzee.Messaging.Core.Services
         Task<(bool Success, string AccountName, string Message)> ResolveBankAccountAsync(string accountNumber, string bankCode);
         Task<(bool Success, string RecipientCode, string Message)> CreateTransferRecipientAsync(string accountName, string accountNumber, string bankCode);
         Task<(bool Success, string TransferCode, string Message)> InitiateTransferAsync(decimal amount, string recipientCode, string reason);
-        Task<(bool Success, string Status, string Message, decimal? Amount, string FailReason)> FetchTransferDetailsAsync(string transferCode);
+        Task<(bool Success, string Status, string Message, decimal? Amount, string FailReason, string RecipientName, string BankName, string AccountNumber)> FetchTransferDetailsAsync(string transferCode);
     }
 
     public class PaystackTransferService : IPaystackTransferService
@@ -239,13 +239,13 @@ namespace Exwhyzee.Messaging.Core.Services
             }
         }
 
-        public async Task<(bool Success, string Status, string Message, decimal? Amount, string FailReason)> FetchTransferDetailsAsync(string transferCode)
+        public async Task<(bool Success, string Status, string Message, decimal? Amount, string FailReason, string RecipientName, string BankName, string AccountNumber)> FetchTransferDetailsAsync(string transferCode)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(transferCode))
                 {
-                    return (false, null, "Transfer code is required.", null, null);
+                    return (false, null, "Transfer code is required.", null, null, null, null, null);
                 }
 
                 SetAuthHeader();
@@ -281,14 +281,42 @@ namespace Exwhyzee.Messaging.Core.Services
                         failReason = reasonProp.GetString();
                     }
 
-                    return (true, transferStatus, message, amount, failReason);
+                    string recipientName = null;
+                    string bankName = null;
+                    string accountNumber = null;
+
+                    if (dataProp.TryGetProperty("recipient", out var recProp) && recProp.ValueKind == JsonValueKind.Object)
+                    {
+                        if (recProp.TryGetProperty("name", out var rNameProp))
+                        {
+                            recipientName = rNameProp.GetString();
+                        }
+
+                        if (recProp.TryGetProperty("details", out var detProp) && detProp.ValueKind == JsonValueKind.Object)
+                        {
+                            if (detProp.TryGetProperty("account_name", out var accNameProp) && !string.IsNullOrWhiteSpace(accNameProp.GetString()))
+                            {
+                                recipientName = accNameProp.GetString();
+                            }
+                            if (detProp.TryGetProperty("account_number", out var accNumProp))
+                            {
+                                accountNumber = accNumProp.GetString();
+                            }
+                            if (detProp.TryGetProperty("bank_name", out var bNameProp))
+                            {
+                                bankName = bNameProp.GetString();
+                            }
+                        }
+                    }
+
+                    return (true, transferStatus, message, amount, failReason, recipientName, bankName, accountNumber);
                 }
 
-                return (false, null, message, null, null);
+                return (false, null, message, null, null, null, null, null);
             }
             catch (Exception ex)
             {
-                return (false, null, $"Failed to query Paystack transfer: {ex.Message}", null, null);
+                return (false, null, $"Failed to query Paystack transfer: {ex.Message}", null, null, null, null, null);
             }
         }
     }
