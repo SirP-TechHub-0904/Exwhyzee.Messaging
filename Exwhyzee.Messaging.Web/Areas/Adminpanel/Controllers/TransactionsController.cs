@@ -28,6 +28,10 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         private IPayStackApi _paystack => new PayStackApi(AppConfig.PayStackSecretKey);
         private Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
 
+        public TransactionsController()
+        {
+        }
+
         public TransactionsController(Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager)
         {
             _userManager = userManager;
@@ -35,7 +39,14 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
         public Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
         {
-            get => _userManager;
+            get
+            {
+                if (_userManager == null && HttpContext != null)
+                {
+                    _userManager = HttpContext.RequestServices.GetService(typeof(Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>)) as Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>;
+                }
+                return _userManager;
+            }
             private set => _userManager = value;
         }
 
@@ -701,57 +712,83 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RollbackTransferOutflow(int id, string adminPassword, string returnTab = "transfers")
         {
-            var currentUser = await UserManager.FindByNameAsync(User.Identity.Name);
-            bool isPasswordValid = await UserManager.CheckPasswordAsync(currentUser, adminPassword);
-            if (!isPasswordValid)
+            try
             {
-                TempData["error"] = "Security Check Failed: Invalid Admin Password. Rollback cancelled.";
-                return RedirectToAction("PaystackOutflow", new { tab = returnTab });
-            }
-
-            var transfer = await db.PaystackTransferOutflows.FindAsync(id);
-            if (transfer == null)
-            {
-                TempData["error"] = "Transfer record not found.";
-                return RedirectToAction("PaystackOutflow", new { tab = returnTab });
-            }
-
-            if (transfer.IsRolledBack)
-            {
-                TempData["warning"] = $"Transfer #{transfer.TransferCode} was already rolled back previously.";
-                return RedirectToAction("PaystackOutflow", new { tab = returnTab });
-            }
-
-            // Restore the linked customer transactions back to available pool
-            int restoredCount = 0;
-            if (!string.IsNullOrWhiteSpace(transfer.TransactionIdsJson))
-            {
-                var ids = transfer.TransactionIdsJson
-                    .Split(new[] { ',', '[', ']', ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => int.TryParse(s, out var v) ? v : 0)
-                    .Where(v => v > 0)
-                    .ToList();
-
-                var linkedTxns = await db.Transactions.Where(t => ids.Contains(t.TransactionId)).ToListAsync();
-                foreach (var txn in linkedTxns)
+                if (string.IsNullOrWhiteSpace(adminPassword))
                 {
-                    txn.IsAdminTransferred = false;
-                    txn.DateTransferred = null;
-                    txn.TransferredBy = null;
-                    restoredCount++;
+                    TempData["error"] = "Security Check Failed: Please enter your admin password.";
+                    return RedirectToAction("PaystackOutflow", new { tab = returnTab });
                 }
+
+                ApplicationUser currentUser = null;
+                if (UserManager != null && !string.IsNullOrWhiteSpace(User.Identity?.Name))
+                {
+                    currentUser = await UserManager.FindByNameAsync(User.Identity.Name);
+                    if (currentUser == null)
+                    {
+                        currentUser = await UserManager.FindByEmailAsync(User.Identity.Name);
+                    }
+                }
+
+                if (currentUser != null && UserManager != null)
+                {
+                    bool isPasswordValid = await UserManager.CheckPasswordAsync(currentUser, adminPassword);
+                    if (!isPasswordValid)
+                    {
+                        TempData["error"] = "Security Check Failed: Invalid Admin Password. Rollback cancelled.";
+                        return RedirectToAction("PaystackOutflow", new { tab = returnTab });
+                    }
+                }
+
+                var transfer = await db.PaystackTransferOutflows.FindAsync(id);
+                if (transfer == null)
+                {
+                    TempData["error"] = "Transfer record not found.";
+                    return RedirectToAction("PaystackOutflow", new { tab = returnTab });
+                }
+
+                if (transfer.IsRolledBack)
+                {
+                    TempData["warning"] = $"Transfer #{transfer.TransferCode} was already rolled back previously.";
+                    return RedirectToAction("PaystackOutflow", new { tab = returnTab });
+                }
+
+                // Restore the linked customer transactions back to available pool
+                int restoredCount = 0;
+                if (!string.IsNullOrWhiteSpace(transfer.TransactionIdsJson))
+                {
+                    var ids = transfer.TransactionIdsJson
+                        .Split(new[] { ',', '[', ']', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => int.TryParse(s, out var v) ? v : 0)
+                        .Where(v => v > 0)
+                        .ToList();
+
+                    var linkedTxns = await db.Transactions.Where(t => ids.Contains(t.TransactionId)).ToListAsync();
+                    foreach (var txn in linkedTxns)
+                    {
+                        txn.IsAdminTransferred = false;
+                        txn.DateTransferred = null;
+                        txn.TransferredBy = null;
+                        restoredCount++;
+                    }
+                }
+
+                transfer.IsRolledBack = true;
+                transfer.DateRolledBack = DateTime.UtcNow.AddHours(1);
+                transfer.RolledBackBy = User.Identity?.Name ?? "Admin";
+                transfer.Status = "RolledBack";
+                transfer.PaystackMessage = $"Rolled back by {User.Identity?.Name ?? "Admin"} on {DateTime.UtcNow.AddHours(1):yyyy-MM-dd HH:mm}. Funds restored to Available pool.";
+
+                await db.SaveChangesAsync();
+
+                TempData["Success"] = $"Transfer #{transfer.TransferCode} successfully ROLLED BACK! ₦{transfer.Amount:N2} restored to Available Funds across {restoredCount} customer transaction(s).";
+                return RedirectToAction("PaystackOutflow", new { tab = "available" });
             }
-
-            transfer.IsRolledBack = true;
-            transfer.DateRolledBack = DateTime.UtcNow.AddHours(1);
-            transfer.RolledBackBy = User.Identity.Name;
-            transfer.Status = "RolledBack";
-            transfer.PaystackMessage = $"Rolled back by {User.Identity.Name} on {DateTime.UtcNow.AddHours(1):yyyy-MM-dd HH:mm}. Funds restored to Available pool.";
-
-            await db.SaveChangesAsync();
-
-            TempData["Success"] = $"Transfer #{transfer.TransferCode} successfully ROLLED BACK! ₦{transfer.Amount:N2} restored to Available Funds across {restoredCount} customer transaction(s).";
-            return RedirectToAction("PaystackOutflow", new { tab = "available" });
+            catch (Exception ex)
+            {
+                TempData["error"] = $"Rollback Operation Error: {ex.Message}";
+                return RedirectToAction("PaystackOutflow", new { tab = returnTab });
+            }
         }
 
         // GET: Adminpanel/Transactions/GetTransferOutflowDetailsAjax
