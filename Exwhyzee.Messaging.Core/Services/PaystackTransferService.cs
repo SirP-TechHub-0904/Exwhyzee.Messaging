@@ -14,6 +14,7 @@ namespace Exwhyzee.Messaging.Core.Services
         Task<(bool Success, string AccountName, string Message)> ResolveBankAccountAsync(string accountNumber, string bankCode);
         Task<(bool Success, string RecipientCode, string Message)> CreateTransferRecipientAsync(string accountName, string accountNumber, string bankCode);
         Task<(bool Success, string TransferCode, string Message)> InitiateTransferAsync(decimal amount, string recipientCode, string reason);
+        Task<(bool Success, string Status, string Message, decimal? Amount, string FailReason)> FetchTransferDetailsAsync(string transferCode);
     }
 
     public class PaystackTransferService : IPaystackTransferService
@@ -235,6 +236,59 @@ namespace Exwhyzee.Messaging.Core.Services
             catch (Exception ex)
             {
                 return (false, null, $"Paystack transfer execution failed: {ex.Message}");
+            }
+        }
+
+        public async Task<(bool Success, string Status, string Message, decimal? Amount, string FailReason)> FetchTransferDetailsAsync(string transferCode)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(transferCode))
+                {
+                    return (false, null, "Transfer code is required.", null, null);
+                }
+
+                SetAuthHeader();
+                string cleanCode = transferCode.Trim();
+                string url = $"https://api.paystack.co/transfer/{cleanCode}";
+
+                var response = await _httpClient.GetAsync(url);
+                string json = await response.Content.ReadAsStringAsync();
+
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                bool status = root.TryGetProperty("status", out var statusProp) && statusProp.GetBoolean();
+                string message = root.TryGetProperty("message", out var msgProp) ? msgProp.GetString() : "Unable to query transfer.";
+
+                if (status && root.TryGetProperty("data", out var dataProp))
+                {
+                    string transferStatus = dataProp.TryGetProperty("status", out var sProp) ? sProp.GetString() : "unknown";
+                    
+                    decimal? amount = null;
+                    if (dataProp.TryGetProperty("amount", out var amtProp) && amtProp.TryGetInt64(out var amtKobo))
+                    {
+                        amount = amtKobo / 100m;
+                    }
+
+                    string failReason = null;
+                    if (dataProp.TryGetProperty("failures", out var failuresProp) && failuresProp.ValueKind == JsonValueKind.Array && failuresProp.GetArrayLength() > 0)
+                    {
+                        failReason = failuresProp[0].ToString();
+                    }
+                    else if (dataProp.TryGetProperty("reason", out var reasonProp))
+                    {
+                        failReason = reasonProp.GetString();
+                    }
+
+                    return (true, transferStatus, message, amount, failReason);
+                }
+
+                return (false, null, message, null, null);
+            }
+            catch (Exception ex)
+            {
+                return (false, null, $"Failed to query Paystack transfer: {ex.Message}", null, null);
             }
         }
     }

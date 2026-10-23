@@ -301,6 +301,8 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         // GET: Adminpanel/Transactions/PaystackOutflow
         public async Task<ActionResult> PaystackOutflow(string tab = "available", int? page = 1)
         {
+            await EnsureOutflowTransfersBackfilledAsync();
+
             var todayStart = DateTime.Today;
 
             var allPaystackTxns = await db.Transactions
@@ -321,6 +323,12 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             ViewBag.TotalTransferred = allPaystackTxns.Where(t => t.IsAdminTransferred).Sum(t => t.AmountPaid ?? t.Amount);
             ViewBag.ActiveTab = tab;
 
+            // Dedicated Paystack Outflow Transfers History
+            var transferOutflows = await db.PaystackTransferOutflows
+                .OrderByDescending(x => x.DateInitiated)
+                .ToListAsync();
+            ViewBag.TransferOutflows = transferOutflows;
+
             IEnumerable<Transaction> filtered = allPaystackTxns;
             if (tab == "available")
             {
@@ -330,7 +338,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             {
                 filtered = allPaystackTxns.Where(t => !t.IsAdminTransferred && (t.DateApproved ?? t.DateCreated) >= todayStart);
             }
-            else if (tab == "transferred")
+            else if (tab == "deposits")
             {
                 filtered = allPaystackTxns.Where(t => t.IsAdminTransferred);
             }
@@ -338,6 +346,58 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             int pageSize = 50;
             int pageNumber = page ?? 1;
             return View(filtered.ToPagedList(pageNumber, pageSize));
+        }
+
+        private async Task EnsureOutflowTransfersBackfilledAsync()
+        {
+            try
+            {
+                var existingCodes = await db.PaystackTransferOutflows.Select(x => x.TransferCode).ToListAsync();
+
+                var txnsWithRef = await db.Transactions
+                    .Where(t => t.IsPaystackOutflow && t.IsAdminTransferred && t.TransferredBy != null && t.TransferredBy.Contains("TRF_"))
+                    .ToListAsync();
+
+                if (txnsWithRef.Any())
+                {
+                    var adminSetting = await db.AdminSettings.FirstOrDefaultAsync();
+
+                    var groups = txnsWithRef.GroupBy(t =>
+                    {
+                        var match = System.Text.RegularExpressions.Regex.Match(t.TransferredBy ?? "", @"TRF_[A-Za-z0-9]+");
+                        return match.Success ? match.Value : null;
+                    }).Where(g => !string.IsNullOrEmpty(g.Key) && !existingCodes.Contains(g.Key)).ToList();
+
+                    foreach (var g in groups)
+                    {
+                        string code = g.Key;
+                        var sample = g.First();
+                        var outflow = new PaystackTransferOutflow
+                        {
+                            TransferCode = code,
+                            TransferReference = code,
+                            Amount = g.Sum(x => x.AmountPaid ?? x.Amount),
+                            RecipientCode = adminSetting?.PaystackRecipientCode,
+                            AccountName = adminSetting?.OutflowAccountName ?? "Corporate Outflow Account",
+                            AccountNumber = adminSetting?.OutflowAccountNumber,
+                            BankName = adminSetting?.OutflowBankName,
+                            Status = "PendingApproval",
+                            InitiatedBy = sample.TransferredBy,
+                            DateInitiated = g.Min(x => x.DateTransferred ?? x.DateApproved ?? x.DateCreated),
+                            TransactionsCount = g.Count(),
+                            TransactionIdsJson = string.Join(",", g.Select(x => x.TransactionId)),
+                            PaystackMessage = "Transfer imported from transaction ledger. Click 'Verify with Paystack' to check live status."
+                        };
+                        db.PaystackTransferOutflows.Add(outflow);
+                    }
+
+                    if (groups.Any())
+                    {
+                        await db.SaveChangesAsync();
+                    }
+                }
+            }
+            catch { }
         }
 
         [HttpPost]
@@ -540,6 +600,25 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
                 return RedirectToAction("PaystackTransfer");
             }
 
+            // Save official PaystackTransferOutflow payout record
+            var outflowRecord = new PaystackTransferOutflow
+            {
+                TransferCode = transferRes.TransferCode,
+                TransferReference = transferRes.TransferCode,
+                Amount = availableFund,
+                RecipientCode = adminSetting.PaystackRecipientCode,
+                AccountName = adminSetting.OutflowAccountName,
+                AccountNumber = adminSetting.OutflowAccountNumber,
+                BankName = adminSetting.OutflowBankName,
+                Status = "PendingApproval",
+                InitiatedBy = User.Identity.Name,
+                DateInitiated = DateTime.UtcNow.AddHours(1),
+                TransactionIdsJson = string.Join(",", clearedTxns.Select(x => x.TransactionId)),
+                TransactionsCount = clearedTxns.Count,
+                PaystackMessage = transferRes.Message ?? "Transfer initiated with Paystack. Awaiting final delivery / approval."
+            };
+            db.PaystackTransferOutflows.Add(outflowRecord);
+
             // Batch-mark all cleared transactions as transferred out
             foreach (var txn in clearedTxns)
             {
@@ -550,8 +629,177 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
             await db.SaveChangesAsync();
 
-            TempData["Success"] = $"Automated Paystack Transfer Initiated Successfully! ₦{availableFund:N2} sent to {adminSetting.OutflowAccountName} ({adminSetting.OutflowBankName}). Ref Code: {transferRes.TransferCode}.";
-            return RedirectToAction("PaystackTransfer");
+            TempData["Success"] = $"Automated Paystack Transfer Initiated! ₦{availableFund:N2} sent to {adminSetting.OutflowAccountName} ({adminSetting.OutflowBankName}). Ref Code: {transferRes.TransferCode}. Status: Awaiting Paystack Delivery/Approval.";
+            return RedirectToAction("PaystackOutflow", new { tab = "transfers" });
+        }
+
+        // POST: Adminpanel/Transactions/VerifyTransferOutflow
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerifyTransferOutflow(int id, string returnTab = "transfers")
+        {
+            var transfer = await db.PaystackTransferOutflows.FindAsync(id);
+            if (transfer == null)
+            {
+                TempData["error"] = "Transfer record not found.";
+                return RedirectToAction("PaystackOutflow", new { tab = returnTab });
+            }
+
+            var service = new PaystackTransferService();
+            var res = await service.FetchTransferDetailsAsync(transfer.TransferCode);
+
+            if (res.Success)
+            {
+                transfer.Status = res.Status; // e.g. success, pending, otp, failed, reversed
+                transfer.DateVerified = DateTime.UtcNow.AddHours(1);
+                transfer.VerifiedBy = User.Identity.Name;
+                transfer.PaystackMessage = $"Status: {res.Status}. {res.Message} {(string.IsNullOrEmpty(res.FailReason) ? "" : $"Reason: {res.FailReason}")}".Trim();
+                await db.SaveChangesAsync();
+
+                if (res.Status.Equals("success", StringComparison.OrdinalIgnoreCase))
+                {
+                    TempData["Success"] = $"Paystack Transfer #{transfer.TransferCode} verified: SUCCESS! Funds delivered to recipient bank.";
+                }
+                else if (res.Status.Equals("otp", StringComparison.OrdinalIgnoreCase) || res.Status.Equals("pending", StringComparison.OrdinalIgnoreCase))
+                {
+                    TempData["warning"] = $"Paystack Transfer #{transfer.TransferCode} status is '{res.Status.ToUpper()}'. Awaiting authorization/approval on Paystack.";
+                }
+                else
+                {
+                    TempData["error"] = $"Paystack Transfer #{transfer.TransferCode} status is '{res.Status.ToUpper()}'. Reason: {res.FailReason ?? res.Message}. Click 'Rollback' to restore customer funds.";
+                }
+            }
+            else
+            {
+                transfer.DateVerified = DateTime.UtcNow.AddHours(1);
+                transfer.VerifiedBy = User.Identity.Name;
+                transfer.PaystackMessage = res.Message;
+                await db.SaveChangesAsync();
+                TempData["error"] = $"Paystack Query: {res.Message}";
+            }
+
+            return RedirectToAction("PaystackOutflow", new { tab = returnTab });
+        }
+
+        // POST: Adminpanel/Transactions/RollbackTransferOutflow
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RollbackTransferOutflow(int id, string adminPassword, string returnTab = "transfers")
+        {
+            var currentUser = await UserManager.FindByNameAsync(User.Identity.Name);
+            bool isPasswordValid = await UserManager.CheckPasswordAsync(currentUser, adminPassword);
+            if (!isPasswordValid)
+            {
+                TempData["error"] = "Security Check Failed: Invalid Admin Password. Rollback cancelled.";
+                return RedirectToAction("PaystackOutflow", new { tab = returnTab });
+            }
+
+            var transfer = await db.PaystackTransferOutflows.FindAsync(id);
+            if (transfer == null)
+            {
+                TempData["error"] = "Transfer record not found.";
+                return RedirectToAction("PaystackOutflow", new { tab = returnTab });
+            }
+
+            if (transfer.IsRolledBack)
+            {
+                TempData["warning"] = $"Transfer #{transfer.TransferCode} was already rolled back previously.";
+                return RedirectToAction("PaystackOutflow", new { tab = returnTab });
+            }
+
+            // Restore the linked customer transactions back to available pool
+            int restoredCount = 0;
+            if (!string.IsNullOrWhiteSpace(transfer.TransactionIdsJson))
+            {
+                var ids = transfer.TransactionIdsJson
+                    .Split(new[] { ',', '[', ']', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => int.TryParse(s, out var v) ? v : 0)
+                    .Where(v => v > 0)
+                    .ToList();
+
+                var linkedTxns = await db.Transactions.Where(t => ids.Contains(t.TransactionId)).ToListAsync();
+                foreach (var txn in linkedTxns)
+                {
+                    txn.IsAdminTransferred = false;
+                    txn.DateTransferred = null;
+                    txn.TransferredBy = null;
+                    restoredCount++;
+                }
+            }
+
+            transfer.IsRolledBack = true;
+            transfer.DateRolledBack = DateTime.UtcNow.AddHours(1);
+            transfer.RolledBackBy = User.Identity.Name;
+            transfer.Status = "RolledBack";
+            transfer.PaystackMessage = $"Rolled back by {User.Identity.Name} on {DateTime.UtcNow.AddHours(1):yyyy-MM-dd HH:mm}. Funds restored to Available pool.";
+
+            await db.SaveChangesAsync();
+
+            TempData["Success"] = $"Transfer #{transfer.TransferCode} successfully ROLLED BACK! ₦{transfer.Amount:N2} restored to Available Funds across {restoredCount} customer transaction(s).";
+            return RedirectToAction("PaystackOutflow", new { tab = "available" });
+        }
+
+        // GET: Adminpanel/Transactions/GetTransferOutflowDetailsAjax
+        [HttpGet]
+        public async Task<IActionResult> GetTransferOutflowDetailsAjax(int id)
+        {
+            var transfer = await db.PaystackTransferOutflows.FindAsync(id);
+            if (transfer == null)
+            {
+                return Json(new { success = false, message = "Transfer record not found." });
+            }
+
+            var linkedTxns = new List<object>();
+            if (!string.IsNullOrWhiteSpace(transfer.TransactionIdsJson))
+            {
+                var ids = transfer.TransactionIdsJson
+                    .Split(new[] { ',', '[', ']', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => int.TryParse(s, out var v) ? v : 0)
+                    .Where(v => v > 0)
+                    .ToList();
+
+                var txns = await db.Transactions
+                    .Include(t => t.User)
+                    .Where(t => ids.Contains(t.TransactionId))
+                    .OrderByDescending(t => t.TransactionId)
+                    .ToListAsync();
+
+                foreach (var t in txns)
+                {
+                    linkedTxns.Add(new
+                    {
+                        transactionId = t.TransactionId,
+                        clientName = GeneralServices.ClientName(t.ClientId),
+                        userName = GeneralServices.UserName(t.UserId),
+                        reference = t.TransactionReference ?? "N/A",
+                        amount = (t.AmountPaid.HasValue && t.AmountPaid > 0 ? t.AmountPaid.Value : t.Amount).ToString("N2"),
+                        units = t.Units.ToString("N0"),
+                        date = t.DateApproved.HasValue ? t.DateApproved.Value.ToString("yyyy-MM-dd HH:mm") : t.DateCreated.ToString("yyyy-MM-dd")
+                    });
+                }
+            }
+
+            return Json(new
+            {
+                success = true,
+                id = transfer.Id,
+                transferCode = transfer.TransferCode,
+                amount = transfer.Amount.ToString("N2"),
+                recipientName = transfer.AccountName ?? "Corporate Outflow Account",
+                bankName = transfer.BankName ?? "N/A",
+                accountNumber = transfer.AccountNumber ?? "N/A",
+                status = transfer.Status ?? "PendingApproval",
+                initiatedBy = transfer.InitiatedBy ?? "Admin",
+                dateInitiated = transfer.DateInitiated.ToString("dd MMM yyyy, hh:mm tt"),
+                dateVerified = transfer.DateVerified.HasValue ? transfer.DateVerified.Value.ToString("dd MMM yyyy, hh:mm tt") : "Not Verified",
+                verifiedBy = transfer.VerifiedBy ?? "N/A",
+                paystackMessage = string.IsNullOrWhiteSpace(transfer.PaystackMessage) ? "No message recorded." : transfer.PaystackMessage,
+                isRolledBack = transfer.IsRolledBack,
+                dateRolledBack = transfer.DateRolledBack.HasValue ? transfer.DateRolledBack.Value.ToString("dd MMM yyyy, hh:mm tt") : null,
+                rolledBackBy = transfer.RolledBackBy,
+                depositsCount = linkedTxns.Count,
+                transactions = linkedTxns
+            });
         }
 
         [HttpPost]
