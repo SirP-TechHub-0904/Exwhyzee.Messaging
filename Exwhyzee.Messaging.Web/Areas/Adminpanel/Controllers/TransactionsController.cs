@@ -654,6 +654,21 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
                 transfer.DateVerified = DateTime.UtcNow.AddHours(1);
                 transfer.VerifiedBy = User.Identity.Name;
                 transfer.PaystackMessage = $"Status: {res.Status}. {res.Message} {(string.IsNullOrEmpty(res.FailReason) ? "" : $"Reason: {res.FailReason}")}".Trim();
+
+                // Update real destination account directly from Paystack's official recipient data
+                if (!string.IsNullOrWhiteSpace(res.RecipientName))
+                {
+                    transfer.AccountName = res.RecipientName;
+                }
+                if (!string.IsNullOrWhiteSpace(res.BankName))
+                {
+                    transfer.BankName = res.BankName;
+                }
+                if (!string.IsNullOrWhiteSpace(res.AccountNumber))
+                {
+                    transfer.AccountNumber = res.AccountNumber;
+                }
+
                 await db.SaveChangesAsync();
 
                 if (res.Status.Equals("success", StringComparison.OrdinalIgnoreCase))
