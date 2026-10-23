@@ -96,7 +96,7 @@
                 </div>
 
                 <p>
-                    @Html.ActionLink("Resend", "Resend", new { messegeId = Model.MessageId }, new { @class = "btn btn-primary" })
+                    @Html.ActionLink("Resend", "Compose", new { resendId = Model.MessageId }, new { @class = "btn btn-primary" })
                     @Html.ActionLink("Back to List", "MessageHistory","Dashboard", null, new { @class = "btn btn-primary" })
                 </p>
                 

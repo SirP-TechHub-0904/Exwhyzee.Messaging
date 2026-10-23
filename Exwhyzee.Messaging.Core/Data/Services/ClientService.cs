@@ -296,24 +296,12 @@ namespace Exwhyzee.Messaging.Core.Data.Services
                 }
                 else
                 {
-                    string errorMsg = response?.msg ?? "";
-                    if (response?.BalanceResponse == "message unit is greater than balance error 88009-8899-333" || 
-                        errorMsg.ToLower().Contains("insufficient") || 
-                        errorMsg.ToLower().Contains("balance"))
-                    {
-                        errorMsg = "Something went wrong, contact administrator.";
-                    }
-                    else if (string.IsNullOrEmpty(errorMsg))
-                    {
-                        errorMsg = "Sending Message Failed. Please try again or Contact the Administrator.";
-                    }
-
                     return new SendMessageResponseDto
                     {
                         Message = "Sending Message Failed.",
-                        Description = errorMsg,
+                        Description = Exwhyzee.Messaging.Core.Services.GatewayErrorMapper.ToClientMessage(response?.error_code, response?.msg),
                         Success = false,
-                        ResponseCode = ""
+                        ResponseCode = Exwhyzee.Messaging.Core.Services.GatewayErrorMapper.GetPlatformCode(response?.error_code, response?.msg)
                     };
                 }
             }
@@ -322,9 +310,9 @@ namespace Exwhyzee.Messaging.Core.Data.Services
                 return new SendMessageResponseDto
                 {
                     Message = "Error.",
-                    Description = "Something wrong happened: " + er.Message,
+                    Description = "Something went wrong while sending your message. Please try again later or contact support. (Error Code: " + Exwhyzee.Messaging.Core.Services.GatewayErrorMapper.UnknownCode + ")",
                     Success = false,
-                    ResponseCode = "500"
+                    ResponseCode = Exwhyzee.Messaging.Core.Services.GatewayErrorMapper.UnknownCode
                 };
             }
 

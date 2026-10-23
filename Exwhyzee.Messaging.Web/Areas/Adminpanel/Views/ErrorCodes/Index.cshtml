@@ -1,0 +1,217 @@
+@model IReadOnlyList<Exwhyzee.Messaging.Core.Services.GatewayErrorMapper.GatewayError>
+@{
+    ViewData["Title"] = "Error Codes & Meanings";
+    var counts = ViewBag.Counts as Dictionary<string, int> ?? new Dictionary<string, int>();
+    var lastSeen = ViewBag.LastSeen as Dictionary<string, DateTime?> ?? new Dictionary<string, DateTime?>();
+    var clientErrors = Model.Where(e => !e.IsInternal).OrderBy(e => e.PlatformCode).ToList();
+    var internalErrors = Model.Where(e => e.IsInternal).OrderBy(e => e.PlatformCode).ToList();
+    const string genericMsg = "We could not send your message at this time. Please try again later or contact support.";
+    int totalSeen = counts.Values.Sum();
+}
+
+<style>
+    .ec-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+    .ec-metric { padding:16px 20px; display:flex; align-items:center; justify-content:space-between; }
+    .ec-metric small { font-size:.78rem; font-weight:700; text-transform:uppercase; }
+    .ec-metric h3 { margin:4px 0 0; font-weight:800; font-size:1.6rem; }
+    .ec-icon { border-radius:10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
+    .ec-section-title { font-weight:800; font-size:1.05rem; color:#0F172A; margin:0; display:flex; align-items:center; gap:8px; }
+    .ec-table { width:100%; margin:0; }
+    .ec-table th { background:#F8FAFC; color:#475569; font-size:.75rem; text-transform:uppercase; letter-spacing:.4px; font-weight:800; padding:10px 14px !important; border-bottom:1px solid #E2E8F0 !important; }
+    .ec-table td { padding:12px 14px !important; vertical-align:top !important; font-size:.88rem; color:#1E293B; border-top:1px solid #F1F5F9 !important; }
+    .ec-table tr:hover td { background:#FAFBFF; }
+    .ec-code { font-family:'JetBrains Mono',Consolas,monospace; font-weight:800; font-size:.95rem; padding:4px 10px; border-radius:6px; display:inline-block; cursor:pointer; transition:transform .12s; }
+    .ec-code:hover { transform:scale(1.05); }
+    .ec-code.client { background:#EEF2FF; color:#4338CA; }
+    .ec-code.internal { background:#FEE2E2; color:#B91C1C; }
+    .ec-gw { font-family:'JetBrains Mono',Consolas,monospace; color:#64748B; font-weight:700; }
+    .ec-quote { background:#F8FAFC; border-left:3px solid #CBD5E1; padding:6px 10px; border-radius:4px; color:#334155; font-size:.84rem; }
+    .ec-action { color:#0F172A; font-size:.85rem; }
+    .ec-badge { font-size:.72rem; font-weight:800; padding:3px 8px; border-radius:999px; white-space:nowrap; }
+    .ec-badge.zero { background:#F1F5F9; color:#94A3B8; }
+    .ec-badge.hit { background:#FEF3C7; color:#B45309; }
+    .ec-highlight td { background:#FFFBEB !important; }
+</style>
+
+<div class="content-header" style="padding:15px 15px 0;">
+    @await Html.PartialAsync("_ResponseMessagePartial")
+
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:15px;">
+        <div>
+            <h1 style="font-weight:800; font-size:1.8rem; margin:0; color:#0F172A;">
+                <i class="fa fa-book" style="color:#6366F1;"></i> Error Codes &amp; Meanings
+            </h1>
+            <p style="color:#64748B; margin:4px 0 0; font-size:.9rem;">
+                Reference for every platform error code shown to clients, what it means at the SMS gateway (KudiSMS), and how to resolve it.
+            </p>
+        </div>
+        <div class="input-group" style="width:320px;">
+            <span class="input-group-addon" style="background:#fff;"><i class="fa fa-magnifying-glass"></i></span>
+            <input type="text" id="ecSearch" class="form-control" placeholder="Search code e.g. 100990, 109, balance..." autocomplete="off" />
+        </div>
+    </div>
+
+    <div class="row" style="margin-bottom:20px;">
+        <div class="col-md-3 col-sm-6 col-xs-12">
+            <div class="ec-card ec-metric">
+                <div><small style="color:#64748B;">Total Codes</small><h3 style="color:#0F172A;">@(Model.Count + 1)</h3></div>
+                <div class="ec-icon" style="background:#F1F5F9;"><i class="fa fa-list" style="color:#475569;"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-xs-12">
+            <div class="ec-card ec-metric">
+                <div><small style="color:#4338CA;">Client-Fixable</small><h3 style="color:#4338CA;">@clientErrors.Count</h3></div>
+                <div class="ec-icon" style="background:#EEF2FF;"><i class="fa fa-user-pen" style="color:#4338CA;"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-xs-12">
+            <div class="ec-card ec-metric">
+                <div><small style="color:#B91C1C;">Admin / Internal</small><h3 style="color:#B91C1C;">@(internalErrors.Count + 1)</h3></div>
+                <div class="ec-icon" style="background:#FEE2E2;"><i class="fa fa-screwdriver-wrench" style="color:#B91C1C;"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-xs-12">
+            <div class="ec-card ec-metric">
+                <div><small style="color:#B45309;">Failures (Last 30 Days)</small><h3 style="color:#B45309;">@ViewBag.Last30Total</h3></div>
+                <div class="ec-icon" style="background:#FEF3C7;"><i class="fa fa-chart-line" style="color:#B45309;"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content" style="padding:0 15px 25px;">
+
+    <div class="callout" style="background:#EEF2FF; border:1px solid #C7D2FE; border-left:4px solid #6366F1; border-radius:10px; color:#312E81; padding:12px 16px; margin-bottom:18px;">
+        <b><i class="fa fa-circle-info"></i> How codes work:</b>
+        Platform code = <code>1009</code> + last two digits of the gateway code (e.g. gateway <code>106</code> &rarr; <code>100906</code>).
+        Exception: gateway <code>109</code> (insufficient gateway credit) &rarr; <code>100990</code>.
+        Raw gateway messages are never shown to clients, but are saved on each message record for troubleshooting.
+    </div>
+
+    <!-- Internal errors -->
+    <div class="ec-card" style="margin-bottom:22px;">
+        <div style="padding:14px 18px; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <h3 class="ec-section-title"><i class="fa fa-screwdriver-wrench" style="color:#DC2626;"></i> Admin / Internal Errors</h3>
+            <span style="font-size:.8rem; color:#64748B;">Client sees a generic message: <i>&ldquo;@genericMsg&rdquo;</i></span>
+        </div>
+        <div class="table-responsive">
+            <table class="table ec-table">
+                <thead>
+                    <tr>
+                        <th style="width:120px;">Our Code</th>
+                        <th style="width:90px;">Gateway</th>
+                        <th>Meaning (Gateway Message)</th>
+                        <th>What Admin Should Do</th>
+                        <th style="width:130px;">Occurrences</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in internalErrors)
+                    {
+                        var hits = counts.TryGetValue(e.PlatformCode, out var h) ? h : 0;
+                        lastSeen.TryGetValue(e.PlatformCode, out var ls);
+                        <tr class="ec-row" id="ec-@e.PlatformCode" data-search="@($"{e.PlatformCode} {e.GatewayCode} {e.GatewayMessage} {e.AdminAction}".ToLower())">
+                            <td><span class="ec-code internal" title="Click to copy" onclick="ecCopy('@e.PlatformCode')">@e.PlatformCode</span></td>
+                            <td><span class="ec-gw">@e.GatewayCode</span></td>
+                            <td><div class="ec-quote">@e.GatewayMessage</div></td>
+                            <td class="ec-action">@e.AdminAction</td>
+                            <td>
+                                <span class="ec-badge @(hits > 0 ? "hit" : "zero")">@hits time@(hits == 1 ? "" : "s")</span>
+                                @if (ls.HasValue)
+                                {
+                                    <div style="font-size:.72rem; color:#94A3B8; margin-top:4px;">Last: @ls.Value.ToString("dd MMM yyyy")</div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    <tr class="ec-row" id="ec-@ViewBag.UnknownCode" data-search="@($"{ViewBag.UnknownCode} unknown other unexpected exception").ToLower()">
+                        <td><span class="ec-code internal" title="Click to copy" onclick="ecCopy('@ViewBag.UnknownCode')">@ViewBag.UnknownCode</span></td>
+                        <td><span class="ec-gw">&mdash;</span></td>
+                        <td><div class="ec-quote">Unknown / unmapped gateway error, or an unexpected exception while sending.</div></td>
+                        <td class="ec-action">Open the message record (Message History) to see the raw gateway response, and check System Error Logs. Add a new mapping if it is a new gateway code.</td>
+                        <td>
+                            @{ var unk = counts.TryGetValue((string)ViewBag.UnknownCode, out var uh) ? uh : 0; }
+                            <span class="ec-badge @(unk > 0 ? "hit" : "zero")">@unk time@(unk == 1 ? "" : "s")</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Client errors -->
+    <div class="ec-card">
+        <div style="padding:14px 18px; border-bottom:1px solid #E2E8F0;">
+            <h3 class="ec-section-title"><i class="fa fa-user-pen" style="color:#4F46E5;"></i> Client-Fixable Errors</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="table ec-table">
+                <thead>
+                    <tr>
+                        <th style="width:120px;">Our Code</th>
+                        <th style="width:90px;">Gateway</th>
+                        <th>Meaning (Gateway Message)</th>
+                        <th>What Client Sees</th>
+                        <th>What Admin Should Do</th>
+                        <th style="width:130px;">Occurrences</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in clientErrors)
+                    {
+                        var hits = counts.TryGetValue(e.PlatformCode, out var h) ? h : 0;
+                        lastSeen.TryGetValue(e.PlatformCode, out var ls);
+                        <tr class="ec-row" id="ec-@e.PlatformCode" data-search="@($"{e.PlatformCode} {e.GatewayCode} {e.GatewayMessage} {e.ClientMessage} {e.AdminAction}".ToLower())">
+                            <td><span class="ec-code client" title="Click to copy" onclick="ecCopy('@e.PlatformCode')">@e.PlatformCode</span></td>
+                            <td><span class="ec-gw">@e.GatewayCode</span></td>
+                            <td><div class="ec-quote">@e.GatewayMessage</div></td>
+                            <td style="color:#334155;">@e.ClientMessage</td>
+                            <td class="ec-action">@e.AdminAction</td>
+                            <td>
+                                <span class="ec-badge @(hits > 0 ? "hit" : "zero")">@hits time@(hits == 1 ? "" : "s")</span>
+                                @if (ls.HasValue)
+                                {
+                                    <div style="font-size:.72rem; color:#94A3B8; margin-top:4px;">Last: @ls.Value.ToString("dd MMM yyyy")</div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="ecNoResults" style="display:none; text-align:center; padding:30px; color:#94A3B8; font-weight:700;">
+        <i class="fa fa-circle-question" style="font-size:1.6rem;"></i><br />No error code matches your search.
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        (function () {
+            var input = document.getElementById('ecSearch');
+            function filter() {
+                var q = (input.value || '').trim().toLowerCase();
+                var rows = document.querySelectorAll('.ec-row'), shown = 0;
+                rows.forEach(function (r) {
+                    var match = !q || r.getAttribute('data-search').indexOf(q) !== -1;
+                    r.style.display = match ? '' : 'none';
+                    r.classList.toggle('ec-highlight', !!q && match);
+                    if (match) shown++;
+                });
+                document.getElementById('ecNoResults').style.display = shown ? 'none' : 'block';
+            }
+            input.addEventListener('input', filter);
+
+            // Support deep-link e.g. /adminpanel/errorcodes#100990 or ?code=100990
+            var params = new URLSearchParams(window.location.search);
+            var code = params.get('code') || (window.location.hash || '').replace('#', '');
+            if (code) { input.value = code; filter(); }
+        })();
+
+        function ecCopy(code) {
+            if (navigator.clipboard) navigator.clipboard.writeText(code);
+            if (window.xyzToast) window.xyzToast.success('Copied ' + code, 'Copied');
+        }
+    </script>
+}
