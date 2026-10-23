@@ -174,7 +174,9 @@ namespace Exwhyzee.Messaging.Api.Controllers
                 recipients = message.Recipients,
                 unitsUsed = message.UnitsUsed,
                 status = message.Status.ToString(),
-                response = message.Response,
+                response = (!string.IsNullOrEmpty(message.Response_error_code) && message.Response_error_code != "000")
+                    ? Exwhyzee.Messaging.Core.Services.GatewayErrorMapper.ToClientMessage(message.Response_error_code, message.Response)
+                    : message.Response,
                 dateSent = message.DeliveredDate ?? message.Scheduleddate
             });
         }

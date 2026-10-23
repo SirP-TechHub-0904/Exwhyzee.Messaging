@@ -236,7 +236,7 @@
                                     </button>
 
                                     <!-- Quick Resend Button -->
-                                    <a href="@Url.Action("Resend", "Dashboard", new { area = "ClientPanel", messegeId = item.MessageId })" class="btn btn-xs btn-default" onclick="return confirm('Resend this broadcast to all recipients now?');" title="Resend Broadcast" style="font-weight:700; border-radius:6px; padding:4px 8px;">
+                                    <a href="@Url.Action("Compose", "Dashboard", new { area = "ClientPanel", resendId = item.MessageId })" class="btn btn-xs btn-default" title="Resend Broadcast" style="font-weight:700; border-radius:6px; padding:4px 8px;">
                                         <i class="fa fa-repeat"></i>
                                     </a>
                                 </div>
@@ -358,7 +358,7 @@
                 <button type="button" class="btn btn-default" data-dismiss="modal" style="font-weight:700; border-radius:8px;">
                     Close
                 </button>
-                <a id="modalBtnResend" href="#" class="btn btn-primary" style="background:#E50914; border:none; font-weight:800; border-radius:8px; padding:8px 18px;" onclick="return confirm('Resend this broadcast to all recipients now?');">
+                <a id="modalBtnResend" href="#" class="btn btn-primary" style="background:#E50914; border:none; font-weight:800; border-radius:8px; padding:8px 18px;">
                     <i class="fa fa-repeat"></i> Resend Broadcast
                 </a>
             </div>
@@ -395,7 +395,7 @@
                         $('#modalStatusBadge').css('background', '#EF4444');
                     }
 
-                    $('#modalBtnResend').attr('href', '@Url.Action("Resend", "Dashboard", new { area = "ClientPanel" })?messegeId=' + res.messageId);
+                    $('#modalBtnResend').attr('href', '@Url.Action("Compose", "Dashboard", new { area = "ClientPanel" })?resendId=' + res.messageId);
                 } else {
                     $('#modalMessageContentBox').text('Unable to load message details.');
                 }

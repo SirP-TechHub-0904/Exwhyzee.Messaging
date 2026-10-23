@@ -448,11 +448,29 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> Compose()
+        public async Task<ActionResult> Compose(int? resendId)
         {
             string userId = User.Identity.GetUserId();
             var client = await _clientService.GetClientDetailsByUserId(userId);
             await PopulateComposeViewBagAsync(userId, client);
+
+            // Resend: prefill the composer with an existing message for preview before sending
+            if (resendId.HasValue)
+            {
+                var original = await _clientService.GetMessage(resendId.Value);
+                if (original != null && original.UserId == userId)
+                {
+                    TempData["info"] = "Message loaded for resend. Review the details below and click Send.";
+                    return View(new ComposeViewModel
+                    {
+                        SenderId = original.SenderId,
+                        Recipients = original.Recipients,
+                        Content = original.MessageContent,
+                        SendOption = "SendNow"
+                    });
+                }
+            }
+
             return View();
         }
 
@@ -763,11 +781,10 @@ STRICT NON-NEGOTIABLE RULES:
                         }
                         else
                         {
-                            string errMessage = response?.msg ?? "Error from SMS Gateway.";
-                            if (response?.error_code == "106")
-                            {
-                                errMessage = "The sender ID used does not exist or has not been approved.";
-                            }
+                            // Never expose the upstream gateway's raw message (e.g. its own
+                            // credit balance) to clients. The raw response is still persisted
+                            // on the message record below for admin troubleshooting.
+                            string errMessage = Exwhyzee.Messaging.Core.Services.GatewayErrorMapper.ToClientMessage(response?.error_code, response?.msg);
 
                             if (sentMessage != null)
                             {
@@ -1006,7 +1023,7 @@ STRICT NON-NEGOTIABLE RULES:
             }
             else
             {
-                TempData["error"] = $"Dispatch error: {response?.msg ?? "Gateway rejected broadcast."}";
+                TempData["error"] = Exwhyzee.Messaging.Core.Services.GatewayErrorMapper.ToClientMessage(response?.error_code, response?.msg);
                 return RedirectToAction("ScheduledMessages");
             }
         }
@@ -1090,7 +1107,7 @@ STRICT NON-NEGOTIABLE RULES:
             else
             {
 
-                TempData["error"] = response + ". Sending Message Failed. Please try again or Contact the Administrator.";
+                TempData["error"] = Exwhyzee.Messaging.Core.Services.GatewayErrorMapper.ToClientMessage(response?.error_code, response?.msg);
                 return RedirectToAction("MessageDetails", new { id = model.MessageId });
             }
 
@@ -1342,7 +1359,9 @@ STRICT NON-NEGOTIABLE RULES:
                 status = msg.Status.ToString(),
                 deliveredDate = msg.DeliveredDate.HasValue ? msg.DeliveredDate.Value.ToString("dd MMM yyyy, hh:mm tt") : "Pending",
                 scheduledDate = msg.Scheduleddate.HasValue ? msg.Scheduleddate.Value.ToString("dd MMM yyyy, hh:mm tt") : "None",
-                responseMsg = msg.Response_msg ?? msg.Response ?? "Dispatched",
+                responseMsg = (!string.IsNullOrEmpty(msg.Response_error_code) && msg.Response_error_code != "000")
+                    ? Exwhyzee.Messaging.Core.Services.GatewayErrorMapper.ToClientMessage(msg.Response_error_code, msg.Response_msg ?? msg.Response)
+                    : (msg.Response_msg ?? msg.Response ?? "Dispatched"),
                 responseStatus = msg.Response_status ?? "Success",
                 responseErrorCode = msg.Response_error_code ?? "0",
                 responseCost = msg.Response_cost ?? "0",
