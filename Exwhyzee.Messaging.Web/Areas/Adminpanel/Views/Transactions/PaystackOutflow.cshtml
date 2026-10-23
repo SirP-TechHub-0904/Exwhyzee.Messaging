@@ -2,6 +2,7 @@
 @using X.PagedList.Mvc.Core;
 <link href="~/Content/PagedList.css" rel="stylesheet" />
 @using Exwhyzee.Messaging.Core.Services
+@using Exwhyzee.Messaging.Core.Models
 
 @{
     ViewBag.Title = "Paystack Outflow & Liquidity Management";
@@ -11,6 +12,8 @@
     decimal availableFund = ViewBag.AvailableFund ?? 0m;
     decimal pending24h = ViewBag.Pending24hSettlement ?? 0m;
     decimal totalTransferred = ViewBag.TotalTransferred ?? 0m;
+    var outflows = ViewBag.TransferOutflows as List<PaystackTransferOutflow> ?? new List<PaystackTransferOutflow>();
+    bool isTransfersTab = (activeTab == "transfers" || activeTab == "transferred");
 }
 
 <style>
@@ -82,6 +85,10 @@
     .xyz-badge-cleared { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
     .xyz-badge-pending-24h { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
     .xyz-badge-transferred { background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
+    .xyz-badge-success { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+    .xyz-badge-warning { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+    .xyz-badge-danger { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+    .xyz-badge-muted { background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0; }
 </style>
 
 @Html.Partial("_ResponseMessagePartial")
@@ -170,8 +177,15 @@
             <a href="@Url.Action("PaystackOutflow", "Transactions", new { area = "Adminpanel", tab = "pending" })" class="xyz-tab-item @(activeTab == "pending" ? "active" : "")">
                 <i class="fa fa-clock"></i> Pending 24h Settlement
             </a>
-            <a href="@Url.Action("PaystackOutflow", "Transactions", new { area = "Adminpanel", tab = "transferred" })" class="xyz-tab-item @(activeTab == "transferred" ? "active" : "")">
-                <i class="fa fa-history"></i> Transferred History
+            <a href="@Url.Action("PaystackOutflow", "Transactions", new { area = "Adminpanel", tab = "transfers" })" class="xyz-tab-item @(isTransfersTab ? "active" : "")">
+                <i class="fa fa-paper-plane"></i> Transfer Payouts History
+                @if (outflows != null && outflows.Any())
+                {
+                    <span class="badge" style="background:#0F172A; font-weight:800; font-size:0.75rem; margin-left:4px;">@outflows.Count</span>
+                }
+            </a>
+            <a href="@Url.Action("PaystackOutflow", "Transactions", new { area = "Adminpanel", tab = "deposits" })" class="xyz-tab-item @(activeTab == "deposits" ? "active" : "")">
+                <i class="fa fa-wallet"></i> Customer Deposits Ledger
             </a>
             <a href="@Url.Action("PaystackOutflow", "Transactions", new { area = "Adminpanel", tab = "all" })" class="xyz-tab-item @(activeTab == "all" ? "active" : "")">
                 <i class="fa fa-list"></i> All Paystack Logs
@@ -180,106 +194,476 @@
     </div>
 
     <div class="box-body table-responsive" style="padding:20px;">
-        <table class="table table-hover" style="vertical-align:middle; font-size:0.88rem;">
-            <thead style="background:#F8FAFC; font-weight:800; font-size:0.75rem; color:#475569; text-transform:uppercase;">
-                <tr>
-                    <th style="padding:10px 14px;">Trans ID</th>
-                    <th>Client</th>
-                    <th>Paystack Reference</th>
-                    <th>Amount Paid</th>
-                    <th>Units Credited</th>
-                    <th>Date Approved</th>
-                    <th>Settlement Status</th>
-                    <th style="text-align:right; padding:10px 14px;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!Model.Any())
-                {
+        @if (isTransfersTab)
+        {
+            <!-- DEDICATED PAYSTACK OUTFLOW TRANSFERS TABLE -->
+            <table class="table table-hover" style="vertical-align:middle; font-size:0.88rem;">
+                <thead style="background:#F8FAFC; font-weight:800; font-size:0.75rem; color:#475569; text-transform:uppercase;">
                     <tr>
-                        <td colspan="8" style="text-align:center; padding:40px; color:#94A3B8;">
-                            <i class="fa fa-inbox" style="font-size:2rem; display:block; margin-bottom:8px; color:#CBD5E1;"></i>
-                            No Paystack transactions found in this category.
-                        </td>
+                        <th style="padding:10px 14px;">Transfer Code</th>
+                        <th>Destination Account</th>
+                        <th>Amount Sent</th>
+                        <th>Linked Deposits</th>
+                        <th>Date Initiated</th>
+                        <th>Status on Paystack</th>
+                        <th style="text-align:right; padding:10px 14px;">Actions</th>
                     </tr>
-                }
-                else
-                {
-                    foreach (var item in Model)
+                </thead>
+                <tbody>
+                    @if (outflows == null || !outflows.Any())
                     {
-                        bool isToday = (item.DateApproved ?? item.DateCreated) >= DateTime.Today;
-
                         <tr>
-                            <td style="padding:10px 14px;">
-                                <span style="font-family:'JetBrains Mono', monospace; font-weight:800; font-size:0.8rem; background:#F1F5F9; color:#334155; padding:2px 6px; border-radius:4px; border:1px solid #E2E8F0;">#@item.TransactionId</span>
-                            </td>
-                            <td>
-                                <strong style="color:#1E293B;">@GeneralServices.ClientName(item.ClientId)</strong>
-                                <small style="color:#64748B; display:block;">@GeneralServices.UserName(item.UserId)</small>
-                            </td>
-                            <td>
-                                <code style="color:#0284C7; font-size:0.78rem;">@(item.TransactionReference ?? "N/A")</code>
-                            </td>
-                            <td>
-                                <strong style="color:#10B981; font-family:'JetBrains Mono', monospace;">
-                                    &#x20A6;@((item.AmountPaid.HasValue && item.AmountPaid > 0 ? item.AmountPaid.Value : item.Amount).ToString("N2"))
-                                </strong>
-                            </td>
-                            <td>
-                                <span style="font-weight:700; color:#334155;">+@item.Units.ToString("N0") Units</span>
-                            </td>
-                            <td>
-                                <small style="color:#64748B;">@(item.DateApproved != null ? item.DateApproved.Value.ToString("yyyy-MM-dd HH:mm") : item.DateCreated.ToString("yyyy-MM-dd"))</small>
-                            </td>
-                            <td>
-                                @if (item.IsAdminTransferred)
-                                {
-                                    <span class="xyz-badge xyz-badge-transferred" title="Transferred by @item.TransferredBy on @item.DateTransferred">
-                                        <i class="fa fa-check-double"></i> Transferred Out (@item.TransferredBy)
-                                    </span>
-                                }
-                                else if (!isToday)
-                                {
-                                    <span class="xyz-badge xyz-badge-cleared">
-                                        <i class="fa fa-circle-check"></i> Cleared for Transfer
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="xyz-badge xyz-badge-pending-24h" title="Processed today; clears tomorrow at 12:00 AM">
-                                        <i class="fa fa-clock"></i> Clears Tomorrow 12:00 AM
-                                    </span>
-                                }
-                            </td>
-                            <td style="text-align:right; padding:10px 14px;">
-                                <div style="display:inline-flex; gap:6px; align-items:center;">
-                                    @if (!item.IsAdminTransferred && !isToday)
-                                    {
-                                        using (Html.BeginForm("MarkAsTransferred", "Transactions", new { area = "Adminpanel", id = item.TransactionId, returnTab = activeTab }, FormMethod.Post, null, new { style = "display:inline;" }))
-                                        {
-                                            <button type="submit" class="btn btn-xs btn-success" style="font-weight:800; border-radius:6px; background:#059669; border:none;" onclick="return confirm('Mark Paystack Transaction #@item.TransactionId (&#x20A6;@((item.AmountPaid ?? item.Amount).ToString("N2"))) as Transferred Out (Withdrawn by Admin)?');">
-                                                <i class="fa fa-arrow-up-right-from-square"></i> Mark Transferred
-                                            </button>
-                                        }
-                                    }
-                                    else if (!item.IsAdminTransferred && isToday)
-                                    {
-                                        <button type="button" class="btn btn-xs btn-default disabled" style="font-weight:700; border-radius:6px;" title="Funds processed today must complete 24h settlement before transfer.">
-                                            <i class="fa fa-lock"></i> Locked (24h)
-                                        </button>
-                                    }
-                                    @Html.ActionLink("Details", "Details", new { id = item.TransactionId }, new { @class = "btn btn-primary btn-xs", style = "font-weight:700; border-radius:6px;" })
-                                </div>
+                            <td colspan="7" style="text-align:center; padding:40px; color:#94A3B8;">
+                                <i class="fa fa-paper-plane" style="font-size:2rem; display:block; margin-bottom:8px; color:#CBD5E1;"></i>
+                                No automated transfer payouts recorded yet.
                             </td>
                         </tr>
                     }
-                }
-            </tbody>
-        </table>
+                    else
+                    {
+                        foreach (var trf in outflows)
+                        {
+                            var isSuccess = trf.Status != null && trf.Status.Equals("success", StringComparison.OrdinalIgnoreCase);
+                            var isFailed = trf.Status != null && (trf.Status.Equals("failed", StringComparison.OrdinalIgnoreCase) || trf.Status.Equals("reversed", StringComparison.OrdinalIgnoreCase));
+                            var isRolledBack = trf.IsRolledBack || (trf.Status != null && trf.Status.Equals("RolledBack", StringComparison.OrdinalIgnoreCase));
 
-        <div class="container text-center page" style="margin-top:20px;">
-            <p>Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount</p>
-            @Html.PagedListPager(Model, page => Url.Action("PaystackOutflow", new { tab = activeTab, page }))
+                            <tr>
+                                <td style="padding:10px 14px;">
+                                    <a href="javascript:void(0)" onclick="openTransferDetailsModal(@trf.Id)" style="text-decoration:none;" title="Click to view full breakdown of bundled deposits">
+                                        <span style="font-family:'JetBrains Mono', monospace; font-weight:800; font-size:0.85rem; background:#F1F5F9; color:#0284C7; padding:4px 8px; border-radius:6px; border:1px solid #CBD5E1; display:inline-block;">
+                                            @trf.TransferCode <i class="fa fa-arrow-up-right-from-square" style="font-size:0.7rem;"></i>
+                                        </span>
+                                    </a>
+                                    <small style="display:block; color:#64748B; margin-top:3px;">By @(trf.InitiatedBy ?? "Admin")</small>
+                                </td>
+                                <td>
+                                    <strong style="color:#0F172A; display:block;">@(trf.AccountName ?? "Corporate Outflow")</strong>
+                                    <span style="color:#475569; font-size:0.82rem;">@(trf.BankName ?? "Bank") &bull; <code>@(trf.AccountNumber ?? "N/A")</code></span>
+                                </td>
+                                <td>
+                                    <strong style="color:#059669; font-family:'JetBrains Mono', monospace; font-size:1.05rem;">
+                                        &#x20A6;@trf.Amount.ToString("N2")
+                                    </strong>
+                                </td>
+                                <td>
+                                    <a href="javascript:void(0)" onclick="openTransferDetailsModal(@trf.Id)" style="font-weight:700; color:#0284C7; text-decoration:none;">
+                                        <i class="fa fa-folder-open"></i> @trf.TransactionsCount deposit(s)
+                                    </a>
+                                </td>
+                                <td>
+                                    <span style="color:#334155; font-size:0.82rem;">@trf.DateInitiated.ToString("yyyy-MM-dd HH:mm")</span>
+                                    @if (trf.DateVerified.HasValue)
+                                    {
+                                        <small style="display:block; color:#059669;" title="Verified by @trf.VerifiedBy">
+                                            <i class="fa fa-check"></i> Verified @trf.DateVerified.Value.ToString("MMM dd, HH:mm")
+                                        </small>
+                                    }
+                                </td>
+                                <td>
+                                    @if (isSuccess)
+                                    {
+                                        <span class="xyz-badge xyz-badge-success" title="@trf.PaystackMessage">
+                                            <i class="fa fa-circle-check"></i> SUCCESS (PAID)
+                                        </span>
+                                    }
+                                    else if (isRolledBack)
+                                    {
+                                        <span class="xyz-badge xyz-badge-muted" title="@trf.PaystackMessage">
+                                            <i class="fa fa-rotate-left"></i> ROLLED BACK
+                                        </span>
+                                    }
+                                    else if (isFailed)
+                                    {
+                                        <span class="xyz-badge xyz-badge-danger" title="@trf.PaystackMessage">
+                                            <i class="fa fa-circle-xmark"></i> FAILED / DECLINED
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="xyz-badge xyz-badge-warning" title="@trf.PaystackMessage">
+                                            <i class="fa fa-hourglass-half"></i> PENDING APPROVAL (PAYSTACK)
+                                        </span>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(trf.PaystackMessage))
+                                    {
+                                        <small style="display:block; color:#64748B; font-size:0.75rem; max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="@trf.PaystackMessage">
+                                            @trf.PaystackMessage
+                                        </small>
+                                    }
+                                </td>
+                                <td style="text-align:right; padding:10px 14px;">
+                                    <div style="display:inline-flex; gap:6px; align-items:center;">
+                                        <button type="button" class="btn btn-xs btn-default" style="font-weight:700; border-radius:6px;" onclick="openTransferDetailsModal(@trf.Id)" title="View all customer deposits in this transfer">
+                                            <i class="fa fa-list-check"></i> Breakdown
+                                        </button>
+
+                                        @if (!isRolledBack)
+                                        {
+                                            <!-- Verify Status Button -->
+                                            using (Html.BeginForm("VerifyTransferOutflow", "Transactions", new { area = "Adminpanel", id = trf.Id, returnTab = activeTab }, FormMethod.Post, null, new { style = "display:inline;" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-xs btn-info" style="font-weight:800; border-radius:6px; background:#0284C7; border:none;" title="Check real-time status with Paystack">
+                                                    <i class="fa fa-arrows-rotate"></i> Verify Status
+                                                </button>
+                                            }
+
+                                            @if (!isSuccess)
+                                            {
+                                                <!-- Rollback Button -->
+                                                <button type="button" class="btn btn-xs btn-danger" style="font-weight:800; border-radius:6px;" onclick="openRollbackModal(@trf.Id, '@trf.TransferCode', '&#x20A6;@trf.Amount.ToString("N2")', @trf.TransactionsCount)">
+                                                    <i class="fa fa-rotate-left"></i> Rollback
+                                                </button>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <small style="color:#94A3B8; font-weight:700;">Restored by @(trf.RolledBackBy ?? "Admin")</small>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <!-- CUSTOMER FUNDING TRANSACTIONS TABLE -->
+            <table class="table table-hover" style="vertical-align:middle; font-size:0.88rem;">
+                <thead style="background:#F8FAFC; font-weight:800; font-size:0.75rem; color:#475569; text-transform:uppercase;">
+                    <tr>
+                        <th style="padding:10px 14px;">Trans ID</th>
+                        <th>Client</th>
+                        <th>Paystack Reference</th>
+                        <th>Amount Paid</th>
+                        <th>Units Credited</th>
+                        <th>Date Approved</th>
+                        <th>Settlement Status</th>
+                        <th style="text-align:right; padding:10px 14px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="8" style="text-align:center; padding:40px; color:#94A3B8;">
+                                <i class="fa fa-inbox" style="font-size:2rem; display:block; margin-bottom:8px; color:#CBD5E1;"></i>
+                                No Paystack transactions found in this category.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model)
+                        {
+                            bool isToday = (item.DateApproved ?? item.DateCreated) >= DateTime.Today;
+
+                            <tr>
+                                <td style="padding:10px 14px;">
+                                    <span style="font-family:'JetBrains Mono', monospace; font-weight:800; font-size:0.8rem; background:#F1F5F9; color:#334155; padding:2px 6px; border-radius:4px; border:1px solid #E2E8F0;">#@item.TransactionId</span>
+                                </td>
+                                <td>
+                                    <strong style="color:#1E293B;">@GeneralServices.ClientName(item.ClientId)</strong>
+                                    <small style="color:#64748B; display:block;">@GeneralServices.UserName(item.UserId)</small>
+                                </td>
+                                <td>
+                                    <code style="color:#0284C7; font-size:0.78rem;">@(item.TransactionReference ?? "N/A")</code>
+                                </td>
+                                <td>
+                                    <strong style="color:#10B981; font-family:'JetBrains Mono', monospace;">
+                                        &#x20A6;@((item.AmountPaid.HasValue && item.AmountPaid > 0 ? item.AmountPaid.Value : item.Amount).ToString("N2"))
+                                    </strong>
+                                </td>
+                                <td>
+                                    <span style="font-weight:700; color:#334155;">+@item.Units.ToString("N0") Units</span>
+                                </td>
+                                <td>
+                                    <small style="color:#64748B;">@(item.DateApproved != null ? item.DateApproved.Value.ToString("yyyy-MM-dd HH:mm") : item.DateCreated.ToString("yyyy-MM-dd"))</small>
+                                </td>
+                                <td>
+                                    @if (item.IsAdminTransferred)
+                                    {
+                                        <span class="xyz-badge xyz-badge-transferred" title="Transferred by @item.TransferredBy on @item.DateTransferred">
+                                            <i class="fa fa-check-double"></i> Transferred Out (@item.TransferredBy)
+                                        </span>
+                                    }
+                                    else if (!isToday)
+                                    {
+                                        <span class="xyz-badge xyz-badge-cleared">
+                                            <i class="fa fa-circle-check"></i> Cleared for Transfer
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="xyz-badge xyz-badge-pending-24h" title="Processed today; clears tomorrow at 12:00 AM">
+                                            <i class="fa fa-clock"></i> Clears Tomorrow 12:00 AM
+                                        </span>
+                                    }
+                                </td>
+                                <td style="text-align:right; padding:10px 14px;">
+                                    <div style="display:inline-flex; gap:6px; align-items:center;">
+                                        @if (!item.IsAdminTransferred && !isToday)
+                                        {
+                                            using (Html.BeginForm("MarkAsTransferred", "Transactions", new { area = "Adminpanel", id = item.TransactionId, returnTab = activeTab }, FormMethod.Post, null, new { style = "display:inline;" }))
+                                            {
+                                                <button type="submit" class="btn btn-xs btn-success" style="font-weight:800; border-radius:6px; background:#059669; border:none;" onclick="return confirm('Mark Paystack Transaction #@item.TransactionId (&#x20A6;@((item.AmountPaid ?? item.Amount).ToString("N2"))) as Transferred Out (Withdrawn by Admin)?');">
+                                                    <i class="fa fa-arrow-up-right-from-square"></i> Mark Transferred
+                                                </button>
+                                            }
+                                        }
+                                        else if (!item.IsAdminTransferred && isToday)
+                                        {
+                                            <button type="button" class="btn btn-xs btn-default disabled" style="font-weight:700; border-radius:6px;" title="Funds processed today must complete 24h settlement before transfer.">
+                                                <i class="fa fa-lock"></i> Locked (24h)
+                                            </button>
+                                        }
+                                        @Html.ActionLink("Details", "Details", new { id = item.TransactionId }, new { @class = "btn btn-primary btn-xs", style = "font-weight:700; border-radius:6px;" })
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+
+            <div class="container text-center page" style="margin-top:20px;">
+                <p>Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount</p>
+                @Html.PagedListPager(Model, page => Url.Action("PaystackOutflow", new { tab = activeTab, page }))
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ROLLBACK TRANSFER MODAL -->
+<div class="modal fade" id="xyzRollbackModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document" style="max-width:480px;">
+        <div class="modal-content" style="border-radius:14px; overflow:hidden;">
+            @using (Html.BeginForm("RollbackTransferOutflow", "Transactions", new { area = "Adminpanel" }, FormMethod.Post, null, new { id = "rollbackForm" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="rollbackTransferId" value="" />
+                <input type="hidden" name="returnTab" value="@activeTab" />
+
+                <div class="modal-header" style="background:#FEE2E2; border-bottom:1px solid #FECACA; padding:16px 20px;">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" style="font-weight:800; color:#991B1B;">
+                        <i class="fa fa-rotate-left"></i> Rollback Unapproved Transfer
+                    </h4>
+                </div>
+                <div class="modal-body" style="padding:20px;">
+                    <p style="color:#334155; font-size:0.92rem;">
+                        You are about to roll back transfer <strong id="rollbackCodeText" style="color:#0284C7;"></strong> (<span id="rollbackAmountText" style="color:#059669; font-weight:800;"></span>).
+                    </p>
+                    <div class="alert alert-warning" style="font-size:0.85rem; border-radius:8px; margin-bottom:16px;">
+                        <i class="fa fa-triangle-exclamation"></i> <strong>What will happen:</strong> All <span id="rollbackCountText" style="font-weight:800;"></span> linked customer transactions will be restored to <strong>"Available for Transfer (Cleared)"</strong>. Your available fund balance will immediately increase by this amount.
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-weight:700; font-size:0.85rem; color:#334155;">Confirm with Admin Password:</label>
+                        <input type="password" name="adminPassword" class="form-control" placeholder="Enter your admin account password" style="border-radius:8px; height:42px;" required />
+                    </div>
+                </div>
+                <div class="modal-footer" style="background:#F8FAFC; border-top:1px solid #E2E8F0; padding:14px 20px;">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" style="font-weight:700; border-radius:8px;">Cancel</button>
+                    <button type="submit" class="btn btn-danger" style="font-weight:800; border-radius:8px; background:#DC2626; border:none;">
+                        <i class="fa fa-rotate-left"></i> Confirm &amp; Restore Funds
+                    </button>
+                </div>
+            }
         </div>
     </div>
 </div>
+
+<script>
+    function openRollbackModal(id, code, amount, count) {
+        document.getElementById('rollbackTransferId').value = id;
+        document.getElementById('rollbackCodeText').innerText = code;
+        document.getElementById('rollbackAmountText').innerHTML = amount;
+        document.getElementById('rollbackCountText').innerText = count;
+        $('#xyzRollbackModal').modal('show');
+    }
+
+    function openTransferDetailsModal(transferId) {
+        // Reset modal state
+        $('#tdLoading').show();
+        $('#tdContent').hide();
+        $('#tdError').hide();
+        $('#xyzTransferDetailsModal').modal('show');
+
+        var url = '@Url.Action("GetTransferOutflowDetailsAjax", "Transactions", new { area = "Adminpanel" })?id=' + transferId;
+
+        $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'json',
+            success: function (res) {
+                $('#tdLoading').hide();
+                if (!res.success) {
+                    $('#tdErrorMessage').text(res.message || 'Unable to load transfer details.');
+                    $('#tdError').show();
+                    return;
+                }
+
+                // Populate header & summary
+                $('#tdTransferCode').text(res.transferCode);
+                $('#tdAmount').text('₦' + res.amount);
+                $('#tdRecipient').text(res.recipientName);
+                $('#tdBank').text(res.bankName + ' • ' + res.accountNumber);
+                $('#tdInitiated').text(res.dateInitiated + ' (by ' + res.initiatedBy + ')');
+                $('#tdVerified').text(res.dateVerified + (res.verifiedBy !== 'N/A' ? ' by ' + res.verifiedBy : ''));
+                $('#tdGatewayMsg').text(res.paystackMessage);
+                $('#tdTxnCountBadge').text(res.depositsCount + ' customer deposits');
+
+                // Dynamic Status Badge
+                var st = (res.status || '').toLowerCase();
+                var statusHtml = '';
+                if (res.isRolledBack || st === 'rolledback') {
+                    statusHtml = '<span class="xyz-badge xyz-badge-muted"><i class="fa fa-rotate-left"></i> ROLLED BACK</span>';
+                    if (res.dateRolledBack) {
+                        $('#tdRollbackInfo').html('<div class="alert alert-info" style="margin-bottom:12px; font-size:0.85rem;"><i class="fa fa-info-circle"></i> This transfer was <strong>Rolled Back</strong> by <strong>' + res.rolledBackBy + '</strong> on <strong>' + res.dateRolledBack + '</strong>. All linked customer deposits were returned to Available Funds.</div>').show();
+                    } else {
+                        $('#tdRollbackInfo').hide();
+                    }
+                } else if (st === 'success') {
+                    statusHtml = '<span class="xyz-badge xyz-badge-success"><i class="fa fa-circle-check"></i> SUCCESS (PAID)</span>';
+                    $('#tdRollbackInfo').hide();
+                } else if (st === 'failed' || st === 'reversed' || st === 'declined') {
+                    statusHtml = '<span class="xyz-badge xyz-badge-danger"><i class="fa fa-circle-xmark"></i> ' + res.status.toUpperCase() + '</span>';
+                    $('#tdRollbackInfo').hide();
+                } else {
+                    statusHtml = '<span class="xyz-badge xyz-badge-warning"><i class="fa fa-hourglass-half"></i> PENDING APPROVAL</span>';
+                    $('#tdRollbackInfo').hide();
+                }
+                $('#tdStatusBadge').html(statusHtml);
+
+                // Populate customer transactions table
+                var tbody = $('#tdTransactionsBody');
+                tbody.empty();
+
+                if (!res.transactions || res.transactions.length === 0) {
+                    tbody.append('<tr><td colspan="5" style="text-align:center; padding:20px; color:#94A3B8;">No customer transaction records linked to this transfer code.</td></tr>');
+                } else {
+                    $.each(res.transactions, function (i, item) {
+                        var row = '<tr>' +
+                            '<td style="font-family:\'JetBrains Mono\', monospace; font-weight:800; font-size:0.82rem; color:#334155; padding:8px 12px;">#' + item.transactionId + '</td>' +
+                            '<td style="padding:8px 12px;"><strong style="color:#0F172A;">' + item.clientName + '</strong><small style="color:#64748B; display:block;">' + item.userName + '</small></td>' +
+                            '<td style="padding:8px 12px;"><code style="color:#0284C7; font-size:0.78rem;">' + item.reference + '</code></td>' +
+                            '<td style="padding:8px 12px;"><strong style="color:#059669; font-family:\'JetBrains Mono\', monospace;">₦' + item.amount + '</strong></td>' +
+                            '<td style="padding:8px 12px; color:#475569; font-weight:600;">+' + item.units + ' Units</td>' +
+                            '<td style="padding:8px 12px; color:#64748B; font-size:0.8rem;">' + item.date + '</td>' +
+                            '</tr>';
+                        tbody.append(row);
+                    });
+                }
+
+                $('#tdContent').show();
+            },
+            error: function () {
+                $('#tdLoading').hide();
+                $('#tdErrorMessage').text('Network error while retrieving transfer details.');
+                $('#tdError').show();
+            }
+        });
+    }
+</script>
+
+<!-- TRANSFER BREAKDOWN DETAILS MODAL -->
+<div class="modal fade" id="xyzTransferDetailsModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document" style="max-width:880px;">
+        <div class="modal-content" style="border-radius:14px; overflow:hidden; border:none; box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="background:#0F172A; color:#FFFFFF; padding:18px 24px; border-bottom:1px solid #1E293B;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#FFFFFF; opacity:0.8;"><span aria-hidden="true">&times;</span></button>
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <h4 class="modal-title" style="font-weight:800; font-size:1.15rem; margin:0; color:#FFFFFF;">
+                        <i class="fa fa-receipt" style="color:#38BDF8; margin-right:6px;"></i> Paystack Outflow Transfer
+                    </h4>
+                    <span id="tdTransferCode" style="font-family:'JetBrains Mono', monospace; font-weight:800; font-size:0.9rem; background:#1E293B; color:#38BDF8; padding:3px 10px; border-radius:6px; border:1px solid #334155;"></span>
+                    <span id="tdStatusBadge"></span>
+                </div>
+            </div>
+
+            <div class="modal-body" style="padding:24px; background:#F8FAFC;">
+                <!-- Loading indicator -->
+                <div id="tdLoading" style="text-align:center; padding:40px;">
+                    <i class="fa fa-spinner fa-spin" style="font-size:2rem; color:#0284C7; margin-bottom:12px;"></i>
+                    <p style="color:#64748B; font-weight:600; margin:0;">Loading transfer breakdown from database...</p>
+                </div>
+
+                <!-- Error message -->
+                <div id="tdError" style="display:none;" class="alert alert-danger">
+                    <i class="fa fa-triangle-exclamation"></i> <span id="tdErrorMessage"></span>
+                </div>
+
+                <!-- Content Container -->
+                <div id="tdContent" style="display:none;">
+                    <!-- Rollback notice if applicable -->
+                    <div id="tdRollbackInfo" style="display:none;"></div>
+
+                    <!-- Summary Grid -->
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:14px; margin-bottom:20px;">
+                        <div style="background:#FFFFFF; padding:16px; border-radius:10px; border:1px solid #E2E8F0; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                            <span style="font-size:0.75rem; text-transform:uppercase; font-weight:800; color:#64748B; letter-spacing:0.5px; display:block;">Total Payout Amount</span>
+                            <div id="tdAmount" style="font-size:1.5rem; font-weight:900; color:#059669; font-family:'JetBrains Mono', monospace; margin-top:4px;"></div>
+                            <span id="tdTxnCountBadge" style="display:inline-block; font-size:0.75rem; font-weight:700; color:#0284C7; background:#E0F2FE; padding:2px 8px; border-radius:4px; margin-top:6px;"></span>
+                        </div>
+
+                        <div style="background:#FFFFFF; padding:16px; border-radius:10px; border:1px solid #E2E8F0; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                            <span style="font-size:0.75rem; text-transform:uppercase; font-weight:800; color:#64748B; letter-spacing:0.5px; display:block;">Destination Account</span>
+                            <strong id="tdRecipient" style="color:#0F172A; font-size:0.95rem; display:block; margin-top:4px;"></strong>
+                            <small id="tdBank" style="color:#475569; font-size:0.82rem; font-family:'JetBrains Mono', monospace; display:block; margin-top:2px;"></small>
+                        </div>
+
+                        <div style="background:#FFFFFF; padding:16px; border-radius:10px; border:1px solid #E2E8F0; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                            <span style="font-size:0.75rem; text-transform:uppercase; font-weight:800; color:#64748B; letter-spacing:0.5px; display:block;">Dispatch &amp; Verification</span>
+                            <div style="font-size:0.8rem; color:#334155; margin-top:4px;">
+                                <div><strong>Initiated:</strong> <span id="tdInitiated"></span></div>
+                                <div style="margin-top:2px;"><strong>Paystack Check:</strong> <span id="tdVerified"></span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paystack gateway response box -->
+                    <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-left:4px solid #0284C7; border-radius:8px; padding:12px 16px; margin-bottom:20px;">
+                        <span style="font-size:0.72rem; text-transform:uppercase; font-weight:800; color:#64748B; display:block;">Paystack Gateway Status Note</span>
+                        <div id="tdGatewayMsg" style="color:#0F172A; font-size:0.88rem; font-weight:600; margin-top:3px;"></div>
+                    </div>
+
+                    <!-- Bundled Transactions Table -->
+                    <div style="background:#FFFFFF; border-radius:10px; border:1px solid #E2E8F0; overflow:hidden;">
+                        <div style="padding:14px 18px; border-bottom:1px solid #E2E8F0; background:#F8FAFC; display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <h5 style="margin:0; font-weight:800; color:#0F172A; font-size:0.92rem;">
+                                    <i class="fa fa-layer-group" style="color:#0284C7; margin-right:6px;"></i> Bundled Customer Deposits in this Transfer
+                                </h5>
+                                <small style="color:#64748B;">All customer transactions cleared and grouped into this single bank payout</small>
+                            </div>
+                        </div>
+                        <div class="table-responsive" style="max-height:340px; overflow-y:auto; margin:0;">
+                            <table class="table table-hover table-striped" style="margin:0; font-size:0.84rem;">
+                                <thead style="background:#F1F5F9; font-weight:800; font-size:0.74rem; color:#475569; text-transform:uppercase; position:sticky; top:0; z-index:1;">
+                                    <tr>
+                                        <th style="padding:10px 12px;">ID</th>
+                                        <th style="padding:10px 12px;">Client / User</th>
+                                        <th style="padding:10px 12px;">Paystack Reference</th>
+                                        <th style="padding:10px 12px;">Amount</th>
+                                        <th style="padding:10px 12px;">Units</th>
+                                        <th style="padding:10px 12px;">Date Paid</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tdTransactionsBody">
+                                    <!-- Populated via AJAX -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="background:#FFFFFF; border-top:1px solid #E2E8F0; padding:14px 24px;">
+                <button type="button" class="btn btn-default" data-dismiss="modal" style="font-weight:700; border-radius:8px; padding:7px 18px;">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -618,6 +618,83 @@ namespace Exwhyzee.Messaging.Core.Migrations
                     b.ToTable("ModalInfo");
                 });
 
+            modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.PaystackTransferOutflow", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccountName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("AccountNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BankName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("DateInitiated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateRolledBack")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateVerified")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("InitiatedBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsRolledBack")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PaystackMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RecipientCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("RolledBackBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Status")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TransactionIdsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TransactionsCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TransferCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("TransferReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("VerifiedBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PaystackTransferOutflow");
+                });
+
             modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.PriceSetting", b =>
                 {
                     b.Property<int>("PriceSettingId")
