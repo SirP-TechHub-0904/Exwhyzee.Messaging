@@ -760,13 +760,16 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
                         .Where(v => v > 0)
                         .ToList();
 
-                    var linkedTxns = await db.Transactions.Where(t => ids.Contains(t.TransactionId)).ToListAsync();
-                    foreach (var txn in linkedTxns)
+                    foreach (var txnId in ids)
                     {
-                        txn.IsAdminTransferred = false;
-                        txn.DateTransferred = null;
-                        txn.TransferredBy = null;
-                        restoredCount++;
+                        var txn = await db.Transactions.FindAsync(txnId);
+                        if (txn != null)
+                        {
+                            txn.IsAdminTransferred = false;
+                            txn.DateTransferred = null;
+                            txn.TransferredBy = null;
+                            restoredCount++;
+                        }
                     }
                 }
 
@@ -807,24 +810,22 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
                     .Where(v => v > 0)
                     .ToList();
 
-                var txns = await db.Transactions
-                    .Include(t => t.User)
-                    .Where(t => ids.Contains(t.TransactionId))
-                    .OrderByDescending(t => t.TransactionId)
-                    .ToListAsync();
-
-                foreach (var t in txns)
+                foreach (var txnId in ids)
                 {
-                    linkedTxns.Add(new
+                    var t = await db.Transactions.Include(x => x.User).FirstOrDefaultAsync(x => x.TransactionId == txnId);
+                    if (t != null)
                     {
-                        transactionId = t.TransactionId,
-                        clientName = GeneralServices.ClientName(t.ClientId),
-                        userName = GeneralServices.UserName(t.UserId),
-                        reference = t.TransactionReference ?? "N/A",
-                        amount = (t.AmountPaid.HasValue && t.AmountPaid > 0 ? t.AmountPaid.Value : t.Amount).ToString("N2"),
-                        units = t.Units.ToString("N0"),
-                        date = t.DateApproved.HasValue ? t.DateApproved.Value.ToString("yyyy-MM-dd HH:mm") : t.DateCreated.ToString("yyyy-MM-dd")
-                    });
+                        linkedTxns.Add(new
+                        {
+                            transactionId = t.TransactionId,
+                            clientName = GeneralServices.ClientName(t.ClientId),
+                            userName = GeneralServices.UserName(t.UserId),
+                            reference = t.TransactionReference ?? "N/A",
+                            amount = (t.AmountPaid.HasValue && t.AmountPaid > 0 ? t.AmountPaid.Value : t.Amount).ToString("N2"),
+                            units = t.Units.ToString("N0"),
+                            date = t.DateApproved.HasValue ? t.DateApproved.Value.ToString("yyyy-MM-dd HH:mm") : t.DateCreated.ToString("yyyy-MM-dd")
+                        });
+                    }
                 }
             }
 
