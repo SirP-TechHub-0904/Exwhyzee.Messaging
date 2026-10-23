@@ -28,10 +28,6 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
         private IPayStackApi _paystack => new PayStackApi(AppConfig.PayStackSecretKey);
         private Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
 
-        public TransactionsController()
-        {
-        }
-
         public TransactionsController(Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager)
         {
             _userManager = userManager;
@@ -39,14 +35,7 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
         public Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
         {
-            get
-            {
-                if (_userManager == null && HttpContext != null)
-                {
-                    _userManager = HttpContext.RequestServices.GetService(typeof(Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>)) as Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>;
-                }
-                return _userManager;
-            }
+            get => _userManager;
             private set => _userManager = value;
         }
 
@@ -721,10 +710,18 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
                 }
 
                 ApplicationUser currentUser = null;
-                if (UserManager != null && !string.IsNullOrWhiteSpace(User.Identity?.Name))
+                if (UserManager != null)
                 {
-                    currentUser = await UserManager.FindByNameAsync(User.Identity.Name);
-                    if (currentUser == null)
+                    string userId = UserManager.GetUserId(User);
+                    if (!string.IsNullOrEmpty(userId))
+                    {
+                        currentUser = await UserManager.FindByIdAsync(userId);
+                    }
+                    if (currentUser == null && !string.IsNullOrWhiteSpace(User.Identity?.Name))
+                    {
+                        currentUser = await UserManager.FindByNameAsync(User.Identity.Name);
+                    }
+                    if (currentUser == null && !string.IsNullOrWhiteSpace(User.Identity?.Name))
                     {
                         currentUser = await UserManager.FindByEmailAsync(User.Identity.Name);
                     }
