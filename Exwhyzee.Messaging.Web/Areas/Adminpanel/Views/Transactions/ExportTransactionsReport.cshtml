@@ -1,0 +1,78 @@
+@model IEnumerable<Exwhyzee.Messaging.Core.Dtos.TransactionLedgerDto>
+@using Exwhyzee.Messaging.Core.Dtos
+@using Exwhyzee.Messaging.Core.Models
+@{
+    Layout = null;
+    var stats = ViewBag.Stats as TransactionLedgerStatsDto ?? new TransactionLedgerStatsDto();
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.ReportTitle</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; color: #0F172A; margin: 24px; font-size: 12px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0F172A; padding-bottom: 12px; margin-bottom: 16px; }
+        .stats-bar { display: flex; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+        .stat-box { border: 1px solid #CBD5E1; border-radius: 8px; padding: 10px 14px; background: #F8FAFC; min-width: 140px; }
+        .stat-label { font-size: 10px; text-transform: uppercase; color: #64748B; font-weight: 700; }
+        .stat-val { font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 2px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #0F172A; color: #FFF; padding: 8px; text-align: left; font-size: 11px; text-transform: uppercase; }
+        td { padding: 7px 8px; border-bottom: 1px solid #E2E8F0; font-size: 11px; }
+        tr:nth-child(even) { background: #F8FAFC; }
+        @@media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="no-print" style="margin-bottom:16px;">
+        <button onclick="window.print()" style="background:#4F46E5; color:#FFF; border:none; padding:8px 16px; border-radius:6px; font-weight:700; cursor:pointer;">Print / Save as PDF</button>
+    </div>
+    <div class="header">
+        <div>
+            <h2 style="margin:0;">@ViewBag.ReportTitle</h2>
+            <div style="color:#64748B; margin-top:4px;">Generated: @ViewBag.GeneratedAt</div>
+        </div>
+        <div style="text-align:right; font-weight:800;">Exwhyzee Bulk SMS Platform</div>
+    </div>
+    <div class="stats-bar">
+        <div class="stat-box"><div class="stat-label">Total Records</div><div class="stat-val">@stats.TotalTransactions.ToString("N0")</div></div>
+        <div class="stat-box"><div class="stat-label">Approved Revenue</div><div class="stat-val">&#x20A6;@stats.ApprovedRevenueNgn.ToString("N2")</div></div>
+        <div class="stat-box"><div class="stat-label">Approved Units</div><div class="stat-val">@stats.ApprovedUnitsCredited.ToString("N0")</div></div>
+        <div class="stat-box"><div class="stat-label">Pending Txns</div><div class="stat-val">@stats.PendingCount.ToString("N0")</div></div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th>Trans ID</th>
+                <th>Client</th>
+                <th>Username</th>
+                <th>Source</th>
+                <th>Amount Paid (₦)</th>
+                <th>Units</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{ int sn = 1; }
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@(sn++)</td>
+                    <td>#@item.TransactionId</td>
+                    <td>@item.ClientFullName</td>
+                    <td>@item.Username</td>
+                    <td>@item.SourceCategory</td>
+                    <td>&#x20A6;@item.EffectiveAmountPaid.ToString("N2")</td>
+                    <td>@item.Units.ToString("N0")</td>
+                    <td>@((item.Status == TransactionStatus.Approved || item.DateApproved.HasValue) ? "Approved" : item.Status.ToString())</td>
+                    <td>@item.EffectiveDate.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</body>
+</html>
+

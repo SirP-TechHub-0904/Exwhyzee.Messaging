@@ -1,0 +1,177 @@
+@model IEnumerable<Exwhyzee.Messaging.Core.Dtos.UserManagementDto>
+@{
+    Layout = null;
+    string title = ViewBag.ExportTitle as string ?? "User Management Report";
+    bool isUnitsMode = ViewBag.IsUnitsMode == true;
+    var stats = ViewBag.Stats as Exwhyzee.Messaging.Core.Dtos.UserManagementStatsDto ?? new Exwhyzee.Messaging.Core.Dtos.UserManagementStatsDto();
+    string generatedAt = ViewBag.GeneratedAt as string ?? DateTime.UtcNow.AddHours(1).ToString("dd MMM yyyy, hh:mm tt");
+    int sn = 1;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@title - Exwhyzee Bulk SMS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #0F172A;
+            margin: 24px;
+            font-size: 12px;
+        }
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #0F172A;
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+        }
+        .report-header h1 {
+            margin: 0 0 4px;
+            font-size: 20px;
+            font-weight: 800;
+        }
+        .report-summary {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        .summary-box {
+            border: 1px solid #CBD5E1;
+            background: #F8FAFC;
+            border-radius: 8px;
+            padding: 10px 16px;
+        }
+        .summary-box small {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #64748B;
+            font-weight: 700;
+        }
+        .summary-box strong {
+            font-size: 15px;
+            color: #0F172A;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: #0F172A;
+            color: #FFFFFF;
+            text-align: left;
+            padding: 8px 10px;
+            font-size: 11px;
+            text-transform: uppercase;
+            border: 1px solid #0F172A;
+        }
+        td {
+            padding: 7px 10px;
+            border: 1px solid #CBD5E1;
+            font-size: 11.5px;
+        }
+        tr:nth-child(even) {
+            background: #F8FAFC;
+        }
+        .no-print {
+            margin-bottom: 16px;
+        }
+        .btn-print {
+            background: #0284C7;
+            color: #FFFFFF;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        @@media print {
+            .no-print { display: none !important; }
+            body { margin: 0; }
+        }
+    </style>
+</head>
+<body onload="setTimeout(function(){ window.print(); }, 400);">
+    <div class="no-print">
+        <button type="button" class="btn-print" onclick="window.print();">Print / Save as PDF</button>
+    </div>
+
+    <div class="report-header">
+        <div>
+            <h1>Exwhyzee Bulk SMS — @title</h1>
+            <div style="color: #64748B;">Generated on @generatedAt</div>
+        </div>
+    </div>
+
+    <div class="report-summary">
+        <div class="summary-box">
+            <small>Total Matched Users</small>
+            <strong>@stats.TotalUsers.ToString("N0")</strong>
+        </div>
+        <div class="summary-box">
+            <small>Total Units Balance</small>
+            <strong>@stats.TotalUnitsBalance.ToString("N2") Units</strong>
+        </div>
+        <div class="summary-box">
+            <small>Active (&lt; 1 Month)</small>
+            <strong>@stats.ActiveUnderOneMonth.ToString("N0")</strong>
+        </div>
+        <div class="summary-box">
+            <small>Active (&gt; 1 Month)</small>
+            <strong>@stats.ActiveOverOneMonth.ToString("N0")</strong>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th>Full Name</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Phone</th>
+                @if (isUnitsMode)
+                {
+                    <th>Unit Balance</th>
+                    <th>Last SMS Sent</th>
+                }
+                else
+                {
+                    <th>Gender</th>
+                    <th>Roles</th>
+                    <th>Date Registered</th>
+                    <th>Status</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model)
+            {
+                <tr>
+                    <td>@(sn++)</td>
+                    <td><strong>@u.FullName</strong></td>
+                    <td>@@@u.Username</td>
+                    <td>@u.Email</td>
+                    <td>@(u.PhoneNumber ?? "N/A")</td>
+                    @if (isUnitsMode)
+                    {
+                        <td><strong>@u.UnitsBalance.ToString("N2") Units</strong></td>
+                        <td>@(u.LastTimeSent.HasValue ? u.LastTimeSent.Value.ToString("dd MMM yyyy, hh:mm tt") : "Never Sent")</td>
+                    }
+                    else
+                    {
+                        <td>@u.Gender</td>
+                        <td>@string.Join(", ", u.Roles)</td>
+                        <td>@(u.DateRegistered > new DateTime(1990, 1, 1) ? u.DateRegistered.ToString("dd MMM yyyy") : "Legacy")</td>
+                        <td>@(u.IsActiveWithinOneMonth ? "Active (< 1M)" : "Over 1M")</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</body>
+</html>
+

@@ -69,17 +69,9 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
                 if (imageFile != null && imageFile.Length > 0)
                 {
-                    string fileName = $"modal_img_{Guid.NewGuid():N}{Path.GetExtension(imageFile.FileName)}";
-                    string uploadFolder = Path.Combine(_env.WebRootPath, "uploads", "modals");
-                    Directory.CreateDirectory(uploadFolder);
-                    string filePath = Path.Combine(uploadFolder, fileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await imageFile.CopyToAsync(stream);
-                    }
-
-                    existing.ImageUrl = $"/uploads/modals/{fileName}";
+                    var cloudinary = HttpContext.RequestServices.GetService<Exwhyzee.Messaging.Core.Services.ICloudinaryService>()
+                        ?? new Exwhyzee.Messaging.Core.Services.CloudinaryService(Exwhyzee.Messaging.Web.AppConfig.Configuration, _env);
+                    existing.ImageUrl = await cloudinary.UploadFileAsync(imageFile, "modals", "modal_img");
                 }
 
                 await db.SaveChangesAsync();
@@ -91,17 +83,9 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             {
                 if (imageFile != null && imageFile.Length > 0)
                 {
-                    string fileName = $"modal_img_{Guid.NewGuid():N}{Path.GetExtension(imageFile.FileName)}";
-                    string uploadFolder = Path.Combine(_env.WebRootPath, "uploads", "modals");
-                    Directory.CreateDirectory(uploadFolder);
-                    string filePath = Path.Combine(uploadFolder, fileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await imageFile.CopyToAsync(stream);
-                    }
-
-                    modalInfo.ImageUrl = $"/uploads/modals/{fileName}";
+                    var cloudinary = HttpContext.RequestServices.GetService<Exwhyzee.Messaging.Core.Services.ICloudinaryService>()
+                        ?? new Exwhyzee.Messaging.Core.Services.CloudinaryService(Exwhyzee.Messaging.Web.AppConfig.Configuration, _env);
+                    modalInfo.ImageUrl = await cloudinary.UploadFileAsync(imageFile, "modals", "modal_img");
                 }
 
                 modalInfo.DateCreated = DateTime.UtcNow;
@@ -143,17 +127,9 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
 
                 if (imageFile != null && imageFile.Length > 0)
                 {
-                    string fileName = $"modal_img_{Guid.NewGuid():N}{Path.GetExtension(imageFile.FileName)}";
-                    string uploadFolder = Path.Combine(_env.WebRootPath, "uploads", "modals");
-                    Directory.CreateDirectory(uploadFolder);
-                    string filePath = Path.Combine(uploadFolder, fileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await imageFile.CopyToAsync(stream);
-                    }
-
-                    existing.ImageUrl = $"/uploads/modals/{fileName}";
+                    var cloudinary = HttpContext.RequestServices.GetService<Exwhyzee.Messaging.Core.Services.ICloudinaryService>()
+                        ?? new Exwhyzee.Messaging.Core.Services.CloudinaryService(Exwhyzee.Messaging.Web.AppConfig.Configuration, _env);
+                    existing.ImageUrl = await cloudinary.UploadFileAsync(imageFile, "modals", "modal_img");
                 }
 
                 await db.SaveChangesAsync();

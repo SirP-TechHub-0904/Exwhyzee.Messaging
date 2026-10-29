@@ -1,81 +1,342 @@
 @model Exwhyzee.Messaging.Core.Models.Client
+@using Exwhyzee.Messaging.Core.Models
 
 @{
-    ViewBag.Title = "Details";
+    ViewBag.Title = "My Profile & KYC Verification";
+    var user = ViewBag.UserAccount as ApplicationUser;
+    var kyc = ViewBag.KycProfile as UserKycProfile ?? new UserKycProfile();
+    var kycSetting = ViewBag.KycSetting as KycSetting ?? new KycSetting();
+    int totalSmsSent = ViewBag.TotalSmsSent != null ? (int)ViewBag.TotalSmsSent : 0;
+    decimal totalUnitsFunded = ViewBag.TotalUnitsFunded != null ? (decimal)ViewBag.TotalUnitsFunded : 0m;
+    bool isTriggered = kyc.KycStatus == KycVerificationStatus.Triggered || kyc.TriggeredDate.HasValue;
 }
 
-<section class="content-header">
-    <h1>
-        Dashboard
-        <small> User  Details</small>
-    </h1>
-    <ol class="breadcrumb">
-        <li><a href="#"><i class="fa fa-dashboard"></i> Profile</a></li>
-        <li class="active">Details</li>
-    </ol>
-</section>
+<style>
+    .kyc-wrap { font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif; color: #1e293b; }
+    .kyc-header { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 22px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 2px 6px rgba(15,23,42,0.03); }
+    .kyc-header h2 { margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; }
+    .kyc-header p { margin: 4px 0 0; font-size: 13px; color: #64748b; }
 
-<section class="content">
+    .kyc-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px 22px; margin-bottom: 18px; box-shadow: 0 2px 6px rgba(15,23,42,0.03); }
+    .kyc-card-title { font-size: 15px; font-weight: 800; color: #0f172a; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
 
-    <div class="box">
-        <div class="box-header">
-            <h3 class="box-title">Profile</h3>
+    .kyc-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: #475569; display: block; margin-bottom: 5px; }
+    .kyc-input { width: 100%; height: 40px; border-radius: 9px; border: 1px solid #cbd5e1; padding: 0 12px; font-size: 13px; color: #0f172a; }
+    .kyc-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 800; }
+</style>
 
-            <span class="pull-right">
-                @*<a href="@Url.Action("Details",new { area = "ClientPanel" })" class="btn btn-app"><i class="fa fa-backward"></i>Back</a>*@
-                <a href="@Url.Action("EditClient", new { id = Model.ClientId, area = "ClientPanel" })" class="btn btn-app"><i class="fa fa-pencil"></i>Edit</a>
-            </span>
+<div class="kyc-wrap">
+    @if (TempData["success"] != null)
+    {
+        <div class="alert alert-success" style="border-radius:10px; font-weight:700;"><i class="fa fa-check-circle"></i> @TempData["success"]</div>
+    }
+    @if (TempData["error"] != null)
+    {
+        <div class="alert alert-danger" style="border-radius:10px; font-weight:700;"><i class="fa fa-exclamation-triangle"></i> @TempData["error"]</div>
+    }
+
+    <div class="kyc-header">
+        <div>
+            <h2><i class="fa fa-id-card" style="color:#4f46e5; margin-right:8px;"></i> My Profile & KYC Verification Studio</h2>
+            <p>Manage your personal details, verify your phone number via OTP, and submit your KYC identity documents.</p>
         </div>
-        <div class="box-body">
-            <div class="col-md-6 col-sm-12 col-md-offset-3">
-                <dl class="dl-horizontal">
-                   
-                    <dt>
-                        @Html.DisplayNameFor(model => model.Units)
-                    </dt>
+        <div style="display:flex; gap:10px; align-items:center;">
+            @if (kyc.KycStatus == KycVerificationStatus.Approved)
+            {
+                <span class="kyc-badge" style="background:#dcfce7; color:#15803d;"><i class="fa fa-check-circle"></i> KYC Approved</span>
+            }
+            else if (kyc.KycStatus == KycVerificationStatus.PendingReview)
+            {
+                <span class="kyc-badge" style="background:#e0f2fe; color:#0369a1;"><i class="fa fa-hourglass-half"></i> KYC Pending Admin Review</span>
+            }
+            else if (kyc.KycStatus == KycVerificationStatus.Rejected)
+            {
+                <span class="kyc-badge" style="background:#fee2e2; color:#b91c1c;"><i class="fa fa-times-circle"></i> KYC Rejected</span>
+            }
+            else if (isTriggered)
+            {
+                <span class="kyc-badge" style="background:#fef3c7; color:#b45309;"><i class="fa fa-exclamation-triangle"></i> Mandatory KYC Required</span>
+            }
+            else
+            {
+                <span class="kyc-badge" style="background:#f1f5f9; color:#475569;"><i class="fa fa-id-badge"></i> Standard Tier (Unverified)</span>
+            }
+            <a href="@Url.Action("Index", "Dashboard", new { area = "ClientPanel" })" class="btn btn-default btn-sm" style="border-radius:9px; font-weight:700; padding:8px 14px;">
+                <i class="fa fa-arrow-left"></i> Dashboard
+            </a>
+        </div>
+    </div>
 
-                    <dd>
-                        @Html.DisplayFor(model => model.Units)
-                    </dd>
+    @if (isTriggered && kyc.KycStatus != KycVerificationStatus.Approved)
+    {
+        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:16px 20px; margin-bottom:18px; color:#92400e;">
+            <div style="font-size:14px; font-weight:800; margin-bottom:4px;"><i class="fa fa-bell"></i> Mandatory KYC Verification Triggered!</div>
+            <div style="font-size:13px;">Reason: <strong>@(kyc.TriggerReason ?? "Account volume threshold reached")</strong>. Please verify your phone number and submit your address, passport photo, and valid Government ID below to avoid service interruptions.</div>
+        </div>
+    }
 
-                    <dt>
-                        @Html.DisplayNameFor(model => model.Surname)
-                    </dt>
+    @if (kyc.KycStatus == KycVerificationStatus.Rejected && !string.IsNullOrWhiteSpace(kyc.AdminReviewNote))
+    {
+        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:16px 20px; margin-bottom:18px; color:#991b1b;">
+            <div style="font-size:14px; font-weight:800; margin-bottom:4px;"><i class="fa fa-times-circle"></i> KYC Submission Feedback from Admin</div>
+            <div style="font-size:13px;">@kyc.AdminReviewNote</div>
+        </div>
+    }
 
-                    <dd>
-                        @Html.DisplayFor(model => model.Surname)
-                    </dd>
+    <div class="row">
+        <div class="col-md-5">
+            <div class="kyc-card">
+                <div class="kyc-card-title">
+                    <span><i class="fa fa-user-circle" style="color:#4f46e5;"></i> Account Overview & Limits</span>
+                    <span style="font-size:12px; font-weight:800; color:#059669;">@((Model?.Units ?? 0m).ToString("N2")) Units</span>
+                </div>
 
-                    <dt>
-                        @Html.DisplayNameFor(model => model.FirstName)
-                    </dt>
-
-                    <dd>
-                        @Html.DisplayFor(model => model.FirstName)
-                    </dd>
-
-                    <dt>
-                        @Html.DisplayNameFor(model => model.OtherNames)
-                    </dt>
-
-                    <dd>
-                        @Html.DisplayFor(model => model.OtherNames)
-                    </dd>
-
-                    <dt>
-                        @Html.DisplayNameFor(model => model.Discount)
-                    </dt>
-
-                    <dd>
-                        @Html.DisplayFor(model => model.Discount)
-                    </dd>
-
-                
-                </dl>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                        <div style="font-size:10.5px; font-weight:800; color:#64748b; text-transform:uppercase;">Username</div>
+                        <div style="font-size:14px; font-weight:800; color:#0f172a; margin-top:2px;">@(user?.UserName ?? "N/A")</div>
+                    </div>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                        <div style="font-size:10.5px; font-weight:800; color:#64748b; text-transform:uppercase;">Email Address</div>
+                        <div style="font-size:13px; font-weight:700; color:#0f172a; margin-top:2px; word-break:break-all;">@(user?.Email ?? "N/A")</div>
+                    </div>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                        <div style="font-size:10.5px; font-weight:800; color:#64748b; text-transform:uppercase;">Total SMS Sent</div>
+                        <div style="font-size:14px; font-weight:800; color:#4f46e5; margin-top:2px;">
+                            @totalSmsSent.ToString("N0")
+                            @if (kycSetting.SmsSentThreshold > 0)
+                            {
+                                <span style="font-size:11px; color:#64748b; font-weight:600;">/ @kycSetting.SmsSentThreshold.ToString("N0") threshold</span>
+                            }
+                        </div>
+                    </div>
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                        <div style="font-size:10.5px; font-weight:800; color:#64748b; text-transform:uppercase;">Total Units Funded</div>
+                        <div style="font-size:14px; font-weight:800; color:#0284c7; margin-top:2px;">
+                            @totalUnitsFunded.ToString("N0")
+                            @if (kycSetting.UnitsFundedThreshold > 0)
+                            {
+                                <span style="font-size:11px; color:#64748b; font-weight:600;">/ @kycSetting.UnitsFundedThreshold.ToString("N0")</span>
+                            }
+                        </div>
+                    </div>
+                </div>
             </div>
-            <p style="margin:10px;">
-               
-            </p>
+
+            <div class="kyc-card">
+                <div class="kyc-card-title">
+                    <span><i class="fa fa-mobile" style="color:#059669; font-size:18px;"></i> Step 1: Phone Number Verification</span>
+                    @if (kyc.IsPhoneVerified || (user?.PhoneNumberConfirmed ?? false))
+                    {
+                        <span class="kyc-badge" style="background:#dcfce7; color:#15803d;"><i class="fa fa-check-circle"></i> Verified</span>
+                    }
+                    else
+                    {
+                        <span class="kyc-badge" style="background:#fef3c7; color:#b45309;"><i class="fa fa-clock-o"></i> Unverified</span>
+                    }
+                </div>
+
+                <p style="font-size:12.5px; color:#64748b; margin-bottom:12px;">
+                    Verify your mobile phone number via a 6-digit SMS code to secure your account and fulfill KYC requirements.
+                </p>
+
+                <div style="margin-bottom:12px;">
+                    <label class="kyc-lbl">Mobile Phone Number</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="otpPhoneInput" class="kyc-input" value="@(user?.PhoneNumber)" placeholder="e.g. 08030000000" />
+                        <button type="button" id="btnSendOtp" onclick="sendKycOtp()" class="btn btn-primary" style="background:#4f46e5; border:none; border-radius:9px; font-weight:700; white-space:nowrap; padding:0 14px;">
+                            <i class="fa fa-paper-plane"></i> Send OTP
+                        </button>
+                    </div>
+                </div>
+
+                <div id="otpVerifyBox" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
+                    <label class="kyc-lbl">Enter 6-Digit SMS OTP Code</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="otpCodeInput" class="kyc-input" maxlength="6" placeholder="Enter 6-digit code" style="letter-spacing:3px; font-weight:800;" />
+                        <button type="button" onclick="verifyKycOtp()" class="btn btn-success" style="background:#059669; border:none; border-radius:9px; font-weight:700; white-space:nowrap; padding:0 16px;">
+                            <i class="fa fa-check"></i> Verify Code
+                        </button>
+                    </div>
+                    <div id="otpStatusMsg" style="margin-top:8px; font-size:12px; font-weight:700;"></div>
+                </div>
             </div>
         </div>
-    </section>
+
+        <div class="col-md-7">
+            <div class="kyc-card">
+                <div class="kyc-card-title">
+                    <span><i class="fa fa-shield" style="color:#4f46e5;"></i> Step 2: Profile, Address, Passport & ID Card Submission</span>
+                </div>
+
+                @using (Html.BeginForm("SubmitKycProfile", "Dashboard", new { area = "ClientPanel" }, FormMethod.Post, true, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="row" style="margin-bottom:12px;">
+                        <div class="col-sm-4">
+                            <label class="kyc-lbl">Surname</label>
+                            <input type="text" name="Surname" value="@Model?.Surname" class="kyc-input" required />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="kyc-lbl">First Name</label>
+                            <input type="text" name="FirstName" value="@Model?.FirstName" class="kyc-input" required />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="kyc-lbl">Other Names</label>
+                            <input type="text" name="OtherNames" value="@Model?.OtherNames" class="kyc-input" />
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-bottom:12px;">
+                        <div class="col-sm-8">
+                            <label class="kyc-lbl">Residential / Office Street Address *</label>
+                            <input type="text" name="ResidentialAddress" value="@kyc.ResidentialAddress" class="kyc-input" placeholder="House No, Street Name, Area" required />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="kyc-lbl">Phone Number</label>
+                            <input type="text" name="PhoneNumber" value="@(user?.PhoneNumber)" class="kyc-input" required />
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-bottom:14px;">
+                        <div class="col-sm-4">
+                            <label class="kyc-lbl">City / Town *</label>
+                            <input type="text" name="City" value="@kyc.City" class="kyc-input" placeholder="e.g. Ikeja" required />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="kyc-lbl">State *</label>
+                            <input type="text" name="State" value="@kyc.State" class="kyc-input" placeholder="e.g. Lagos" required />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="kyc-lbl">Country</label>
+                            <input type="text" name="Country" value="@(kyc.Country ?? "Nigeria")" class="kyc-input" required />
+                        </div>
+                    </div>
+
+                    <hr style="border-top:1px solid #f1f5f9; margin:14px 0;" />
+
+                    <div class="row" style="margin-bottom:14px;">
+                        <div class="col-sm-6">
+                            <label class="kyc-lbl">Government ID Card Type *</label>
+                            <select name="IdType" class="kyc-input" required>
+                                <option value="">-- Select Valid ID Type --</option>
+                                <option value="NIN" selected="@(kyc.IdType == "NIN" ? "selected" : null)">National Identification Number (NIN Slip / Card)</option>
+                                <option value="VotersCard" selected="@(kyc.IdType == "VotersCard" ? "selected" : null)">Permanent Voter's Card (PVC)</option>
+                                <option value="DriversLicense" selected="@(kyc.IdType == "DriversLicense" ? "selected" : null)">Driver's License</option>
+                                <option value="InternationalPassport" selected="@(kyc.IdType == "InternationalPassport" ? "selected" : null)">International Passport</option>
+                                <option value="CAC" selected="@(kyc.IdType == "CAC" ? "selected" : null)">Corporate CAC Certificate</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="kyc-lbl">ID Card / NIN Number *</label>
+                            <input type="text" name="IdNumber" value="@kyc.IdNumber" class="kyc-input" placeholder="Enter ID Number" required />
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-bottom:16px;">
+                        <div class="col-sm-4">
+                            <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; padding:12px;">
+                                <label class="kyc-lbl"><i class="fa fa-camera" style="color:#4f46e5;"></i> Passport Photo</label>
+                                <input type="file" name="passportFile" accept=".jpg,.jpeg,.png,.pdf" class="form-control" style="font-size:11.5px;" />
+                                @if (!string.IsNullOrWhiteSpace(kyc.PassportPhotoPath))
+                                {
+                                    <div style="margin-top:6px; font-size:11px;">
+                                        <a href="@kyc.PassportPhotoPath" target="_blank" style="color:#4f46e5; font-weight:700;"><i class="fa fa-external-link"></i> View Passport</a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; padding:12px;">
+                                <label class="kyc-lbl"><i class="fa fa-id-card-o" style="color:#0284c7;"></i> ID Card (Front)</label>
+                                <input type="file" name="idFrontFile" accept=".jpg,.jpeg,.png,.pdf" class="form-control" style="font-size:11.5px;" />
+                                @if (!string.IsNullOrWhiteSpace(kyc.IdDocumentFrontPath))
+                                {
+                                    <div style="margin-top:6px; font-size:11px;">
+                                        <a href="@kyc.IdDocumentFrontPath" target="_blank" style="color:#0284c7; font-weight:700;"><i class="fa fa-external-link"></i> View ID Front</a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; padding:12px;">
+                                <label class="kyc-lbl"><i class="fa fa-id-card" style="color:#64748b;"></i> ID Card (Back - Optional)</label>
+                                <input type="file" name="idBackFile" accept=".jpg,.jpeg,.png,.pdf" class="form-control" style="font-size:11.5px;" />
+                                @if (!string.IsNullOrWhiteSpace(kyc.IdDocumentBackPath))
+                                {
+                                    <div style="margin-top:6px; font-size:11px;">
+                                        <a href="@kyc.IdDocumentBackPath" target="_blank" style="color:#64748b; font-weight:700;"><i class="fa fa-external-link"></i> View ID Back</a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end;">
+                        <button type="submit" class="btn btn-primary" style="background:#4f46e5; border:none; border-radius:10px; font-weight:800; padding:10px 22px; font-size:13.5px;">
+                            <i class="fa fa-cloud-upload"></i> Save Profile & Submit KYC Documents
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function sendKycOtp() {
+        var phone = document.getElementById('otpPhoneInput').value;
+        var msgEl = document.getElementById('otpStatusMsg');
+        var btn = document.getElementById('btnSendOtp');
+        if (!phone) {
+            msgEl.style.color = '#dc2626';
+            msgEl.innerText = 'Please enter a valid mobile phone number.';
+            return;
+        }
+        btn.disabled = true;
+        msgEl.style.color = '#4f46e5';
+        msgEl.innerText = 'Sending OTP code via SMS...';
+
+        $.post('@Url.Action("SendKycPhoneOtp", "Dashboard", new { area = "ClientPanel" })', { phoneNumber: phone }, function (res) {
+            btn.disabled = false;
+            if (res && res.success) {
+                msgEl.style.color = '#059669';
+                msgEl.innerText = res.message;
+            } else {
+                msgEl.style.color = '#dc2626';
+                msgEl.innerText = (res && res.message) ? res.message : 'Could not send OTP.';
+            }
+        }).fail(function () {
+            btn.disabled = false;
+            msgEl.style.color = '#dc2626';
+            msgEl.innerText = 'Network error while sending OTP.';
+        });
+    }
+
+    function verifyKycOtp() {
+        var code = document.getElementById('otpCodeInput').value;
+        var msgEl = document.getElementById('otpStatusMsg');
+        if (!code) {
+            msgEl.style.color = '#dc2626';
+            msgEl.innerText = 'Please enter the 6-digit OTP code.';
+            return;
+        }
+        msgEl.style.color = '#4f46e5';
+        msgEl.innerText = 'Verifying OTP...';
+
+        $.post('@Url.Action("VerifyKycPhoneOtp", "Dashboard", new { area = "ClientPanel" })', { otpCode: code }, function (res) {
+            if (res && res.success) {
+                msgEl.style.color = '#059669';
+                msgEl.innerText = res.message;
+                setTimeout(function () { window.location.reload(); }, 1000);
+            } else {
+                msgEl.style.color = '#dc2626';
+                msgEl.innerText = (res && res.message) ? res.message : 'Invalid OTP code.';
+            }
+        }).fail(function () {
+            msgEl.style.color = '#dc2626';
+            msgEl.innerText = 'Network error while verifying OTP.';
+        });
+    }
+</script>

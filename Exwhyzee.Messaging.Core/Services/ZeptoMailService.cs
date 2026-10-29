@@ -20,6 +20,7 @@ namespace Exwhyzee.Messaging.Core.Services
         Task<bool> SendPasswordResetOtpAsync(string recipientEmail, string username, string otpCode);
         Task<bool> SendPaymentSuccessReceiptAsync(string recipientEmail, string username, decimal unitsPurchased, decimal totalNewBalance, decimal amountPaid, string transactionRef, string paymentMethod = "Online (Paystack)");
         Task<bool> SendTestEmailAsync(string recipientEmail);
+        Task<bool> SendCustomEmailAsync(string recipientEmail, string recipientName, string subject, string htmlBody);
     }
 
     public class ZeptoMailService : IZeptoMailService
@@ -249,6 +250,12 @@ namespace Exwhyzee.Messaging.Core.Services
                 await LogEmailToDbAsync(recipientSummary, subject, message, isSuccess: false, errorMessage: $"{ex.GetType().Name}: {ex.Message}");
                 return false;
             }
+        }
+
+        public async Task<bool> SendCustomEmailAsync(string recipientEmail, string recipientName, string subject, string htmlBody)
+        {
+            if (string.IsNullOrWhiteSpace(recipientEmail)) return false;
+            return await SendEmailWithCustomRecipientAsync(htmlBody, new[] { recipientEmail.Trim() }, subject);
         }
 
         private async Task LogEmailToDbAsync(string recipientEmail, string subject, string bodyHtml, bool isSuccess, string errorMessage)

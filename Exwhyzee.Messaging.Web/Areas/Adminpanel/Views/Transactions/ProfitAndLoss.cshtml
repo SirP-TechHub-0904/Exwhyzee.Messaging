@@ -1,0 +1,576 @@
+@model X.PagedList.IPagedList<Exwhyzee.Messaging.Core.Dtos.ProfitAndLossItemDto>
+@using Exwhyzee.Messaging.Core.Dtos
+@using Exwhyzee.Messaging.Core.Models
+
+@{
+    ViewBag.Title = "SMS Profit & Loss Analytics Studio";
+    var stats = ViewBag.Stats as ProfitAndLossStatsDto ?? new ProfitAndLossStatsDto();
+
+    string searchString = ViewBag.SearchString as string ?? "";
+    string cardFilter = ViewBag.CardFilter as string ?? "";
+    string outcomeFilter = ViewBag.OutcomeFilter as string ?? "";
+    string dateFrom = ViewBag.DateFrom as string ?? "";
+    string dateTo = ViewBag.DateTo as string ?? "";
+    string datePreset = ViewBag.DatePreset as string ?? "";
+    string sortBy = ViewBag.SortBy as string ?? "date_desc";
+    int pageSize = ViewBag.PageSize != null ? (int)ViewBag.PageSize : 20;
+    int currentPage = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+    int totalPages = ViewBag.TotalPages != null ? (int)ViewBag.TotalPages : 1;
+    int totalFilteredCount = ViewBag.TotalFilteredCount != null ? (int)ViewBag.TotalFilteredCount : 0;
+
+    string BuildUrl(int? targetPage = null, string overrideCard = null, string overridePreset = null, bool clearDates = false)
+    {
+        return Url.Action("ProfitAndLoss", "Transactions", new
+        {
+            area = "Adminpanel",
+            searchString = searchString,
+            cardFilter = overrideCard ?? cardFilter,
+            outcomeFilter = outcomeFilter,
+            dateFrom = clearDates ? null : (overridePreset != null ? null : dateFrom),
+            dateTo = clearDates ? null : (overridePreset != null ? null : dateTo),
+            datePreset = clearDates ? null : (overridePreset ?? datePreset),
+            sortBy = sortBy,
+            pageSize = pageSize,
+            page = targetPage ?? 1
+        });
+    }
+
+    string BuildExportUrl(string format)
+    {
+        return Url.Action("ExportProfitAndLoss", "Transactions", new
+        {
+            area = "Adminpanel",
+            format = format,
+            searchString = searchString,
+            cardFilter = cardFilter,
+            outcomeFilter = outcomeFilter,
+            dateFrom = dateFrom,
+            dateTo = dateTo,
+            datePreset = datePreset,
+            sortBy = sortBy
+        });
+    }
+}
+
+<style>
+    .xyz-studio-header {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .xyz-formula-strip {
+        background: linear-gradient(90deg, #F8FAFC 0%, #EFF6FF 100%);
+        border: 1px solid #DBEAFE;
+        border-radius: 12px;
+        padding: 12px 18px;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 0.83rem;
+        color: #1E293B;
+    }
+
+    .xyz-mini-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .xyz-mini-card {
+        background: #FFFFFF;
+        border-radius: 14px;
+        border: 1px solid #E2E8F0;
+        padding: 16px 18px;
+        text-decoration: none !important;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.02);
+    }
+
+    .xyz-mini-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        border-color: #10B981;
+    }
+
+    .xyz-mini-card.active-card {
+        border: 2px solid #059669;
+        background: #ECFDF5;
+    }
+
+    .xyz-mini-label {
+        font-size: 0.71rem;
+        font-weight: 800;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .xyz-mini-val {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #0F172A;
+        font-family: 'JetBrains Mono', monospace;
+        line-height: 1.15;
+    }
+
+    .xyz-mini-sub {
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: #64748B;
+        margin-top: 3px;
+    }
+
+    .xyz-mini-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .xyz-filter-panel {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+    }
+
+    .xyz-filter-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #475569;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .xyz-id-chip {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 800;
+        font-size: 0.8rem;
+        background: #F1F5F9;
+        color: #334155;
+        padding: 3px 8px;
+        border-radius: 6px;
+        border: 1px solid #E2E8F0;
+    }
+
+    .xyz-profit-pill {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 800;
+        font-size: 0.81rem;
+        padding: 4px 10px;
+        border-radius: 6px;
+        display: inline-block;
+    }
+
+    .xyz-profit-pos { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+    .xyz-profit-even { background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; }
+    .xyz-profit-neg { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+
+    .xyz-smart-pager {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .xyz-page-btn {
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 8px;
+        border: 1px solid #CBD5E1;
+        background: #FFFFFF;
+        color: #334155;
+        font-weight: 800;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none !important;
+        transition: all 0.15s ease;
+    }
+
+    .xyz-page-btn.active {
+        background: #059669;
+        border-color: #059669;
+        color: #FFFFFF;
+    }
+
+    .xyz-page-btn.disabled {
+        opacity: 0.45;
+        pointer-events: none;
+    }
+</style>
+
+<!-- Studio Header -->
+<div class="xyz-studio-header">
+    <div>
+        <h2 style="margin:0 0 4px; font-weight:800; font-size:1.4rem; color:#0F172A;">
+            <i class="fa fa-chart-line" style="color:#059669;"></i> SMS Profit &amp; Loss Analytics Studio
+        </h2>
+        <p style="margin:0; color:#64748B; font-size:0.88rem;">
+            Per-broadcast reconciliation comparing <strong>Our End (`Message.UnitsUsed`)</strong> deducted from Client Wallets vs <strong>Kudi End (`Message.Response_cost`)</strong> deducted from your Gateway Balance.
+        </p>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <a href="@BuildExportUrl("excel")" class="btn btn-sm" style="background:#16A34A; color:#FFF; font-weight:800; border-radius:8px; padding:7px 13px;">
+            <i class="fa fa-file-excel"></i> Excel
+        </a>
+        <a href="@BuildExportUrl("word")" class="btn btn-sm" style="background:#2563EB; color:#FFF; font-weight:800; border-radius:8px; padding:7px 13px;">
+            <i class="fa fa-file-word"></i> Word
+        </a>
+        <a href="@BuildExportUrl("pdf")" target="_blank" class="btn btn-sm" style="background:#DC2626; color:#FFF; font-weight:800; border-radius:8px; padding:7px 13px;">
+            <i class="fa fa-file-pdf"></i> PDF
+        </a>
+        <a href="@Url.Action("Index", "Transactions", new { area = "Adminpanel" })" class="btn btn-sm btn-default" style="font-weight:800; border-radius:8px; padding:7px 13px; margin-left:4px;">
+            &larr; Transactions Ledger
+        </a>
+    </div>
+</div>
+
+<!-- Clear Calculation Explanation Strip -->
+<div class="xyz-formula-strip">
+    <div>
+        <i class="fa fa-calculator" style="color:#2563EB; margin-right:6px;"></i>
+        <strong>How P&amp;L is Calculated:</strong>
+        <span style="margin-left:6px;">
+            <strong style="color:#0284C7;">Our End (`UnitsUsed`)</strong> [Client Wallet Deduction @@ @stats.FlatUnitsPerSms.ToString("N2") Units/SMS]
+            &minus;
+            <strong style="color:#D97706;">Kudi End (`Response_cost`)</strong> [Gateway Deduction]
+            =
+            <strong style="color:#059669;">Net Spread (Profit / Break-Even / Loss)</strong>
+        </span>
+    </div>
+    <div style="font-weight:800; font-size:0.78rem; color:#475569;">
+        @if (!string.IsNullOrWhiteSpace(dateFrom) || !string.IsNullOrWhiteSpace(dateTo))
+        {
+            <span style="background:#DBEAFE; color:#1E40AF; padding:4px 10px; border-radius:6px;">
+                <i class="fa fa-calendar"></i> Date Range: @(string.IsNullOrWhiteSpace(dateFrom) ? "Start" : dateFrom) &rarr; @(string.IsNullOrWhiteSpace(dateTo) ? "Today" : dateTo)
+            </span>
+        }
+        else
+        {
+            <span style="background:#E2E8F0; color:#334155; padding:4px 10px; border-radius:6px;">
+                <i class="fa fa-calendar"></i> Period: All Recorded Kudi Broadcasts (@stats.TotalBroadcasts.ToString("N0"))
+            </span>
+        }
+    </div>
+</div>
+
+<!-- 8 Reactive Summary Cards -->
+<div class="xyz-mini-grid">
+    <!-- Card 1: Broadcasts Analyzed -->
+    <a href="@BuildUrl(1, "")" class="xyz-mini-card @(string.IsNullOrEmpty(cardFilter) ? "active-card" : "")">
+        <div>
+            <div class="xyz-mini-label">Broadcasts Analyzed</div>
+            <div class="xyz-mini-val">@stats.TotalBroadcasts.ToString("N0")</div>
+            <div class="xyz-mini-sub">@stats.TotalRecipients.ToString("N0") Est. Recipients</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#EEF2FF; color:#4F46E5;"><i class="fa fa-paper-plane"></i></div>
+    </a>
+
+    <!-- Card 2: Our End (Client Units Used) -->
+    <a href="@BuildUrl(1, "")" class="xyz-mini-card">
+        <div>
+            <div class="xyz-mini-label">Our End (`UnitsUsed`)</div>
+            <div class="xyz-mini-val" style="color:#0284C7;">@stats.TotalClientUnitsCharged.ToString("N2")</div>
+            <div class="xyz-mini-sub">Deducted from Clients (&#x20A6;@((stats.TotalClientUnitsCharged * stats.PricePerUnit).ToString("N0")))</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#E0F2FE; color:#0284C7;"><i class="fa fa-coins"></i></div>
+    </a>
+
+    <!-- Card 3: Kudi Gateway Cost -->
+    <a href="@BuildUrl(1, "with_cost")" class="xyz-mini-card @(cardFilter == "with_cost" ? "active-card" : "")">
+        <div>
+            <div class="xyz-mini-label">Kudi Cost (`Response_cost`)</div>
+            <div class="xyz-mini-val" style="color:#D97706;">@stats.TotalGatewayCostUnits.ToString("N2")</div>
+            <div class="xyz-mini-sub">Deducted by Kudi API</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#FEF3C7; color:#D97706;"><i class="fa fa-server"></i></div>
+    </a>
+
+    <!-- Card 4: Net Profit / Spread -->
+    <a href="@BuildUrl(1, "")" class="xyz-mini-card">
+        <div>
+            <div class="xyz-mini-label">Net Spread (Our &minus; Kudi)</div>
+            <div class="xyz-mini-val" style="color:@(stats.TotalNetProfitUnits > 0 ? "#16A34A" : (stats.TotalNetProfitUnits < 0 ? "#DC2626" : "#334155"));">
+                @(stats.TotalNetProfitUnits > 0 ? "+" : "")@stats.TotalNetProfitUnits.ToString("N2")
+            </div>
+            <div class="xyz-mini-sub">Overall Margin: @stats.OverallMarginPercent%</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:@(stats.TotalNetProfitUnits >= 0 ? "#DCFCE7" : "#FEE2E2"); color:@(stats.TotalNetProfitUnits >= 0 ? "#16A34A" : "#DC2626");">
+            <i class="fa fa-scale-balanced"></i>
+        </div>
+    </a>
+
+    <!-- Card 5: Profitable Broadcasts (> 0) -->
+    <a href="@BuildUrl(1, "profit")" class="xyz-mini-card @(cardFilter == "profit" ? "active-card" : "")">
+        <div>
+            <div class="xyz-mini-label">Profitable Sends (&gt; 0)</div>
+            <div class="xyz-mini-val" style="color:#16A34A;">@stats.ProfitableBroadcastsCount.ToString("N0")</div>
+            <div class="xyz-mini-sub">+@stats.ProfitableUnitsSum.ToString("N2") Net Gain</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#DCFCE7; color:#16A34A;"><i class="fa fa-arrow-trend-up"></i></div>
+    </a>
+
+    <!-- Card 6: Break-Even Broadcasts (== 0) -->
+    <a href="@BuildUrl(1, "breakeven")" class="xyz-mini-card @(cardFilter == "breakeven" ? "active-card" : "")">
+        <div>
+            <div class="xyz-mini-label">Break-Even Sends (= 0)</div>
+            <div class="xyz-mini-val" style="color:#334155;">@stats.BreakEvenBroadcastsCount.ToString("N0")</div>
+            <div class="xyz-mini-sub">@stats.BreakEvenUnitsVolume.ToString("N2") Units Matched</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#F1F5F9; color:#475569;"><i class="fa fa-equals"></i></div>
+    </a>
+
+    <!-- Card 7: Loss Broadcasts (< 0) -->
+    <a href="@BuildUrl(1, "loss")" class="xyz-mini-card @(cardFilter == "loss" ? "active-card" : "")">
+        <div>
+            <div class="xyz-mini-label">Loss Sends (&lt; 0)</div>
+            <div class="xyz-mini-val" style="color:#DC2626;">@stats.LossBroadcastsCount.ToString("N0")</div>
+            <div class="xyz-mini-sub">@stats.LossUnitsSum.ToString("N2") Deficit</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#FEE2E2; color:#DC2626;"><i class="fa fa-arrow-trend-down"></i></div>
+    </a>
+
+    <!-- Card 8: Latest Kudi Balance -->
+    <div class="xyz-mini-card">
+        <div>
+            <div class="xyz-mini-label">Latest Kudi Balance</div>
+            <div class="xyz-mini-val" style="color:#4F46E5;">&#x20A6;@stats.LatestGatewayBalance</div>
+            <div class="xyz-mini-sub">Last API Response</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#EEF2FF; color:#4F46E5;"><i class="fa fa-wallet"></i></div>
+    </div>
+</div>
+
+<!-- Filter & Date Range Bar -->
+<div class="xyz-filter-panel">
+    <form method="get" action="@Url.Action("ProfitAndLoss", "Transactions", new { area = "Adminpanel" })">
+        <input type="hidden" name="cardFilter" value="@cardFilter" />
+
+        <div class="row">
+            <div class="col-md-3 col-sm-6" style="margin-bottom:12px;">
+                <label class="xyz-filter-label"><i class="fa fa-search"></i> Search Client / Sender ID</label>
+                <input type="text" name="searchString" value="@searchString" class="form-control" placeholder="Username, Sender ID, Msg ID..." style="border-radius:8px;" />
+            </div>
+
+            <div class="col-md-2 col-sm-6" style="margin-bottom:12px;">
+                <label class="xyz-filter-label"><i class="fa fa-calendar"></i> From Date</label>
+                <input type="date" name="dateFrom" value="@dateFrom" class="form-control" style="border-radius:8px; font-weight:700;" />
+            </div>
+
+            <div class="col-md-2 col-sm-6" style="margin-bottom:12px;">
+                <label class="xyz-filter-label"><i class="fa fa-calendar"></i> To Date</label>
+                <input type="date" name="dateTo" value="@dateTo" class="form-control" style="border-radius:8px; font-weight:700;" />
+            </div>
+
+            <div class="col-md-2 col-sm-6" style="margin-bottom:12px;">
+                <label class="xyz-filter-label">Outcome Filter</label>
+                <select name="outcomeFilter" class="form-control" style="border-radius:8px;">
+                    <option value="">-- All Broadcasts --</option>
+                    <option value="profit" selected="@(outcomeFilter == "profit" ? "selected" : null)">Profitable Only (&gt; 0)</option>
+                    <option value="breakeven" selected="@(outcomeFilter == "breakeven" ? "selected" : null)">Break-Even Only (= 0)</option>
+                    <option value="loss" selected="@(outcomeFilter == "loss" ? "selected" : null)">Loss Only (&lt; 0)</option>
+                </select>
+            </div>
+
+            <div class="col-md-2 col-sm-6" style="margin-bottom:12px;">
+                <label class="xyz-filter-label">Sort By</label>
+                <select name="sortBy" class="form-control" style="border-radius:8px;">
+                    <option value="date_desc" selected="@(sortBy == "date_desc" ? "selected" : null)">Date (Newest First)</option>
+                    <option value="date_asc" selected="@(sortBy == "date_asc" ? "selected" : null)">Date (Oldest First)</option>
+                    <option value="profit_desc" selected="@(sortBy == "profit_desc" ? "selected" : null)">Highest Profit First</option>
+                    <option value="profit_asc" selected="@(sortBy == "profit_asc" ? "selected" : null)">Biggest Loss First</option>
+                    <option value="charged_desc" selected="@(sortBy == "charged_desc" ? "selected" : null)">Highest Client UnitsUsed</option>
+                    <option value="cost_desc" selected="@(sortBy == "cost_desc" ? "selected" : null)">Highest Kudi Cost</option>
+                </select>
+            </div>
+
+            <div class="col-md-1 col-sm-6" style="margin-bottom:12px;">
+                <label class="xyz-filter-label">Rows</label>
+                <select name="pageSize" class="form-control" style="border-radius:8px;" onchange="this.form.submit()">
+                    <option value="20" selected="@(pageSize == 20 ? "selected" : null)">20</option>
+                    <option value="50" selected="@(pageSize == 50 ? "selected" : null)">50</option>
+                    <option value="100" selected="@(pageSize == 100 ? "selected" : null)">100</option>
+                    <option value="200" selected="@(pageSize == 200 ? "selected" : null)">200</option>
+                    <option value="500" selected="@(pageSize == 500 ? "selected" : null)">500</option>
+                    <option value="0" selected="@(pageSize == 0 ? "selected" : null)">All</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:4px; padding-top:10px; border-top:1px solid #F1F5F9;">
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span style="font-size:0.75rem; font-weight:800; color:#64748B; text-transform:uppercase; margin-right:4px;">Quick Date Range:</span>
+                <a href="@BuildUrl(1, null, "today")" class="btn btn-xs @(datePreset == "today" ? "btn-primary" : "btn-default")" style="font-weight:800; border-radius:6px; padding:4px 10px;">Today</a>
+                <a href="@BuildUrl(1, null, "yesterday")" class="btn btn-xs @(datePreset == "yesterday" ? "btn-primary" : "btn-default")" style="font-weight:800; border-radius:6px; padding:4px 10px;">Yesterday</a>
+                <a href="@BuildUrl(1, null, "7d")" class="btn btn-xs @(datePreset == "7d" ? "btn-primary" : "btn-default")" style="font-weight:800; border-radius:6px; padding:4px 10px;">Last 7 Days</a>
+                <a href="@BuildUrl(1, null, "30d")" class="btn btn-xs @(datePreset == "30d" ? "btn-primary" : "btn-default")" style="font-weight:800; border-radius:6px; padding:4px 10px;">Last 30 Days</a>
+                <a href="@BuildUrl(1, null, "month")" class="btn btn-xs @(datePreset == "month" ? "btn-primary" : "btn-default")" style="font-weight:800; border-radius:6px; padding:4px 10px;">This Month</a>
+                <a href="@BuildUrl(1, null, "last_month")" class="btn btn-xs @(datePreset == "last_month" ? "btn-primary" : "btn-default")" style="font-weight:800; border-radius:6px; padding:4px 10px;">Last Month</a>
+                <a href="@Url.Action("ProfitAndLoss", "Transactions", new { area = "Adminpanel" })" class="btn btn-xs btn-default" style="font-weight:800; border-radius:6px; padding:4px 10px; color:#DC2626;">Reset All</a>
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary" style="background:#059669; border:none; font-weight:800; border-radius:8px; padding:7px 18px;">
+                <i class="fa fa-filter"></i> Apply Date Range &amp; Filter
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Profit & Loss Ledger Table -->
+<div class="box" style="border-radius:16px; border:1px solid #E2E8F0; box-shadow:0 4px 16px rgba(15, 23, 42, 0.03); overflow:hidden;">
+    <div class="box-body table-responsive" style="padding:0;">
+        <table class="table table-hover" style="margin:0; vertical-align:middle;">
+            <thead style="background:#F8FAFC; border-bottom:2px solid #E2E8F0;">
+                <tr style="font-size:0.75rem; font-weight:800; color:#475569; text-transform:uppercase;">
+                    <th style="padding:14px 16px; width:55px;">S/N</th>
+                    <th>Date &amp; Msg ID</th>
+                    <th>Client</th>
+                    <th>Sender ID</th>
+                    <th>Recipients</th>
+                    <th>Our End (`UnitsUsed`)</th>
+                    <th>Kudi End (`Response_cost`)</th>
+                    <th>Net Spread (Our &minus; Kudi)</th>
+                    <th>Kudi Balance After</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    int sn = (currentPage - 1) * (pageSize <= 0 ? Math.Max(1, totalFilteredCount) : pageSize) + 1;
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="9" style="text-align:center; padding:48px 20px; color:#64748B;">
+                            <i class="fa fa-chart-line" style="font-size:2rem; color:#CBD5E1; margin-bottom:10px; display:block;"></i>
+                            <strong>No SMS broadcasts match your selected date range or filter criteria.</strong>
+                        </td>
+                    </tr>
+                }
+                @foreach (var item in Model)
+                {
+                    string pillClass = item.NetProfitUnits > 0 ? "xyz-profit-pos" : (item.NetProfitUnits < 0 ? "xyz-profit-neg" : "xyz-profit-even");
+                    string outcomeLabel = item.NetProfitUnits > 0 ? "PROFIT" : (item.NetProfitUnits < 0 ? "LOSS" : "BREAK-EVEN");
+                    <tr>
+                        <td style="padding:12px 16px; font-weight:700; color:#64748B;">@(sn++)</td>
+                        <td>
+                            <div style="font-weight:800; color:#0F172A; font-size:0.84rem;">@item.SentDate.ToString("yyyy-MM-dd HH:mm")</div>
+                            <span class="xyz-id-chip">#@item.MessageId</span>
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.UserId))
+                            {
+                                <a href="@Url.Action("ClientDetails", "ManageUsers", new { area = "Adminpanel", id = item.UserId })" style="font-weight:800; color:#0F172A; text-decoration:none;">
+                                    @item.ClientFullName
+                                </a>
+                            }
+                            else
+                            {
+                                <strong style="color:#0F172A;">@item.ClientFullName</strong>
+                            }
+                            @if (!string.IsNullOrEmpty(item.Username))
+                            {
+                                <div style="font-size:0.76rem; color:#64748B;">@@@item.Username</div>
+                            }
+                        </td>
+                        <td>
+                            <span class="xyz-id-chip" style="background:#EEF2FF; color:#4F46E5; border-color:#C7D2FE;">@item.SenderId</span>
+                        </td>
+                        <td>
+                            <strong style="color:#334155;">@item.RecipientsCount.ToString("N0")</strong>
+                            <small style="color:#64748B; display:block;">@item.PageCount pg(s)</small>
+                        </td>
+                        <td>
+                            <strong style="color:#0284C7; font-family:'JetBrains Mono', monospace; font-size:0.95rem;">
+                                @item.ClientUnitsCharged.ToString("N2") Units
+                            </strong>
+                        </td>
+                        <td>
+                            <strong style="color:#D97706; font-family:'JetBrains Mono', monospace; font-size:0.95rem;">
+                                @item.GatewayCostUnits.ToString("N2")
+                            </strong>
+                        </td>
+                        <td>
+                            <span class="xyz-profit-pill @pillClass">
+                                @(item.NetProfitUnits > 0 ? "+" : "")@item.NetProfitUnits.ToString("N2") (@outcomeLabel)
+                            </span>
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(item.RawGatewayBalance))
+                            {
+                                <span class="xyz-id-chip" style="background:#F0FDF4; color:#15803D; border-color:#BBF7D0;">
+                                    &#x20A6;@item.RawGatewayBalance
+                                </span>
+                            }
+                            else
+                            {
+                                <span style="color:#94A3B8;">&mdash;</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Smart Pagination -->
+    @if (totalPages > 1)
+    {
+        <div style="padding:16px 20px; border-top:1px solid #E2E8F0; background:#F8FAFC; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div style="font-size:0.85rem; color:#64748B; font-weight:700;">
+                Page <strong>@currentPage</strong> of <strong>@totalPages</strong> (@totalFilteredCount.ToString("N0") broadcasts)
+            </div>
+            <div class="xyz-smart-pager" style="margin:0;">
+                <a href="@BuildUrl(1)" class="xyz-page-btn @(currentPage <= 1 ? "disabled" : "")">&laquo;</a>
+                <a href="@BuildUrl(Math.Max(1, currentPage - 1))" class="xyz-page-btn @(currentPage <= 1 ? "disabled" : "")">&lsaquo;</a>
+                @{
+                    int startP = Math.Max(1, currentPage - 2);
+                    int endP = Math.Min(totalPages, currentPage + 2);
+                    if (startP > 1)
+                    {
+                        <a href="@BuildUrl(1)" class="xyz-page-btn">1</a>
+                        if (startP > 2) { <span style="padding:0 4px; color:#94A3B8; font-weight:800;">...</span> }
+                    }
+                    for (int p = startP; p <= endP; p++)
+                    {
+                        <a href="@BuildUrl(p)" class="xyz-page-btn @(p == currentPage ? "active" : "")">@p</a>
+                    }
+                    if (endP < totalPages)
+                    {
+                        if (endP < totalPages - 1) { <span style="padding:0 4px; color:#94A3B8; font-weight:800;">...</span> }
+                        <a href="@BuildUrl(totalPages)" class="xyz-page-btn">@totalPages</a>
+                    }
+                }
+                <a href="@BuildUrl(Math.Min(totalPages, currentPage + 1))" class="xyz-page-btn @(currentPage >= totalPages ? "disabled" : "")">&rsaquo;</a>
+                <a href="@BuildUrl(totalPages)" class="xyz-page-btn @(currentPage >= totalPages ? "disabled" : "")">&raquo;</a>
+            </div>
+        </div>
+    }
+</div>

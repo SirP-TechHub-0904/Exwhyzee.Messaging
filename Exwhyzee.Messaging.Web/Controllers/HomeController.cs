@@ -26,6 +26,28 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
         private IEnumerable<string> GetSliderImages()
         {
+            var list = new List<string>();
+            try
+            {
+                var dbSliders = db.Sliders
+                    .AsNoTracking()
+                    .Where(s => s.Status == Status.Published && !string.IsNullOrEmpty(s.ImageUrl))
+                    .Select(s => s.ImageUrl)
+                    .ToList();
+                foreach (var img in dbSliders)
+                {
+                    if (img.StartsWith("http", StringComparison.OrdinalIgnoreCase) || img.StartsWith("/"))
+                    {
+                        list.Add(img);
+                    }
+                    else
+                    {
+                        list.Add("~/Sliderimage/" + img);
+                    }
+                }
+            }
+            catch { }
+
             try
             {
                 var webRoot = _env?.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
@@ -37,16 +59,18 @@ namespace Exwhyzee.Messaging.Web.Controllers
 
                 if (Directory.Exists(sliderPath))
                 {
-                    return Directory.EnumerateFiles(sliderPath)
-                                    .Select(fn => "~/Sliderimage/" + Path.GetFileName(fn))
-                                    .ToList();
+                    foreach (var fn in Directory.EnumerateFiles(sliderPath))
+                    {
+                        string rel = "~/Sliderimage/" + Path.GetFileName(fn);
+                        if (!list.Contains(rel)) list.Add(rel);
+                    }
                 }
             }
             catch
             {
                 // Fallback to empty list if directory is missing
             }
-            return new List<string>();
+            return list;
         }
 
         [HttpGet]
@@ -111,32 +135,23 @@ namespace Exwhyzee.Messaging.Web.Controllers
         //adding new slide
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult AddSlider(Slider slider)
+        public async Task<ActionResult> AddSlider(Slider slider)
         {
-            Random randomInteger = new Random();
-            int genNumber = randomInteger.Next(1000000);
-
             if (ModelState.IsValid)
             {
                 if (Request.Form.Files.Count > 0)
                 {
                     IFormFile file = Request.Form.Files[0];
-                    if (file.Length > 0 && (file.ContentType.ToUpper().Contains("JPEG") || file.ContentType.ToUpper().Contains("PNG") || file.ContentType.ToUpper().Contains("JPG")))
+                    if (file.Length > 0 && (file.ContentType.ToUpper().Contains("JPEG") || file.ContentType.ToUpper().Contains("PNG") || file.ContentType.ToUpper().Contains("JPG") || file.ContentType.ToUpper().Contains("WEBP")))
                     {
-                        var webRoot = _env?.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-                        var sliderFolder = Path.Combine(webRoot, "Sliderimage");
-                        if (!Directory.Exists(sliderFolder))
-                        {
-                            Directory.CreateDirectory(sliderFolder);
-                        }
-                        string fileName = Path.Combine(sliderFolder, Path.GetFileName(genNumber + file.FileName));
-                        using (var stream = new FileStream(fileName, FileMode.Create)) { file.CopyTo(stream); }
-                        slider.ImageUrl = Path.GetFileName(genNumber + file.FileName);
+                        var cloudinary = HttpContext.RequestServices.GetService<ICloudinaryService>()
+                            ?? new CloudinaryService(Exwhyzee.Messaging.Web.AppConfig.Configuration, _env);
+                        slider.ImageUrl = await cloudinary.UploadFileAsync(file, "sliders", "slide");
                     }
                 }
                 slider.Status = Status.Published;
                 db.Sliders.Add(slider);
-                db.SaveChanges();
+                await db.SaveChangesAsync();
                 TempData["Success"] = " A New Slide Has Been Successfully Added.";
                 return RedirectToAction("Slider");
             }

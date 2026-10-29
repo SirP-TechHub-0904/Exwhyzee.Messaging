@@ -1,0 +1,610 @@
+@model IEnumerable<Exwhyzee.Messaging.Core.Dtos.UserManagementDto>
+@{
+    ViewBag.Title = "Manage Units Studio";
+    var stats = ViewBag.FilteredStats as Exwhyzee.Messaging.Core.Dtos.UserManagementStatsDto ?? new Exwhyzee.Messaging.Core.Dtos.UserManagementStatsDto();
+    var globalStats = ViewBag.GlobalStats as Exwhyzee.Messaging.Core.Dtos.UserManagementStatsDto ?? stats;
+
+    int pageNumber = ViewBag.PageNumber ?? 1;
+    int pageSize = ViewBag.PageSize ?? 20;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalUsersCount = ViewBag.TotalUsersCount ?? 0;
+
+    string currentFilter = ViewBag.CurrentFilter as string ?? "";
+    string cardFilter = ViewBag.CardFilter as string ?? "";
+    string balanceTier = ViewBag.BalanceTier as string ?? "";
+    decimal? minUnits = ViewBag.MinUnits as decimal?;
+    decimal? maxUnits = ViewBag.MaxUnits as decimal?;
+    string fromDate = ViewBag.FromDate as string ?? "";
+    string toDate = ViewBag.ToDate as string ?? "";
+    string sortBy = ViewBag.SortBy as string ?? "balance_desc";
+    string paystackPublicKey = ViewBag.PaystackPublicKey as string ?? "";
+
+    int startRow = totalUsersCount == 0 ? 0 : (pageSize <= 0 ? 1 : (pageNumber - 1) * pageSize + 1);
+    int endRow = pageSize <= 0 ? totalUsersCount : Math.Min(totalUsersCount, pageNumber * pageSize);
+    int sn = startRow > 0 ? startRow : 1;
+
+    string NextNameSort = sortBy == "name_asc" ? "name_desc" : "name_asc";
+    string NextBalanceSort = sortBy == "balance_desc" ? "balance_asc" : "balance_desc";
+    string NextSentSort = sortBy == "lastsent_desc" ? "lastsent_asc" : "lastsent_desc";
+}
+
+<style>
+    .xyz-units-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+
+    /* Mini Dashboard (Units Filter Outcome) */
+    .xyz-units-mini-dash {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    @@media (max-width: 1280px) {
+        .xyz-units-mini-dash { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @@media (max-width: 768px) {
+        .xyz-units-mini-dash { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .xyz-mini-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 12px 14px;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+
+    body.xyz-dark-theme .xyz-mini-card {
+        background: #131B2E;
+        border-color: rgba(255,255,255,0.08);
+    }
+
+    .xyz-mini-card:hover {
+        transform: translateY(-2px);
+        border-color: #0284C7;
+        box-shadow: 0 6px 16px rgba(2, 132, 199, 0.14);
+    }
+
+    .xyz-mini-card.active-card {
+        border: 2px solid #0284C7;
+        background: #F0F9FF;
+    }
+
+    body.xyz-dark-theme .xyz-mini-card.active-card {
+        background: rgba(2, 132, 199, 0.2);
+        border-color: #38BDF8;
+    }
+
+    .xyz-mini-card small {
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748B;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    body.xyz-dark-theme .xyz-mini-card small { color: #94A3B8; }
+
+    .xyz-mini-card strong {
+        font-size: 1.2rem;
+        font-weight: 900;
+        font-family: 'JetBrains Mono', monospace;
+        color: #0F172A;
+    }
+
+    body.xyz-dark-theme .xyz-mini-card strong { color: #FFFFFF; }
+
+    .xyz-filter-studio {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+
+    body.xyz-dark-theme .xyz-filter-studio {
+        background: #131B2E;
+        border-color: rgba(255,255,255,0.08);
+    }
+
+    .xyz-filter-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #475569;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    body.xyz-dark-theme .xyz-filter-label { color: #94A3B8; }
+
+    .xyz-table-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-table-card {
+        background: #131B2E;
+        border-color: rgba(255,255,255,0.08);
+    }
+
+    .xyz-unit-chip {
+        background: #EFF6FF;
+        color: #1D4ED8;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.86rem;
+        border: 1px solid #BFDBFE;
+    }
+
+    .xyz-btn-paystack {
+        background: #09A5DB;
+        color: #FFFFFF !important;
+        font-weight: 800;
+        border: none;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 0.76rem;
+        transition: all 0.2s ease;
+    }
+
+    .xyz-btn-paystack:hover {
+        background: #0786B3;
+        transform: translateY(-1px);
+    }
+
+    .xyz-sort-header {
+        color: #475569 !important;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .xyz-sort-header:hover { color: #0284C7 !important; }
+</style>
+
+<div class="container-fluid" style="padding-top: 8px;">
+    @Html.Partial("_ResponseMessagePartial")
+
+    <!-- TOP HEADER -->
+    <div class="xyz-units-header">
+        <div>
+            <h2 style="font-weight: 800; color: #0F172A; margin: 0; font-size: 1.5rem;">
+                <i class="fa fa-wallet" style="color: #0284C7; margin-right: 6px;"></i> Manage User Units Studio
+            </h2>
+            <p style="color: #64748B; margin: 4px 0 0 0; font-size: 0.88rem;">
+                Filtered Balance Outcome: <strong style="color:#1D4ED8; font-family:'JetBrains Mono', monospace;">@stats.TotalUnitsBalance.ToString("N2") Units</strong> across <strong>@totalUsersCount.ToString("N0")</strong> matched users.
+            </p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <!-- Export Buttons (Excel, Word, PDF) -->
+            <a href="@Url.Action("Export", "ManageUsers", new { area = "Adminpanel", format = "excel", mode = "units", searchString = currentFilter, cardFilter = cardFilter, balanceTier = balanceTier, minUnits = minUnits, maxUnits = maxUnits, fromDate = fromDate, toDate = toDate, sortBy = sortBy })" class="btn btn-sm btn-success" style="font-weight: 800; border-radius: 8px; padding: 8px 14px;">
+                <i class="fa fa-file-excel"></i> Excel
+            </a>
+            <a href="@Url.Action("Export", "ManageUsers", new { area = "Adminpanel", format = "word", mode = "units", searchString = currentFilter, cardFilter = cardFilter, balanceTier = balanceTier, minUnits = minUnits, maxUnits = maxUnits, fromDate = fromDate, toDate = toDate, sortBy = sortBy })" class="btn btn-sm btn-primary" style="font-weight: 800; border-radius: 8px; padding: 8px 14px;">
+                <i class="fa fa-file-word"></i> Word
+            </a>
+            <a href="@Url.Action("Export", "ManageUsers", new { area = "Adminpanel", format = "pdf", mode = "units", searchString = currentFilter, cardFilter = cardFilter, balanceTier = balanceTier, minUnits = minUnits, maxUnits = maxUnits, fromDate = fromDate, toDate = toDate, sortBy = sortBy })" target="_blank" class="btn btn-sm btn-danger" style="font-weight: 800; border-radius: 8px; padding: 8px 14px;">
+                <i class="fa fa-file-pdf"></i> PDF
+            </a>
+
+            <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-sm btn-default" style="font-weight: 800; border-radius: 8px; padding: 8px 14px;">
+                <i class="fa fa-users"></i> Manage Users
+            </a>
+        </div>
+    </div>
+
+    <!-- MINI DASHBOARD: DYNAMIC OUTCOME OF CURRENT UNITS FILTER (ALL CLICKABLE) -->
+    <div class="xyz-units-mini-dash">
+        <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", cardFilter = "all", searchString = currentFilter, minUnits = minUnits, maxUnits = maxUnits, fromDate = fromDate, toDate = toDate, sortBy = "balance_desc", pageSize = pageSize })"
+           class="xyz-mini-card @(string.IsNullOrEmpty(cardFilter) || cardFilter == "all" ? "active-card" : "")">
+            <small><i class="fa fa-coins" style="color:#2563EB;"></i> Filtered Units Sum</small>
+            <strong style="color:#1D4ED8;">@stats.TotalUnitsBalance.ToString("N2")</strong>
+        </a>
+
+        <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", cardFilter = "all", searchString = currentFilter, minUnits = minUnits, maxUnits = maxUnits, fromDate = fromDate, toDate = toDate, sortBy = sortBy, pageSize = pageSize })"
+           class="xyz-mini-card">
+            <small><i class="fa fa-users" style="color:#4F46E5;"></i> Matched Users</small>
+            <strong>@stats.TotalUsers.ToString("N0")</strong>
+        </a>
+
+        <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", cardFilter = "bal_under_1k", searchString = currentFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy, pageSize = pageSize })"
+           class="xyz-mini-card @(cardFilter == "bal_under_1k" ? "active-card" : "")">
+            <small><i class="fa fa-battery-quarter" style="color:#64748B;"></i> &lt; 1,000 Units</small>
+            <strong>@stats.UsersUnder1kUnits.ToString("N0") <span style="font-size:0.72rem; color:#64748B;">(@stats.UnitsSumUnder1k.ToString("N0"))</span></strong>
+        </a>
+
+        <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", cardFilter = "bal_1k_5k", searchString = currentFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy, pageSize = pageSize })"
+           class="xyz-mini-card @(cardFilter == "bal_1k_5k" ? "active-card" : "")">
+            <small><i class="fa fa-battery-half" style="color:#7C3AED;"></i> 1k – 5k Units</small>
+            <strong style="color:#7C3AED;">@stats.Users1kTo5kUnits.ToString("N0") <span style="font-size:0.72rem; color:#64748B;">(@stats.UnitsSum1kTo5k.ToString("N0"))</span></strong>
+        </a>
+
+        <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", cardFilter = "bal_over_5k", searchString = currentFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy, pageSize = pageSize })"
+           class="xyz-mini-card @(cardFilter == "bal_over_5k" ? "active-card" : "")">
+            <small><i class="fa fa-battery-full" style="color:#059669;"></i> &gt; 5,000 Units</small>
+            <strong style="color:#059669;">@stats.UsersOver5kUnits.ToString("N0") <span style="font-size:0.72rem; color:#64748B;">(@stats.UnitsSumOver5k.ToString("N0"))</span></strong>
+        </a>
+
+        <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", cardFilter = "bal_zero", searchString = currentFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy, pageSize = pageSize })"
+           class="xyz-mini-card @(cardFilter == "bal_zero" ? "active-card" : "")">
+            <small><i class="fa fa-battery-empty" style="color:#DC2626;"></i> 0 Units (Empty)</small>
+            <strong style="color:#DC2626;">@stats.UsersZeroUnits.ToString("N0")</strong>
+        </a>
+    </div>
+
+    <!-- SERIOUS UNITS FILTER, AMOUNT RANGE & SORT BAR -->
+    <div class="xyz-filter-studio">
+        @using (Html.BeginForm("ManageUnits", "ManageUsers", new { area = "Adminpanel" }, FormMethod.Get))
+        {
+            <input type="hidden" name="cardFilter" value="@cardFilter" />
+            <div class="row" style="margin-bottom: 12px;">
+                <div class="col-md-3 col-sm-6" style="margin-bottom: 8px;">
+                    <label class="xyz-filter-label">Search Name / Username / Email / Phone</label>
+                    <input type="text" name="searchString" value="@currentFilter" placeholder="Type keyword..." class="form-control" style="height: 38px; border-radius: 8px;" />
+                </div>
+
+                <div class="col-md-2 col-sm-6" style="margin-bottom: 8px;">
+                    <label class="xyz-filter-label">Unit Balance Tier</label>
+                    <select name="balanceTier" class="form-control" style="height: 38px; border-radius: 8px;">
+                        <option value="">All Balance Tiers</option>
+                        <option value="under_1k" selected="@(balanceTier == "under_1k" ? "selected" : null)">Less than 1,000 Units</option>
+                        <option value="1k_5k" selected="@(balanceTier == "1k_5k" ? "selected" : null)">1,000 – 5,000 Units</option>
+                        <option value="over_5k" selected="@(balanceTier == "over_5k" ? "selected" : null)">Over 5,000 Units</option>
+                        <option value="zero" selected="@(balanceTier == "zero" ? "selected" : null)">0 Units (Empty Wallet)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 col-sm-6" style="margin-bottom: 8px;">
+                    <label class="xyz-filter-label">Min Units (Amount)</label>
+                    <input type="number" step="0.01" name="minUnits" value="@minUnits" placeholder="e.g. 100" class="form-control" style="height: 38px; border-radius: 8px;" />
+                </div>
+
+                <div class="col-md-2 col-sm-6" style="margin-bottom: 8px;">
+                    <label class="xyz-filter-label">Max Units (Amount)</label>
+                    <input type="number" step="0.01" name="maxUnits" value="@maxUnits" placeholder="e.g. 5000" class="form-control" style="height: 38px; border-radius: 8px;" />
+                </div>
+
+                <div class="col-md-3 col-sm-12" style="margin-bottom: 8px;">
+                    <label class="xyz-filter-label">Sort Order</label>
+                    <select name="sortBy" class="form-control" style="height: 38px; border-radius: 8px; font-weight: 700;">
+                        <option value="balance_desc" selected="@(sortBy == "balance_desc" ? "selected" : null)">Unit Balance: Highest to Lowest</option>
+                        <option value="balance_asc" selected="@(sortBy == "balance_asc" ? "selected" : null)">Unit Balance: Lowest to Highest</option>
+                        <option value="lastsent_desc" selected="@(sortBy == "lastsent_desc" ? "selected" : null)">Last SMS Sent: Most Recent</option>
+                        <option value="lastsent_asc" selected="@(sortBy == "lastsent_asc" ? "selected" : null)">Last SMS Sent: Oldest</option>
+                        <option value="name_asc" selected="@(sortBy == "name_asc" ? "selected" : null)">Name: A to Z</option>
+                        <option value="name_desc" selected="@(sortBy == "name_desc" ? "selected" : null)">Name: Z to A</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row" style="align-items: flex-end;">
+                <div class="col-md-3 col-sm-6" style="margin-bottom: 6px;">
+                    <label class="xyz-filter-label">Last SMS Sent From Date</label>
+                    <input type="date" name="fromDate" value="@fromDate" class="form-control" style="height: 38px; border-radius: 8px;" />
+                </div>
+
+                <div class="col-md-3 col-sm-6" style="margin-bottom: 6px;">
+                    <label class="xyz-filter-label">Last SMS Sent To Date</label>
+                    <input type="date" name="toDate" value="@toDate" class="form-control" style="height: 38px; border-radius: 8px;" />
+                </div>
+
+                <div class="col-md-2 col-sm-4" style="margin-bottom: 6px;">
+                    <label class="xyz-filter-label">Rows Per Page</label>
+                    <select name="pageSize" class="form-control" style="height: 38px; border-radius: 8px; font-weight: 700;">
+                        <option value="20" selected="@(pageSize == 20 ? "selected" : null)">1 – 20 Rows</option>
+                        <option value="50" selected="@(pageSize == 50 ? "selected" : null)">1 – 50 Rows</option>
+                        <option value="100" selected="@(pageSize == 100 ? "selected" : null)">1 – 100 Rows</option>
+                        <option value="200" selected="@(pageSize == 200 ? "selected" : null)">1 – 200 Rows</option>
+                        <option value="500" selected="@(pageSize == 500 ? "selected" : null)">1 – 500 Rows</option>
+                        <option value="0" selected="@(pageSize == 0 ? "selected" : null)">Show All (@totalUsersCount)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 col-sm-8 text-right" style="margin-bottom: 6px; padding-top: 18px;">
+                    <button type="submit" class="btn btn-dark" style="height: 38px; font-weight: 800; border-radius: 8px; padding: 0 20px; background: #0284C7; border: none; color: #FFF;">
+                        <i class="fa fa-filter"></i> Filter Units
+                    </button>
+                    <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-default" style="height: 38px; line-height: 24px; font-weight: 700; border-radius: 8px; margin-left: 6px;">
+                        <i class="fa fa-rotate-left"></i> Reset
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- UNITS DATA TABLE -->
+    <div class="xyz-table-card">
+        <div class="table-responsive">
+            <table class="table table-hover" style="margin: 0; vertical-align: middle; font-size: 0.88rem;">
+                <thead style="background: #F8FAFC; font-weight: 800; font-size: 0.74rem; color: #475569; text-transform: uppercase; border-bottom: 2px solid #E2E8F0;">
+                    <tr>
+                        <th style="padding: 12px 16px; width: 65px;">S/N</th>
+                        <th style="padding: 12px 16px;">
+                            <a class="xyz-sort-header" href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", searchString = currentFilter, cardFilter = cardFilter, balanceTier = balanceTier, minUnits = minUnits, maxUnits = maxUnits, fromDate = fromDate, toDate = toDate, sortBy = NextNameSort, pageSize = pageSize })">
+                                Name &amp; Username <i class="fa fa-sort"></i>
+                            </a>
+                        </th>
+                        <th>Email &amp; Phone</th>
+                        <th>
+                            <a class="xyz-sort-header" href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", searchString = currentFilter, cardFilter = cardFilter, balanceTier = balanceTier, minUnits = minUnits, maxUnits = maxUnits, fromDate = fromDate, toDate = toDate, sortBy = NextBalanceSort, pageSize = pageSize })">
+                                Wallet Unit Balance &amp; Top Up <i class="fa fa-sort"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a class="xyz-sort-header" href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", searchString = currentFilter, cardFilter = cardFilter, balanceTier = balanceTier, minUnits = minUnits, maxUnits = maxUnits, fromDate = fromDate, toDate = toDate, sortBy = NextSentSort, pageSize = pageSize })">
+                                Last Time Sent (SMS) <i class="fa fa-sort"></i>
+                            </a>
+                        </th>
+                        <th style="text-align: right; padding: 12px 16px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var user in Model)
+                        {
+                            <tr>
+                                <td style="padding: 12px 16px; font-weight: 700; color: #64748B;">@(sn++)</td>
+                                <td style="padding: 12px 16px;">
+                                    <a href="@Url.Action("ClientDetails", "ManageUsers", new { area = "Adminpanel", id = user.UserId })" style="text-decoration: none;">
+                                        @if (!string.IsNullOrWhiteSpace(user.FullName) && !user.FullName.Equals(user.Username, StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <strong style="color: #0F172A; display: block; font-size: 0.94rem;">@user.FullName</strong>
+                                            <small style="color: #0284C7; font-weight: 700;">@@@user.Username</small>
+                                        }
+                                        else
+                                        {
+                                            <strong style="color: #0F172A; display: block; font-size: 0.94rem;">@@@user.Username</strong>
+                                        }
+                                    </a>
+                                </td>
+                                <td>
+                                    <div style="color: #1E293B; font-weight: 600;">@user.Email</div>
+                                    <small style="color: #64748B;"><i class="fa fa-phone" style="font-size: 0.72rem;"></i> @(string.IsNullOrEmpty(user.PhoneNumber) ? "N/A" : user.PhoneNumber)</small>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                        <span class="xyz-unit-chip" id="unit-balance-@user.UserId">
+                                            @user.UnitsBalance.ToString("N2") Units
+                                        </span>
+                                        <button type="button" class="xyz-btn-paystack" onclick="openAdminPaystackModal('@user.UserId', '@user.Username', '@user.UnitsBalance')" title="Credit wallet securely via Paystack">
+                                            <i class="fa fa-credit-card"></i> Paystack Top Up
+                                        </button>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (user.LastTimeSent.HasValue)
+                                    {
+                                        <strong style="color: #0F172A; display: block; font-size: 0.85rem;">@user.LastTimeSent.Value.ToString("dd MMM yyyy, hh:mm tt")</strong>
+                                        <small style="color: #059669; font-weight: 700;"><i class="fa fa-paper-plane"></i> Broadcast Dispatched</small>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: #94A3B8; font-size: 0.82rem; font-style: italic;">Never Sent SMS</span>
+                                    }
+                                </td>
+                                <td style="text-align: right; padding: 12px 16px; white-space: nowrap;">
+                                    <a href="@Url.Action("ClientDetails", "ManageUsers", new { area = "Adminpanel", id = user.UserId })" class="btn btn-xs btn-primary" style="font-weight: 800; border-radius: 6px; padding: 6px 12px; background: #4F46E5; border: none;">
+                                        <i class="fa fa-address-card"></i> Full Details
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 36px; color: #94A3B8;">
+                                <i class="fa fa-wallet" style="font-size: 2rem; display: block; margin-bottom: 8px; color: #CBD5E1;"></i>
+                                No user wallets found matching your unit filter criteria.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SMART PAGINATION: << < 1, 2, ... 500, 501 > >> -->
+        <div style="padding: 14px 20px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <span style="color: #64748B; font-size: 0.85rem; font-weight: 600;">
+                Showing <strong>@startRow.ToString("N0") – @endRow.ToString("N0")</strong> of <strong>@totalUsersCount.ToString("N0")</strong> users (Page <strong>@pageNumber</strong> of <strong>@totalPages</strong>)
+            </span>
+
+            @if (totalPages > 1)
+            {
+                var pagesToShow = new System.Collections.Generic.SortedSet<int>();
+                pagesToShow.Add(1);
+                if (totalPages >= 2) pagesToShow.Add(2);
+                for (int p = Math.Max(1, pageNumber - 1); p <= Math.Min(totalPages, pageNumber + 1); p++)
+                {
+                    pagesToShow.Add(p);
+                }
+                if (totalPages >= 2) pagesToShow.Add(totalPages - 1);
+                pagesToShow.Add(totalPages);
+
+                int prevRendered = 0;
+
+                <ul class="pagination pagination-sm" style="margin: 0; font-weight: 700;">
+                    <!-- First Page << -->
+                    <li class="@(pageNumber <= 1 ? "disabled" : "")">
+                        <a href="@(pageNumber <= 1 ? "javascript:void(0)" : Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", page = 1, pageSize = pageSize, searchString = currentFilter, cardFilter = cardFilter, balanceTier = balanceTier, minUnits = minUnits, maxUnits = maxUnits, fromDate = fromDate, toDate = toDate, sortBy = sortBy }))" title="First Page">&laquo;&laquo;</a>
+                    </li>
+                    <!-- Previous Page < -->
+                    <li class="@(pageNumber <= 1 ? "disabled" : "")">
+                        <a href="@(pageNumber <= 1 ? "javascript:void(0)" : Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", page = pageNumber - 1, pageSize = pageSize, searchString = currentFilter, cardFilter = cardFilter, balanceTier = balanceTier, minUnits = minUnits, maxUnits = maxUnits, fromDate = fromDate, toDate = toDate, sortBy = sortBy }))" title="Previous Page">&lsaquo;</a>
+                    </li>
+
+                    @foreach (int p in pagesToShow)
+                    {
+                        if (prevRendered > 0 && p - prevRendered > 1)
+                        {
+                            <li class="disabled"><span>&hellip;</span></li>
+                        }
+                        <li class="@(p == pageNumber ? "active" : "")">
+                            <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", page = p, pageSize = pageSize, searchString = currentFilter, cardFilter = cardFilter, balanceTier = balanceTier, minUnits = minUnits, maxUnits = maxUnits, fromDate = fromDate, toDate = toDate, sortBy = sortBy })">@p</a>
+                        </li>
+                        prevRendered = p;
+                    }
+
+                    <!-- Next Page > -->
+                    <li class="@(pageNumber >= totalPages ? "disabled" : "")">
+                        <a href="@(pageNumber >= totalPages ? "javascript:void(0)" : Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", page = pageNumber + 1, pageSize = pageSize, searchString = currentFilter, cardFilter = cardFilter, balanceTier = balanceTier, minUnits = minUnits, maxUnits = maxUnits, fromDate = fromDate, toDate = toDate, sortBy = sortBy }))" title="Next Page">&rsaquo;</a>
+                    </li>
+                    <!-- Last Page >> -->
+                    <li class="@(pageNumber >= totalPages ? "disabled" : "")">
+                        <a href="@(pageNumber >= totalPages ? "javascript:void(0)" : Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", page = totalPages, pageSize = pageSize, searchString = currentFilter, cardFilter = cardFilter, balanceTier = balanceTier, minUnits = minUnits, maxUnits = maxUnits, fromDate = fromDate, toDate = toDate, sortBy = sortBy }))" title="Last Page">&raquo;&raquo;</a>
+                    </li>
+                </ul>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ADMIN PAYSTACK TOP-UP MODAL -->
+<div class="modal fade" id="adminPaystackModal" tabindex="-1" role="dialog" aria-labelledby="paystackModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 440px;">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 40px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #0B0F19 0%, #1E293B 100%); color: #FFF; border-radius: 16px 16px 0 0; padding: 20px 24px;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#FFF; opacity:0.8;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="paystackModalLabel" style="font-weight: 800; font-size: 1.15rem;">
+                    <i class="fa fa-credit-card" style="color:#09A5DB;"></i> Paystack Top Up for User
+                </h4>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;">
+                    <small style="color: #64748B; display: block; font-weight: 700; text-transform: uppercase; font-size: 0.72rem;">Target Client</small>
+                    <strong style="color: #0F172A; font-size: 1.05rem;" id="modalTargetUsername">Username</strong>
+                    <span class="pull-right text-muted" id="modalCurrentBalance">0 Units</span>
+                </div>
+
+                <input type="hidden" id="modalTargetUserId" />
+
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label style="font-weight: 700; color: #334155;">Quantity of SMS Units to Credit</label>
+                    <div class="input-group">
+                        <input type="number" id="modalUnitsInput" class="form-control" placeholder="e.g. 500" min="1" step="1" style="height: 44px; font-size: 1.1rem; font-weight: 800; border-color: #CBD5E1;" />
+                        <span class="input-group-addon" style="font-weight:700; background:#F1F5F9;">Units</span>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-block btn-lg" id="btnInitiatePaystack" style="background: #09A5DB; color: #FFF; font-weight: 800; border-radius: 10px; height: 48px; font-size: 1rem;" onclick="processAdminPaystackPayment()">
+                    <i class="fa fa-shield-alt"></i> Proceed to Paystack Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PAYSTACK INLINE POPUP SCRIPT -->
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+    const PAYSTACK_PUB_KEY = "@paystackPublicKey";
+
+    function openAdminPaystackModal(userId, username, currentBalance) {
+        document.getElementById('modalTargetUserId').value = userId;
+        document.getElementById('modalTargetUsername').innerText = '@@' + username;
+        document.getElementById('modalCurrentBalance').innerText = 'Current: ' + parseFloat(currentBalance).toLocaleString() + ' Units';
+        document.getElementById('modalUnitsInput').value = '';
+        $('#adminPaystackModal').modal('show');
+    }
+
+    function processAdminPaystackPayment() {
+        const userId = document.getElementById('modalTargetUserId').value;
+        const units = parseFloat(document.getElementById('modalUnitsInput').value);
+
+        if (!units || units <= 0) {
+            alert('Please enter a valid unit quantity greater than zero.');
+            return;
+        }
+
+        const btn = document.getElementById('btnInitiatePaystack');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Initializing Paystack...';
+
+        $.ajax({
+            url: '@Url.Action("InitializeAdminPaystackTopUp", "ManageUsers", new { area = "Adminpanel" })',
+            type: 'POST',
+            data: { targetUserId: userId, units: units },
+            success: function (res) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-shield-alt"></i> Proceed to Paystack Payment';
+
+                if (res.success) {
+                    $('#adminPaystackModal').modal('hide');
+
+                    let handler = PaystackPop.setup({
+                        key: res.publicKey || PAYSTACK_PUB_KEY,
+                        email: res.email,
+                        amount: res.amountInKobo,
+                        currency: "NGN",
+                        ref: 'EXW_ADM_' + Math.floor((Math.random() * 1000000000) + 1),
+                        callback: function (response) {
+                            verifyAdminPayment(response.reference, res.transactionId, userId);
+                        },
+                        onClose: function () {
+                            alert('Paystack transaction was cancelled.');
+                        }
+                    });
+                    handler.openIframe();
+                } else {
+                    alert(res.message || 'Failed to initialize Paystack transaction.');
+                }
+            },
+            error: function () {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-shield-alt"></i> Proceed to Paystack Payment';
+                alert('Error connecting to server. Please try again.');
+            }
+        });
+    }
+
+    function verifyAdminPayment(reference, transactionId, userId) {
+        $.ajax({
+            url: '@Url.Action("VerifyAdminPaystackTopUp", "ManageUsers", new { area = "Adminpanel" })',
+            type: 'POST',
+            data: { reference: reference, transactionId: transactionId },
+            success: function (res) {
+                if (res.success) {
+                    alert('🎉 Success! ' + res.message);
+                    const balEl = document.getElementById('unit-balance-' + userId);
+                    if (balEl && res.newBalance !== undefined) {
+                        balEl.innerText = parseFloat(res.newBalance).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' Units';
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert('⚠️ Verification Warning: ' + res.message);
+                }
+            },
+            error: function () {
+                alert('Error verifying payment. Please refresh the page.');
+            }
+        });
+    }
+</script>
+

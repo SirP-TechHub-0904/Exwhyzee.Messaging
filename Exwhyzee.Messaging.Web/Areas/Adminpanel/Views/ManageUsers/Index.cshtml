@@ -1,17 +1,30 @@
 @model IEnumerable<Exwhyzee.Messaging.Core.Dtos.UserManagementDto>
 @{
-    ViewBag.Title = "User Management Studio";
+    ViewBag.Title = "Manage Users Studio";
     var rolesList = ViewBag.Roles as IEnumerable<Microsoft.AspNetCore.Identity.IdentityRole> ?? new List<Microsoft.AspNetCore.Identity.IdentityRole>();
+    var stats = ViewBag.FilteredStats as Exwhyzee.Messaging.Core.Dtos.UserManagementStatsDto ?? new Exwhyzee.Messaging.Core.Dtos.UserManagementStatsDto();
+    var globalStats = ViewBag.GlobalStats as Exwhyzee.Messaging.Core.Dtos.UserManagementStatsDto ?? stats;
+
     int pageNumber = ViewBag.PageNumber ?? 1;
-    int pageSize = ViewBag.PageSize ?? 25;
+    int pageSize = ViewBag.PageSize ?? 20;
     int totalPages = ViewBag.TotalPages ?? 1;
     int totalUsersCount = ViewBag.TotalUsersCount ?? 0;
-    decimal totalFilteredUnits = ViewBag.TotalFilteredUnits ?? 0m;
-    decimal totalFilteredNaira = totalFilteredUnits * 2.0m; // Based on standard unit rate
+
     string currentFilter = ViewBag.CurrentFilter as string ?? "";
     string roleFilter = ViewBag.RoleFilter as string ?? "";
-    string paystackPublicKey = ViewBag.PaystackPublicKey as string ?? "";
-    int sn = (pageNumber - 1) * pageSize + 1;
+    string cardFilter = ViewBag.CardFilter as string ?? "";
+    string activityFilter = ViewBag.ActivityFilter as string ?? "";
+    string genderFilter = ViewBag.GenderFilter as string ?? "";
+    string fromDate = ViewBag.FromDate as string ?? "";
+    string toDate = ViewBag.ToDate as string ?? "";
+    string sortBy = ViewBag.SortBy as string ?? "date_desc";
+
+    int startRow = totalUsersCount == 0 ? 0 : (pageSize <= 0 ? 1 : (pageNumber - 1) * pageSize + 1);
+    int endRow = pageSize <= 0 ? totalUsersCount : Math.Min(totalUsersCount, pageNumber * pageSize);
+    int sn = startRow > 0 ? startRow : 1;
+
+    string NextNameSort = sortBy == "name_asc" ? "name_desc" : "name_asc";
+    string NextDateSort = sortBy == "date_desc" ? "date_asc" : "date_desc";
 }
 
 <style>
@@ -19,141 +32,338 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
+        margin-bottom: 18px;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 14px;
     }
 
-    .xyz-filter-card {
+    /* Mini Dashboard (Filter Outcome) */
+    .xyz-mini-dash {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+
+    @@media (max-width: 1280px) {
+        .xyz-mini-dash { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    @@media (max-width: 768px) {
+        .xyz-mini-dash { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .xyz-mini-card {
         background: #FFFFFF;
         border: 1px solid #E2E8F0;
         border-radius: 12px;
-        padding: 16px 20px;
-        margin-bottom: 24px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        padding: 12px 14px;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
     }
+
+    body.xyz-dark-theme .xyz-mini-card {
+        background: #131B2E;
+        border-color: rgba(255,255,255,0.08);
+    }
+
+    .xyz-mini-card:hover {
+        transform: translateY(-2px);
+        border-color: #6366F1;
+        box-shadow: 0 6px 16px rgba(99, 102, 241, 0.12);
+    }
+
+    .xyz-mini-card.active-card {
+        border: 2px solid #4F46E5;
+        background: #EEF2FF;
+    }
+
+    body.xyz-dark-theme .xyz-mini-card.active-card {
+        background: rgba(79, 70, 229, 0.2);
+        border-color: #818CF8;
+    }
+
+    .xyz-mini-card small {
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748B;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    body.xyz-dark-theme .xyz-mini-card small { color: #94A3B8; }
+
+    .xyz-mini-card strong {
+        font-size: 1.25rem;
+        font-weight: 900;
+        font-family: 'JetBrains Mono', monospace;
+        color: #0F172A;
+    }
+
+    body.xyz-dark-theme .xyz-mini-card strong { color: #FFFFFF; }
+
+    /* Serious Filter Bar */
+    .xyz-filter-studio {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+
+    body.xyz-dark-theme .xyz-filter-studio {
+        background: #131B2E;
+        border-color: rgba(255,255,255,0.08);
+    }
+
+    .xyz-filter-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #475569;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    body.xyz-dark-theme .xyz-filter-label { color: #94A3B8; }
 
     .xyz-table-card {
         background: #FFFFFF;
         border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.04);
         overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-table-card {
+        background: #131B2E;
+        border-color: rgba(255,255,255,0.08);
     }
 
     .xyz-role-pill {
         display: inline-block;
         padding: 3px 9px;
         border-radius: 9999px;
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         font-weight: 800;
         text-transform: uppercase;
         margin-right: 4px;
-        margin-bottom: 4px;
     }
 
     .xyz-role-superadmin { background: #FEE2E2; color: #DC2626; border: 1px solid #FCA5A5; }
     .xyz-role-admin { background: #DBEAFE; color: #2563EB; border: 1px solid #93C5FD; }
     .xyz-role-client { background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB; }
 
-    .xyz-unit-chip {
-        background: #EFF6FF;
-        color: #1D4ED8;
-        font-weight: 800;
-        padding: 4px 10px;
-        border-radius: 8px;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.85rem;
-        border: 1px solid #BFDBFE;
+    .xyz-sort-header {
+        color: #475569 !important;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
     }
 
-    .xyz-btn-paystack {
-        background: #09A5DB;
-        color: #FFFFFF !important;
-        font-weight: 800;
-        border: none;
-        border-radius: 6px;
-        padding: 4px 10px;
-        font-size: 0.76rem;
-        transition: all 0.2s ease;
-    }
-
-    .xyz-btn-paystack:hover {
-        background: #0786B3;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(9, 165, 219, 0.4);
-    }
+    .xyz-sort-header:hover { color: #4F46E5 !important; }
 </style>
 
-<div class="container-fluid" style="padding-top: 10px;">
+<div class="container-fluid" style="padding-top: 8px;">
     @Html.Partial("_ResponseMessagePartial")
 
-    <!-- HEADER BLOCK -->
+    <!-- TOP HEADER -->
     <div class="xyz-user-header">
         <div>
-            <h2 style="font-weight: 800; color: #0F172A; margin: 0; font-size: 1.6rem; letter-spacing: -0.5px;">
-                <i class="fa fa-users-gear" style="color: #4F46E5; margin-right: 8px;"></i> User Management Studio
+            <h2 style="font-weight: 800; color: #0F172A; margin: 0; font-size: 1.5rem;">
+                <i class="fa fa-users-gear" style="color: #4F46E5; margin-right: 6px;"></i> Manage Users Studio
             </h2>
-            <p style="color: #64748B; margin: 4px 0 0 0; font-size: 0.9rem;">
-                Sub-100ms executive management for <strong style="color: #0F172A;">@totalUsersCount.ToString("N0") registered users</strong>.
+            <p style="color: #64748B; margin: 4px 0 0 0; font-size: 0.88rem;">
+                Showing <strong style="color:#0F172A;">@totalUsersCount.ToString("N0")</strong> matched users out of <strong>@globalStats.TotalUsers.ToString("N0")</strong> total accounts.
             </p>
         </div>
-        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-            <!-- DYNAMIC FILTERED TOTAL WALLET BALANCE SUMMATION -->
-            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 8px 16px; display: flex; align-items: center; gap: 12px;">
-                <div style="background: #2563EB; color: #FFF; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
-                    <i class="fa fa-wallet"></i>
-                </div>
-                <div>
-                    <small style="color: #1E40AF; font-weight: 700; text-transform: uppercase; font-size: 0.7rem; display: block;">Total Wallet Balance Sum</small>
-                    <strong style="color: #1D4ED8; font-size: 1.05rem; font-family: 'JetBrains Mono', monospace;">@totalFilteredUnits.ToString("N2") Units</strong>
-                    <small style="color: #3B82F6; font-size: 0.78rem; font-weight: 700;">(&#8358;@totalFilteredNaira.ToString("N2"))</small>
-                </div>
-            </div>
-            <a href="@Url.Action("Register", "Account", new { area = "" })" class="btn btn-primary" style="font-weight: 800; border-radius: 8px; padding: 10px 18px;">
-                <i class="fa fa-user-plus"></i> Add New User
+
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <!-- Export Buttons (Excel, Word, PDF) -->
+            <a href="@Url.Action("Export", "ManageUsers", new { area = "Adminpanel", format = "excel", mode = "users", searchString = currentFilter, roleFilter = roleFilter, cardFilter = cardFilter, activityFilter = activityFilter, genderFilter = genderFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy })" class="btn btn-sm btn-success" style="font-weight: 800; border-radius: 8px; padding: 8px 14px;">
+                <i class="fa fa-file-excel"></i> Excel
+            </a>
+            <a href="@Url.Action("Export", "ManageUsers", new { area = "Adminpanel", format = "word", mode = "users", searchString = currentFilter, roleFilter = roleFilter, cardFilter = cardFilter, activityFilter = activityFilter, genderFilter = genderFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy })" class="btn btn-sm btn-primary" style="font-weight: 800; border-radius: 8px; padding: 8px 14px;">
+                <i class="fa fa-file-word"></i> Word
+            </a>
+            <a href="@Url.Action("Export", "ManageUsers", new { area = "Adminpanel", format = "pdf", mode = "users", searchString = currentFilter, roleFilter = roleFilter, cardFilter = cardFilter, activityFilter = activityFilter, genderFilter = genderFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy })" target="_blank" class="btn btn-sm btn-danger" style="font-weight: 800; border-radius: 8px; padding: 8px 14px;">
+                <i class="fa fa-file-pdf"></i> PDF
+            </a>
+
+            <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-sm btn-info" style="font-weight: 800; border-radius: 8px; padding: 8px 14px;">
+                <i class="fa fa-wallet"></i> Manage Units
+            </a>
+
+            <a href="@Url.Action("KycSettings", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-sm" style="font-weight: 800; border-radius: 8px; padding: 8px 14px; background: #059669; color: #FFF; border: none;">
+                <i class="fa fa-id-card-clip"></i> KYC Settings
+            </a>
+
+            <a href="@Url.Action("Register", "Account", new { area = "" })" class="btn btn-sm btn-primary" style="font-weight: 800; border-radius: 8px; padding: 8px 14px; background: #4F46E5; border: none;">
+                <i class="fa fa-user-plus"></i> Add User
             </a>
         </div>
     </div>
 
-    <!-- FILTER & SEARCH BAR -->
-    <div class="xyz-filter-card">
-        @using (Html.BeginForm("Index", "ManageUsers", FormMethod.Get, new { @class = "row form-inline", style = "margin:0; align-items:center;" }))
+    <!-- MINI DASHBOARD: DYNAMIC OUTCOME OF CURRENT FILTER (ALL CLICKABLE) -->
+    <div class="xyz-mini-dash">
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "all", searchString = currentFilter, roleFilter = roleFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy, pageSize = pageSize })"
+           class="xyz-mini-card @(string.IsNullOrEmpty(cardFilter) || cardFilter == "all" ? "active-card" : "")">
+            <small><i class="fa fa-users" style="color:#4F46E5;"></i> Filtered Users</small>
+            <strong>@stats.TotalUsers.ToString("N0")</strong>
+        </a>
+
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "active_under_1m", searchString = currentFilter, roleFilter = roleFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy, pageSize = pageSize })"
+           class="xyz-mini-card @(cardFilter == "active_under_1m" ? "active-card" : "")">
+            <small><i class="fa fa-bolt" style="color:#10B981;"></i> Active (&lt; 1M)</small>
+            <strong style="color:#059669;">@stats.ActiveUnderOneMonth.ToString("N0")</strong>
+        </a>
+
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "active_over_1m", searchString = currentFilter, roleFilter = roleFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy, pageSize = pageSize })"
+           class="xyz-mini-card @(cardFilter == "active_over_1m" ? "active-card" : "")">
+            <small><i class="fa fa-clock" style="color:#D97706;"></i> Active (&gt; 1M)</small>
+            <strong style="color:#D97706;">@stats.ActiveOverOneMonth.ToString("N0")</strong>
+        </a>
+
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "male", searchString = currentFilter, roleFilter = roleFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy, pageSize = pageSize })"
+           class="xyz-mini-card @(cardFilter == "male" ? "active-card" : "")">
+            <small><i class="fa fa-mars" style="color:#0284C7;"></i> Male</small>
+            <strong style="color:#0284C7;">@stats.MaleUsers.ToString("N0")</strong>
+        </a>
+
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "female", searchString = currentFilter, roleFilter = roleFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy, pageSize = pageSize })"
+           class="xyz-mini-card @(cardFilter == "female" ? "active-card" : "")">
+            <small><i class="fa fa-venus" style="color:#DB2777;"></i> Female</small>
+            <strong style="color:#DB2777;">@stats.FemaleUsers.ToString("N0")</strong>
+        </a>
+
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "client_only", searchString = currentFilter, roleFilter = roleFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy, pageSize = pageSize })"
+           class="xyz-mini-card @(cardFilter == "client_only" ? "active-card" : "")">
+            <small><i class="fa fa-user" style="color:#2563EB;"></i> Clients Only</small>
+            <strong style="color:#2563EB;">@stats.ClientsOnlyCount.ToString("N0")</strong>
+        </a>
+
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "admins", searchString = currentFilter, roleFilter = roleFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy, pageSize = pageSize })"
+           class="xyz-mini-card @(cardFilter == "admins" ? "active-card" : "")">
+            <small><i class="fa fa-user-shield" style="color:#DC2626;"></i> Admins</small>
+            <strong style="color:#DC2626;">@stats.AdminUsersCount.ToString("N0")</strong>
+        </a>
+    </div>
+
+    <!-- SERIOUS MULTI-CRITERIA FILTER & SORT BAR -->
+    <div class="xyz-filter-studio">
+        @using (Html.BeginForm("Index", "ManageUsers", new { area = "Adminpanel" }, FormMethod.Get))
         {
-            <div class="col-md-5 col-sm-6" style="padding-left:0;">
-                <div class="input-group" style="width: 100%;">
-                    <span class="input-group-addon" style="background:#F8FAFC; border-color:#CBD5E1;"><i class="fa fa-search"></i></span>
-                    <input type="text" name="searchString" value="@currentFilter" placeholder="Search by Username, Email, or Phone..." class="form-control" style="border-color:#CBD5E1; height:40px; font-size:0.9rem;" />
+            <input type="hidden" name="cardFilter" value="@cardFilter" />
+            <div class="row" style="margin-bottom: 12px;">
+                <div class="col-md-3 col-sm-6" style="margin-bottom: 8px;">
+                    <label class="xyz-filter-label">Search Name / Username / Email / Phone</label>
+                    <input type="text" name="searchString" value="@currentFilter" placeholder="Type keyword..." class="form-control" style="height: 38px; border-radius: 8px;" />
+                </div>
+
+                <div class="col-md-2 col-sm-6" style="margin-bottom: 8px;">
+                    <label class="xyz-filter-label">Role</label>
+                    <select name="roleFilter" class="form-control" style="height: 38px; border-radius: 8px;">
+                        <option value="">All Roles</option>
+                        @foreach (var r in rolesList)
+                        {
+                            <option value="@r.Name" selected="@(roleFilter == r.Name ? "selected" : null)">@r.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2 col-sm-4" style="margin-bottom: 8px;">
+                    <label class="xyz-filter-label">Activity Status</label>
+                    <select name="activityFilter" class="form-control" style="height: 38px; border-radius: 8px;">
+                        <option value="">All Activity</option>
+                        <option value="under_1m" selected="@(activityFilter == "under_1m" ? "selected" : null)">Active (&lt; 1 Month)</option>
+                        <option value="over_1m" selected="@(activityFilter == "over_1m" ? "selected" : null)">Active (&gt; 1 Month)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 col-sm-4" style="margin-bottom: 8px;">
+                    <label class="xyz-filter-label">Gender</label>
+                    <select name="genderFilter" class="form-control" style="height: 38px; border-radius: 8px;">
+                        <option value="">All Genders</option>
+                        <option value="Male" selected="@(genderFilter == "Male" ? "selected" : null)">Male</option>
+                        <option value="Female" selected="@(genderFilter == "Female" ? "selected" : null)">Female</option>
+                        <option value="Unspecified" selected="@(genderFilter == "Unspecified" ? "selected" : null)">Unspecified</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3 col-sm-4" style="margin-bottom: 8px;">
+                    <label class="xyz-filter-label">Sort Order</label>
+                    <select name="sortBy" class="form-control" style="height: 38px; border-radius: 8px; font-weight: 700;">
+                        <option value="date_desc" selected="@(sortBy == "date_desc" ? "selected" : null)">Registered: Newest First</option>
+                        <option value="date_asc" selected="@(sortBy == "date_asc" ? "selected" : null)">Registered: Oldest First</option>
+                        <option value="name_asc" selected="@(sortBy == "name_asc" ? "selected" : null)">Name: A to Z</option>
+                        <option value="name_desc" selected="@(sortBy == "name_desc" ? "selected" : null)">Name: Z to A</option>
+                        <option value="activity_desc" selected="@(sortBy == "activity_desc" ? "selected" : null)">Most Recently Active</option>
+                    </select>
                 </div>
             </div>
-            <div class="col-md-4 col-sm-4">
-                <select name="roleFilter" class="form-control" style="width: 100%; height:40px; border-color:#CBD5E1; font-size:0.9rem;">
-                    <option value="">-- All User Roles --</option>
-                    @foreach (var r in rolesList)
-                    {
-                        <option value="@r.Name" selected="@(roleFilter == r.Name ? "selected" : null)">@r.Name</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-3 col-sm-2 text-right" style="padding-right:0;">
-                <button type="submit" class="btn btn-dark" style="height:40px; font-weight:800; border-radius:8px; width:100%; background:#1E293B; color:#FFF;">
-                    Filter Users
-                </button>
+
+            <div class="row" style="align-items: flex-end;">
+                <div class="col-md-3 col-sm-6" style="margin-bottom: 6px;">
+                    <label class="xyz-filter-label">Registered From Date</label>
+                    <input type="date" name="fromDate" value="@fromDate" class="form-control" style="height: 38px; border-radius: 8px;" />
+                </div>
+
+                <div class="col-md-3 col-sm-6" style="margin-bottom: 6px;">
+                    <label class="xyz-filter-label">Registered To Date</label>
+                    <input type="date" name="toDate" value="@toDate" class="form-control" style="height: 38px; border-radius: 8px;" />
+                </div>
+
+                <div class="col-md-2 col-sm-4" style="margin-bottom: 6px;">
+                    <label class="xyz-filter-label">Rows Per Page</label>
+                    <select name="pageSize" class="form-control" style="height: 38px; border-radius: 8px; font-weight: 700;">
+                        <option value="20" selected="@(pageSize == 20 ? "selected" : null)">1 – 20 Rows</option>
+                        <option value="50" selected="@(pageSize == 50 ? "selected" : null)">1 – 50 Rows</option>
+                        <option value="100" selected="@(pageSize == 100 ? "selected" : null)">1 – 100 Rows</option>
+                        <option value="200" selected="@(pageSize == 200 ? "selected" : null)">1 – 200 Rows</option>
+                        <option value="500" selected="@(pageSize == 500 ? "selected" : null)">1 – 500 Rows</option>
+                        <option value="0" selected="@(pageSize == 0 ? "selected" : null)">Show All (@totalUsersCount)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 col-sm-8 text-right" style="margin-bottom: 6px; padding-top: 18px;">
+                    <button type="submit" class="btn btn-dark" style="height: 38px; font-weight: 800; border-radius: 8px; padding: 0 20px; background: #0F172A; color: #FFF;">
+                        <i class="fa fa-filter"></i> Apply Filter
+                    </button>
+                    <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-default" style="height: 38px; line-height: 24px; font-weight: 700; border-radius: 8px; margin-left: 6px;">
+                        <i class="fa fa-rotate-left"></i> Reset
+                    </a>
+                </div>
             </div>
         }
     </div>
 
-    <!-- USER DATA TABLE -->
+    <!-- USERS TABLE (NO UNITS COLUMN) -->
     <div class="xyz-table-card">
         <div class="table-responsive">
             <table class="table table-hover" style="margin: 0; vertical-align: middle; font-size: 0.88rem;">
-                <thead style="background: #F8FAFC; font-weight: 800; font-size: 0.75rem; color: #475569; text-transform: uppercase; border-bottom: 2px solid #E2E8F0;">
+                <thead style="background: #F8FAFC; font-weight: 800; font-size: 0.74rem; color: #475569; text-transform: uppercase; border-bottom: 2px solid #E2E8F0;">
                     <tr>
-                        <th style="padding: 12px 16px; width: 60px;">S/N</th>
-                        <th style="padding: 12px 16px;">User Details</th>
-                        <th>Contact info</th>
+                        <th style="padding: 12px 16px; width: 65px;">S/N</th>
+                        <th style="padding: 12px 16px;">
+                            <a class="xyz-sort-header" href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", searchString = currentFilter, roleFilter = roleFilter, cardFilter = cardFilter, activityFilter = activityFilter, genderFilter = genderFilter, fromDate = fromDate, toDate = toDate, sortBy = NextNameSort, pageSize = pageSize })">
+                                User Details <i class="fa fa-sort"></i>
+                            </a>
+                        </th>
+                        <th>Contact Info</th>
+                        <th>Gender</th>
                         <th>Assigned Roles</th>
-                        <th>Wallet Balance &amp; Top Up</th>
+                        <th>
+                            <a class="xyz-sort-header" href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", searchString = currentFilter, roleFilter = roleFilter, cardFilter = cardFilter, activityFilter = activityFilter, genderFilter = genderFilter, fromDate = fromDate, toDate = toDate, sortBy = NextDateSort, pageSize = pageSize })">
+                                Registered &amp; Activity <i class="fa fa-sort"></i>
+                            </a>
+                        </th>
                         <th style="text-align: right; padding: 12px 16px;">Actions</th>
                     </tr>
                 </thead>
@@ -165,19 +375,59 @@
                             <tr>
                                 <td style="padding: 12px 16px; font-weight: 700; color: #64748B;">@(sn++)</td>
                                 <td style="padding: 12px 16px;">
-                                    @if (!string.IsNullOrWhiteSpace(user.FullName) && !user.FullName.Equals(user.Username, StringComparison.OrdinalIgnoreCase))
+                                    <a href="@Url.Action("ClientDetails", "ManageUsers", new { area = "Adminpanel", id = user.UserId })" style="text-decoration: none;">
+                                        @if (!string.IsNullOrWhiteSpace(user.FullName) && !user.FullName.Equals(user.Username, StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <strong style="color: #0F172A; display: block; font-size: 0.94rem;">@user.FullName</strong>
+                                            <small style="color: #4F46E5; font-weight: 700;">@@@user.Username</small>
+                                        }
+                                        else
+                                        {
+                                            <strong style="color: #0F172A; display: block; font-size: 0.94rem;">@@@user.Username</strong>
+                                        }
+                                    </a>
+                                </td>
+                                <td>
+                                    <div style="color: #1E293B; font-weight: 600;">
+                                        @user.Email
+                                        @if (user.EmailConfirmed)
+                                        {
+                                            <i class="fa fa-circle-check" style="color: #10B981; font-size: 0.78rem;" title="Email Verified"></i>
+                                        }
+                                    </div>
+                                    <small style="color: #64748B;">
+                                        <i class="fa fa-phone" style="font-size: 0.72rem;"></i> @(string.IsNullOrEmpty(user.PhoneNumber) ? "N/A" : user.PhoneNumber)
+                                        @if (user.IsPhoneVerified)
+                                        {
+                                            <i class="fa fa-circle-check" style="color: #0284C7; font-size: 0.75rem; margin-left: 3px;" title="Phone Verified"></i>
+                                        }
+                                    </small>
+                                    @if (user.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Approved || user.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Exempted)
                                     {
-                                        <strong style="color: #0F172A; display: block; font-size: 0.95rem;">@user.FullName</strong>
-                                        <small style="color: #64748B;">@@@user.Username</small>
+                                        <div style="margin-top:2px;"><span class="xyz-role-pill" style="background:#DCFCE7; color:#166534; border:1px solid #BBF7D0;"><i class="fa fa-id-card"></i> KYC Verified</span></div>
                                     }
-                                    else
+                                    else if (user.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.PendingReview)
                                     {
-                                        <strong style="color: #0F172A; display: block; font-size: 0.95rem;">@@@user.Username</strong>
+                                        <div style="margin-top:2px;"><span class="xyz-role-pill" style="background:#DBEAFE; color:#1E40AF; border:1px solid #93C5FD;"><i class="fa fa-hourglass-half"></i> KYC Pending Review</span></div>
+                                    }
+                                    else if (user.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Triggered || user.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Rejected)
+                                    {
+                                        <div style="margin-top:2px;"><span class="xyz-role-pill" style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A;"><i class="fa fa-triangle-exclamation"></i> KYC Triggered</span></div>
                                     }
                                 </td>
                                 <td>
-                                    <div style="color: #1E293B; font-weight: 600;">@user.Email</div>
-                                    <small style="color: #64748B;"><i class="fa fa-phone" style="font-size: 0.75rem;"></i> @(string.IsNullOrEmpty(user.PhoneNumber) ? "N/A" : user.PhoneNumber)</small>
+                                    @if (string.Equals(user.Gender, "Male", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <span class="xyz-role-pill" style="background:#E0F2FE; color:#0284C7; border:1px solid #BAE6FD;"><i class="fa fa-mars"></i> Male</span>
+                                    }
+                                    else if (string.Equals(user.Gender, "Female", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <span class="xyz-role-pill" style="background:#FCE7F3; color:#DB2777; border:1px solid #FBCFE8;"><i class="fa fa-venus"></i> Female</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:#94A3B8; font-size:0.78rem;">—</span>
+                                    }
                                 </td>
                                 <td>
                                     @if (user.Roles != null && user.Roles.Any())
@@ -187,7 +437,6 @@
                                             string pillClass = "xyz-role-client";
                                             if (role.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase)) { pillClass = "xyz-role-superadmin"; }
                                             else if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase)) { pillClass = "xyz-role-admin"; }
-
                                             <span class="xyz-role-pill @pillClass">@role</span>
                                         }
                                     }
@@ -197,35 +446,22 @@
                                     }
                                 </td>
                                 <td>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span class="xyz-unit-chip" id="unit-balance-@user.UserId">
-                                            @user.UnitsBalance.ToString("N2") Units
-                                        </span>
-                                        <button type="button" class="xyz-btn-paystack" onclick="openAdminPaystackModal('@user.UserId', '@user.Username', '@user.UnitsBalance')" title="Credit wallet securely via Paystack">
-                                            <i class="fa fa-credit-card"></i> Paystack Top Up
-                                        </button>
+                                    <div style="font-weight: 700; color: #334155; font-size: 0.82rem;">
+                                        @(user.DateRegistered > new DateTime(1990, 1, 1) ? user.DateRegistered.ToString("dd MMM yyyy") : "Legacy Account")
                                     </div>
+                                    @if (user.IsActiveWithinOneMonth)
+                                    {
+                                        <span style="color: #059669; font-size: 0.74rem; font-weight: 800;"><i class="fa fa-circle" style="font-size: 0.5rem;"></i> Active (&lt; 1M)</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: #D97706; font-size: 0.74rem; font-weight: 700;">Over 1 Month</span>
+                                    }
                                 </td>
-                                <td style="text-align: right; padding: 12px 16px;">
-                                    <div class="dropdown" style="display: inline-block;">
-                                        <button class="btn btn-sm btn-default dropdown-toggle" type="button" data-toggle="dropdown" style="font-weight: 700; border-radius: 6px; border-color: #CBD5E1;">
-                                            Manage <span class="caret"></span>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-right" role="menu" style="border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
-                                            <li><a href="@Url.Action("ClientDetails", "ManageUsers", new { area = "Adminpanel", id = user.UserId })"><i class="fa fa-user" style="color: #4F46E5;"></i> Client Details</a></li>
-                                            @if (user.ClientId > 0)
-                                            {
-                                                <li><a href="@Url.Action("UserTransactions", "ManageUsers", new { area = "Adminpanel", id = user.ClientId })"><i class="fa fa-list-alt" style="color: #059669;"></i> View Transactions</a></li>
-                                            }
-                                            <li><a href="@Url.Action("AdminResetPassword", "ManageUsers", new { area = "Adminpanel", id = user.UserId })"><i class="fa fa-key" style="color: #F59E0B;"></i> Reset Password</a></li>
-                                            <li><a href="javascript:void(0)" onclick="openQuickResetModal('@user.UserId', '@user.Username', '@user.Email')"><i class="fa fa-bolt" style="color: #D97706;"></i> Quick Reset Password</a></li>
-                                            <li class="divider"></li>
-                                            <li><a href="@Url.Action("EditUser", "ManageUsers", new { area = "Adminpanel", id = user.UserId })"><i class="fa fa-pen" style="color: #6366F1;"></i> Edit Profile</a></li>
-                                            <li><a href="@Url.Action("ManageRoles", "ManageUsers", new { area = "Adminpanel", id = user.UserId })"><i class="fa fa-user-shield" style="color: #7C3AED;"></i> Manage Roles</a></li>
-                                            <li class="divider"></li>
-                                            <li><a href="@Url.Action("DeleteUser", "ManageUsers", new { area = "Adminpanel", id = user.UserId })" style="color: #DC2626;"><i class="fa fa-trash"></i> Delete User</a></li>
-                                        </ul>
-                                    </div>
+                                <td style="text-align: right; padding: 12px 16px; white-space: nowrap;">
+                                    <a href="@Url.Action("ClientDetails", "ManageUsers", new { area = "Adminpanel", id = user.UserId })" class="btn btn-xs btn-primary" style="font-weight: 800; border-radius: 6px; padding: 6px 12px; background: #4F46E5; border: none;">
+                                        <i class="fa fa-address-card"></i> Full Details
+                                    </a>
                                 </td>
                             </tr>
                         }
@@ -233,9 +469,9 @@
                     else
                     {
                         <tr>
-                            <td colspan="5" style="text-align: center; padding: 36px; color: #94A3B8;">
+                            <td colspan="7" style="text-align: center; padding: 36px; color: #94A3B8;">
                                 <i class="fa fa-users-slash" style="font-size: 2rem; display: block; margin-bottom: 8px; color: #CBD5E1;"></i>
-                                No registered users found matching your filter criteria.
+                                No users found matching your active filter criteria.
                             </td>
                         </tr>
                     }
@@ -243,77 +479,58 @@
             </table>
         </div>
 
-        <!-- PAGINATION CONTROLS -->
-        @if (totalPages > 1)
-        {
-            <div style="padding: 16px 20px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
-                <span style="color: #64748B; font-size: 0.85rem;">
-                    Page <strong>@pageNumber</strong> of <strong>@totalPages</strong> &bull; Showing @Model.Count() of @totalUsersCount users
-                </span>
-                <ul class="pagination pagination-sm" style="margin: 0;">
-                    @if (pageNumber > 1)
-                    {
-                        <li><a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", page = pageNumber - 1, searchString = currentFilter, roleFilter = roleFilter })">&laquo; Previous</a></li>
-                    }
-                    else
-                    {
-                        <li class="disabled"><span>&laquo; Previous</span></li>
-                    }
+        <!-- SMART PAGINATION: << < 1, 2, ... 500, 501 > >> -->
+        <div style="padding: 14px 20px; background: #F8FAFC; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <span style="color: #64748B; font-size: 0.85rem; font-weight: 600;">
+                Showing <strong>@startRow.ToString("N0") – @endRow.ToString("N0")</strong> of <strong>@totalUsersCount.ToString("N0")</strong> users (Page <strong>@pageNumber</strong> of <strong>@totalPages</strong>)
+            </span>
 
-                    @for (int p = Math.Max(1, pageNumber - 2); p <= Math.Min(totalPages, pageNumber + 2); p++)
+            @if (totalPages > 1)
+            {
+                var pagesToShow = new System.Collections.Generic.SortedSet<int>();
+                pagesToShow.Add(1);
+                if (totalPages >= 2) pagesToShow.Add(2);
+                for (int p = Math.Max(1, pageNumber - 1); p <= Math.Min(totalPages, pageNumber + 1); p++)
+                {
+                    pagesToShow.Add(p);
+                }
+                if (totalPages >= 2) pagesToShow.Add(totalPages - 1);
+                pagesToShow.Add(totalPages);
+
+                int prevRendered = 0;
+
+                <ul class="pagination pagination-sm" style="margin: 0; font-weight: 700;">
+                    <!-- First Page << -->
+                    <li class="@(pageNumber <= 1 ? "disabled" : "")">
+                        <a href="@(pageNumber <= 1 ? "javascript:void(0)" : Url.Action("Index", "ManageUsers", new { area = "Adminpanel", page = 1, pageSize = pageSize, searchString = currentFilter, roleFilter = roleFilter, cardFilter = cardFilter, activityFilter = activityFilter, genderFilter = genderFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy }))" title="First Page">&laquo;&laquo;</a>
+                    </li>
+                    <!-- Previous Page < -->
+                    <li class="@(pageNumber <= 1 ? "disabled" : "")">
+                        <a href="@(pageNumber <= 1 ? "javascript:void(0)" : Url.Action("Index", "ManageUsers", new { area = "Adminpanel", page = pageNumber - 1, pageSize = pageSize, searchString = currentFilter, roleFilter = roleFilter, cardFilter = cardFilter, activityFilter = activityFilter, genderFilter = genderFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy }))" title="Previous Page">&lsaquo;</a>
+                    </li>
+
+                    @foreach (int p in pagesToShow)
                     {
+                        if (prevRendered > 0 && p - prevRendered > 1)
+                        {
+                            <li class="disabled"><span>&hellip;</span></li>
+                        }
                         <li class="@(p == pageNumber ? "active" : "")">
-                            <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", page = p, searchString = currentFilter, roleFilter = roleFilter })">@p</a>
+                            <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", page = p, pageSize = pageSize, searchString = currentFilter, roleFilter = roleFilter, cardFilter = cardFilter, activityFilter = activityFilter, genderFilter = genderFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy })">@p</a>
                         </li>
+                        prevRendered = p;
                     }
 
-                    @if (pageNumber < totalPages)
-                    {
-                        <li><a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", page = pageNumber + 1, searchString = currentFilter, roleFilter = roleFilter })">Next &raquo;</a></li>
-                    }
-                    else
-                    {
-                        <li class="disabled"><span>Next &raquo;</span></li>
-                    }
+                    <!-- Next Page > -->
+                    <li class="@(pageNumber >= totalPages ? "disabled" : "")">
+                        <a href="@(pageNumber >= totalPages ? "javascript:void(0)" : Url.Action("Index", "ManageUsers", new { area = "Adminpanel", page = pageNumber + 1, pageSize = pageSize, searchString = currentFilter, roleFilter = roleFilter, cardFilter = cardFilter, activityFilter = activityFilter, genderFilter = genderFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy }))" title="Next Page">&rsaquo;</a>
+                    </li>
+                    <!-- Last Page >> -->
+                    <li class="@(pageNumber >= totalPages ? "disabled" : "")">
+                        <a href="@(pageNumber >= totalPages ? "javascript:void(0)" : Url.Action("Index", "ManageUsers", new { area = "Adminpanel", page = totalPages, pageSize = pageSize, searchString = currentFilter, roleFilter = roleFilter, cardFilter = cardFilter, activityFilter = activityFilter, genderFilter = genderFilter, fromDate = fromDate, toDate = toDate, sortBy = sortBy }))" title="Last Page">&raquo;&raquo;</a>
+                    </li>
                 </ul>
-            </div>
-        }
-    </div>
-</div>
-
-<!-- ADMIN PAYSTACK TOP-UP MODAL -->
-<div class="modal fade" id="adminPaystackModal" tabindex="-1" role="dialog" aria-labelledby="paystackModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 440px;">
-        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 40px rgba(0,0,0,0.15);">
-            <div class="modal-header" style="background: linear-gradient(135deg, #0B0F19 0%, #1E293B 100%); color: #FFF; border-radius: 16px 16px 0 0; padding: 20px 24px;">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#FFF; opacity:0.8;">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-                <h4 class="modal-title" id="paystackModalLabel" style="font-weight: 800; font-size: 1.15rem;">
-                    <i class="fa fa-credit-card" style="color:#09A5DB;"></i> Paystack Top Up for User
-                </h4>
-            </div>
-            <div class="modal-body" style="padding: 24px;">
-                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;">
-                    <small style="color: #64748B; display: block; font-weight: 700; text-transform: uppercase; font-size: 0.72rem;">Target Client</small>
-                    <strong style="color: #0F172A; font-size: 1.05rem;" id="modalTargetUsername">Username</strong>
-                    <span class="pull-right text-muted" id="modalCurrentBalance">0 Units</span>
-                </div>
-
-                <input type="hidden" id="modalTargetUserId" />
-
-                <div class="form-group" style="margin-bottom: 24px;">
-                    <label style="font-weight: 700; color: #334155;">Quantity of SMS Units to Credit</label>
-                    <div class="input-group">
-                        <input type="number" id="modalUnitsInput" class="form-control" placeholder="e.g. 500" min="1" step="1" style="height: 44px; font-size: 1.1rem; font-weight: 800; border-color: #CBD5E1;" />
-                        <span class="input-group-addon" style="font-weight:700; background:#F1F5F9;">Units</span>
-                    </div>
-                </div>
-
-                <button type="button" class="btn btn-block btn-lg" id="btnInitiatePaystack" style="background: #09A5DB; color: #FFF; font-weight: 800; border-radius: 10px; height: 48px; font-size: 1rem;" onclick="processAdminPaystackPayment()">
-                    <i class="fa fa-shield-alt"></i> Proceed to Paystack Payment
-                </button>
-            </div>
+            }
         </div>
     </div>
 </div>
@@ -366,93 +583,7 @@
     </div>
 </div>
 
-<!-- PAYSTACK INLINE POPUP SCRIPT -->
-<script src="https://js.paystack.co/v1/inline.js"></script>
 <script>
-    const PAYSTACK_PUB_KEY = "@paystackPublicKey";
-
-    function openAdminPaystackModal(userId, username, currentBalance) {
-        document.getElementById('modalTargetUserId').value = userId;
-        document.getElementById('modalTargetUsername').innerText = '@@' + username;
-        document.getElementById('modalCurrentBalance').innerText = 'Current: ' + parseFloat(currentBalance).toLocaleString() + ' Units';
-        document.getElementById('modalUnitsInput').value = '';
-        $('#adminPaystackModal').modal('show');
-    }
-
-    function processAdminPaystackPayment() {
-        const userId = document.getElementById('modalTargetUserId').value;
-        const units = parseFloat(document.getElementById('modalUnitsInput').value);
-
-        if (!units || units <= 0) {
-            alert('Please enter a valid unit quantity greater than zero.');
-            return;
-        }
-
-        const btn = document.getElementById('btnInitiatePaystack');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Initializing Paystack...';
-
-        $.ajax({
-            url: '@Url.Action("InitializeAdminPaystackTopUp", "ManageUsers", new { area = "Adminpanel" })',
-            type: 'POST',
-            data: { targetUserId: userId, units: units },
-            success: function (res) {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa fa-shield-alt"></i> Proceed to Paystack Payment';
-
-                if (res.success) {
-                    $('#adminPaystackModal').modal('hide');
-
-                    let handler = PaystackPop.setup({
-                        key: res.publicKey || PAYSTACK_PUB_KEY,
-                        email: res.email,
-                        amount: res.amountInKobo,
-                        currency: "NGN",
-                        ref: 'EXW_ADM_' + Math.floor((Math.random() * 1000000000) + 1),
-                        callback: function (response) {
-                            verifyAdminPayment(response.reference, res.transactionId, userId);
-                        },
-                        onClose: function () {
-                            alert('Paystack transaction was cancelled.');
-                        }
-                    });
-                    handler.openIframe();
-                } else {
-                    alert(res.message || 'Failed to initialize Paystack transaction.');
-                }
-            },
-            error: function () {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa fa-shield-alt"></i> Proceed to Paystack Payment';
-                alert('Error connecting to server. Please try again.');
-            }
-        });
-    }
-
-    function verifyAdminPayment(reference, transactionId, userId) {
-        $.ajax({
-            url: '@Url.Action("VerifyAdminPaystackTopUp", "ManageUsers", new { area = "Adminpanel" })',
-            type: 'POST',
-            data: { reference: reference, transactionId: transactionId },
-            success: function (res) {
-                if (res.success) {
-                    alert('🎉 Success! ' + res.message);
-                    const balEl = document.getElementById('unit-balance-' + userId);
-                    if (balEl && res.newBalance) {
-                        balEl.innerText = parseFloat(res.newBalance).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' Units';
-                    } else {
-                        location.reload();
-                    }
-                } else {
-                    alert('⚠️ Verification Warning: ' + res.message);
-                }
-            },
-            error: function () {
-                alert('Error verifying payment. Please refresh the page.');
-            }
-        });
-    }
-
     function openQuickResetModal(userId, username, email) {
         document.getElementById('resetModalUserId').value = userId;
         document.getElementById('resetModalUsername').innerText = '@@' + username;
@@ -492,7 +623,6 @@
             success: function (res) {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa fa-check-circle"></i> Save New Password';
-
                 if (res.success) {
                     $('#quickResetModal').modal('hide');
                     alert('✓ ' + res.message);

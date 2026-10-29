@@ -1,0 +1,79 @@
+@model IEnumerable<Exwhyzee.Messaging.Core.Dtos.ProfitAndLossItemDto>
+@using Exwhyzee.Messaging.Core.Dtos
+@{
+    Layout = null;
+    var stats = ViewBag.Stats as ProfitAndLossStatsDto ?? new ProfitAndLossStatsDto();
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.ReportTitle</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; color: #0F172A; margin: 24px; font-size: 12px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0F172A; padding-bottom: 12px; margin-bottom: 16px; }
+        .stats-bar { display: flex; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+        .stat-box { border: 1px solid #CBD5E1; border-radius: 8px; padding: 10px 14px; background: #F8FAFC; min-width: 140px; }
+        .stat-label { font-size: 10px; text-transform: uppercase; color: #64748B; font-weight: 700; }
+        .stat-val { font-size: 16px; font-weight: 800; color: #0F172A; margin-top: 2px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #0F172A; color: #FFF; padding: 8px; text-align: left; font-size: 11px; text-transform: uppercase; }
+        td { padding: 7px 8px; border-bottom: 1px solid #E2E8F0; font-size: 11px; }
+        tr:nth-child(even) { background: #F8FAFC; }
+        @@media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="no-print" style="margin-bottom:16px;">
+        <button onclick="window.print()" style="background:#059669; color:#FFF; border:none; padding:8px 16px; border-radius:6px; font-weight:700; cursor:pointer;">Print / Save as PDF</button>
+    </div>
+    <div class="header">
+        <div>
+            <h2 style="margin:0;">@ViewBag.ReportTitle</h2>
+            <div style="color:#64748B; margin-top:4px;">Generated: @ViewBag.GeneratedAt</div>
+        </div>
+        <div style="text-align:right; font-weight:800;">Exwhyzee Bulk SMS Platform</div>
+    </div>
+    <div class="stats-bar">
+        <div class="stat-box"><div class="stat-label">Broadcasts</div><div class="stat-val">@stats.TotalBroadcasts.ToString("N0")</div></div>
+        <div class="stat-box"><div class="stat-label">Charged to Clients</div><div class="stat-val">@stats.TotalClientUnitsCharged.ToString("N2") Units</div></div>
+        <div class="stat-box"><div class="stat-label">Kudi Gateway Cost</div><div class="stat-val">@stats.TotalGatewayCostUnits.ToString("N2")</div></div>
+        <div class="stat-box"><div class="stat-label">Net Profit / Loss</div><div class="stat-val">@(stats.TotalNetProfitUnits >= 0 ? "+" : "")@stats.TotalNetProfitUnits.ToString("N2") (@stats.OverallMarginPercent%)</div></div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th>Msg ID</th>
+                <th>Date</th>
+                <th>Client</th>
+                <th>Sender ID</th>
+                <th>Recipients</th>
+                <th>Charged (Units)</th>
+                <th>Kudi Cost</th>
+                <th>Net Profit/Loss</th>
+                <th>Gateway Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{ int sn = 1; }
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@(sn++)</td>
+                    <td>#@item.MessageId</td>
+                    <td>@item.SentDate.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@item.ClientFullName (@item.Username)</td>
+                    <td>@item.SenderId</td>
+                    <td>@item.RecipientsCount.ToString("N0")</td>
+                    <td>@item.ClientUnitsCharged.ToString("N2")</td>
+                    <td>@item.GatewayCostUnits.ToString("N2")</td>
+                    <td>@(item.NetProfitUnits >= 0 ? "+" : "")@item.NetProfitUnits.ToString("N2") (@item.MarginPercent%)</td>
+                    <td>@(item.RawGatewayBalance ?? "-")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</body>
+</html>
+

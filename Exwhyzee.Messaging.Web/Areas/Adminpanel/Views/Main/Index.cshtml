@@ -327,16 +327,16 @@
     </div>
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <!-- Live Active Users Pill -->
-        <div class="xyz-hero-pill" style="background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.35);">
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "online" })" class="xyz-hero-pill" style="background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.35); cursor:pointer;" title="View Live Online Users">
             <span class="xyz-pulse-dot online"></span>
             <div>
                 <small style="color:#A7F3D0;">Live Users Online</small>
-                <strong style="color:#34D399;">@liveActiveUsers Active</strong>
+                <strong id="xyzLiveUsersCount" style="color:#34D399;">@liveActiveUsers Active</strong>
             </div>
-        </div>
+        </a>
 
         <!-- Pending Sender IDs Pill -->
-        <a href="@Url.Action("Index", "XyzSenderIDs", new { area = "Adminpanel" })" class="xyz-hero-pill" style="background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.35);">
+        <a href="@Url.Action("Index", "XyzSenderIDs", new { area = "Adminpanel", statusFilter = "pending" })" class="xyz-hero-pill" style="background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.35); cursor:pointer;" title="View Pending Sender IDs">
             <span class="xyz-pulse-dot warning"></span>
             <div>
                 <small style="color:#FDE68A;">Pending Sender IDs</small>
@@ -345,7 +345,7 @@
         </a>
 
         <!-- Pending Recharges Pill -->
-        <a href="@Url.Action("Pending", "Transactions", new { area = "Adminpanel" })" class="xyz-hero-pill" style="background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.35);">
+        <a href="@Url.Action("Index", "Transactions", new { area = "Adminpanel", statusFilter = "Pending" })" class="xyz-hero-pill" style="background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.35); cursor:pointer;" title="View Pending Recharges">
             <span class="xyz-pulse-dot error"></span>
             <div>
                 <small style="color:#FECACA;">Pending Recharges</small>
@@ -354,12 +354,12 @@
         </a>
 
         <!-- User Wallet Liability Pill -->
-        <div class="xyz-hero-pill" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+        <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", sortBy = "balance_desc" })" class="xyz-hero-pill" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); cursor:pointer;" title="Open Manage Units Studio">
             <div>
                 <small style="color:#94A3B8;">User Balance Liability</small>
                 <strong style="color:#38BDF8;">@totalLiability.ToString("N2") Units</strong>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
