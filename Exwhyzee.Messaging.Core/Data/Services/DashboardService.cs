@@ -593,16 +593,10 @@ namespace Exwhyzee.Messaging.Core.Data.Services
             };
         }
 
-        public async Task<int> GetLiveActiveUsersCountAsync(int minutesThreshold = 15)
+        public Task<int> GetLiveActiveUsersCountAsync(int minutesThreshold = 15)
         {
-            var cutoff = DateTime.UtcNow.AddMinutes(-minutesThreshold);
-            var activeMsgUsers = await db.Messages
-                .Where(m => m.DeliveredDate >= cutoff && !string.IsNullOrEmpty(m.UserId))
-                .Select(m => m.UserId)
-                .Distinct()
-                .CountAsync();
-
-            return activeMsgUsers > 0 ? activeMsgUsers : 1; // At least admin logged in
+            int count = LiveUserTracker.GetOnlineUsersCount(45);
+            return Task.FromResult(count);
         }
     }
 }

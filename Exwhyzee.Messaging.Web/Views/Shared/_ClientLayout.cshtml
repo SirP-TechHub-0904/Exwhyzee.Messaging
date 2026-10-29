@@ -838,6 +838,11 @@
                     }
 
                     <li class="header">DEVELOPER &amp; ACCOUNT</li>
+                    <li class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Details" && ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                        <a href="@Url.Content("~/clientpanel/dashboard/Details")">
+                            <i class="fa fa-id-card" style="color:#10B981;"></i> <span>My Profile &amp; KYC</span>
+                        </a>
+                    </li>
                     <li>
                         <a href="@Url.Action("UpdatedFeatures", "Home", new { area = "" })">
                             <i class="fa fa-star" style="color:#F59E0B;"></i> <span>Updated Features</span>
@@ -864,6 +869,44 @@
 
         <!-- Main Content Body -->
         <div class="content-wrapper">
+            @{
+                string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+                if (User.Identity.IsAuthenticated && !currentAction.Equals("Details", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var layoutDb = Context.RequestServices.GetService(typeof(Exwhyzee.Messaging.Core.Models.ApplicationDbContext)) as Exwhyzee.Messaging.Core.Models.ApplicationDbContext;
+                        if (layoutDb != null)
+                        {
+                            string uName = User.Identity.Name;
+                            var layoutUser = layoutDb.Users.FirstOrDefault(u => u.UserName == uName);
+                            if (layoutUser != null)
+                            {
+                                var layoutKyc = layoutDb.UserKycProfiles.FirstOrDefault(k => k.UserId == layoutUser.Id);
+                                if (layoutKyc != null && (layoutKyc.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Triggered || layoutKyc.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Rejected))
+                                {
+                                    bool isRej = layoutKyc.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Rejected;
+                                    <div style="background:@(isRej ? "#fef2f2" : "#fffbeb"); border:1px solid @(isRej ? "#fecaca" : "#fde68a"); border-radius:12px; padding:14px 18px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                                        <div style="color:@(isRej ? "#991b1b" : "#92400e");">
+                                            <div style="font-weight:800; font-size:14px;">
+                                                <i class="fa @(isRej ? "fa-times-circle" : "fa-id-card")"></i>
+                                                @(isRej ? "KYC Verification Rejected — Action Required" : "Mandatory KYC Identity Verification Required")
+                                            </div>
+                                            <div style="font-size:12.5px; margin-top:2px;">
+                                                @(isRej ? (layoutKyc.AdminReviewNote ?? "Please review your submitted KYC documents and re-upload.") : $"Trigger: {layoutKyc.TriggerReason ?? "Account volume milestone reached"}. Verify your phone, address, passport & Government ID.")
+                                            </div>
+                                        </div>
+                                        <a href="@Url.Content("~/clientpanel/dashboard/Details")" class="btn btn-sm" style="background:@(isRej ? "#dc2626" : "#d97706"); color:#fff; font-weight:800; border-radius:9px; padding:8px 16px; text-decoration:none; white-space:nowrap;">
+                                            <i class="fa fa-shield"></i> Complete KYC Verification &rarr;
+                                        </a>
+                                    </div>
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
             @RenderBody()
         </div>
 
@@ -930,6 +973,37 @@
                             document.exitFullscreen().catch(() => {});
                         }
                         if (fsIcon) fsIcon.className = 'fa fa-expand';
+                    }
+                });
+            }
+
+            // Live Dashboard Presence Heartbeat
+            let cid = localStorage.getItem('xyz_presence_cid');
+            if (!cid) {
+                cid = 'c_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+                localStorage.setItem('xyz_presence_cid', cid);
+            }
+
+            function sendPresenceHeartbeat() {
+                if (document.visibilityState === 'hidden') return;
+                $.post('/Presence/Heartbeat', { cid: cid });
+            }
+
+            sendPresenceHeartbeat();
+            setInterval(sendPresenceHeartbeat, 15000);
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') {
+                    sendPresenceHeartbeat();
+                }
+            });
+
+            const logoutForm = document.getElementById('logoutForm');
+            if (logoutForm) {
+                logoutForm.addEventListener('submit', function () {
+                    if (navigator.sendBeacon) {
+                        const fd = new FormData();
+                        fd.append('cid', cid);
+                        navigator.sendBeacon('/Presence/Leave', fd);
                     }
                 });
             }

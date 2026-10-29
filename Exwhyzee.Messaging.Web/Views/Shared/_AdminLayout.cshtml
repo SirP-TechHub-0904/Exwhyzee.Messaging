@@ -516,14 +516,29 @@
                     </li>
 
                     <li class="header">USER MANAGEMENT</li>
-                    <li>
+                    <li class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "ManageUsers" && ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")">
+                        <a href="@Url.Content("~/adminpanel/manageusers/dashboard")">
+                            <i class="fa fa-chart-pie"></i> <span>User Analytics</span>
+                        </a>
+                    </li>
+                    <li class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "ManageUsers" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
                         <a href="@Url.Content("~/adminpanel/manageusers")">
                             <i class="fa fa-users"></i> <span>Manage Users</span>
                         </a>
                     </li>
+                    <li class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "ManageUsers" && ViewContext.RouteData.Values["action"]?.ToString() == "ManageUnits" ? "active" : "")">
+                        <a href="@Url.Content("~/adminpanel/manageusers/manageunits")">
+                            <i class="fa fa-wallet"></i> <span>Manage Units</span>
+                        </a>
+                    </li>
+                    <li class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "ManageUsers" && ViewContext.RouteData.Values["action"]?.ToString() == "KycSettings" ? "active" : "")">
+                        <a href="@Url.Content("~/adminpanel/manageusers/kycsettings")">
+                            <i class="fa fa-id-card-clip"></i> <span>KYC &amp; Triggers</span>
+                        </a>
+                    </li>
 
                     <li class="header">BILLING &amp; FINANCE</li>
-                    <li class="treeview">
+                    <li class="treeview @(ViewContext.RouteData.Values["controller"]?.ToString() == "Transactions" && (ViewContext.RouteData.Values["action"]?.ToString() == "Index" || ViewContext.RouteData.Values["action"]?.ToString() == "ProfitAndLoss" || ViewContext.RouteData.Values["action"]?.ToString() == "Details") ? "active" : "")">
                         <a href="#">
                             <i class="fa fa-receipt"></i> <span>Transactions</span>
                             <span class="pull-right-container">
@@ -531,8 +546,8 @@
                             </span>
                         </a>
                         <ul class="treeview-menu">
-                            <li><a href="@Url.Content("~/adminpanel/transactions")"><i class="fa fa-circle" style="font-size:0.5rem;"></i> Transactions</a></li>
-                            <li><a href="@Url.Content("~/adminpanel/transactions/ClientUnits")"><i class="fa fa-circle" style="font-size:0.5rem;"></i> Client Units</a></li>
+                            <li><a href="@Url.Content("~/adminpanel/transactions")"><i class="fa fa-circle" style="font-size:0.5rem;"></i> Transactions Ledger</a></li>
+                            <li><a href="@Url.Content("~/adminpanel/transactions/profitandloss")"><i class="fa fa-chart-line" style="font-size:0.75rem; color:#10B981;"></i> Profit &amp; Loss Studio</a></li>
                         </ul>
                     </li>
                     <li>
@@ -673,6 +688,44 @@
                             document.exitFullscreen().catch(function(){});
                         }
                         if (fsIcon) fsIcon.className = 'fa fa-expand';
+                    }
+                });
+            }
+
+            // Live Dashboard Presence Heartbeat & Counter
+            var cid = localStorage.getItem('xyz_presence_cid');
+            if (!cid) {
+                cid = 'c_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+                localStorage.setItem('xyz_presence_cid', cid);
+            }
+
+            function sendPresenceHeartbeat() {
+                if (document.visibilityState === 'hidden') return;
+                $.post('/Presence/Heartbeat', { cid: cid }, function (res) {
+                    if (res && res.success) {
+                        var badge = document.getElementById('xyzLiveUsersCount');
+                        if (badge) {
+                            badge.textContent = res.onlineCount + ' Active';
+                        }
+                    }
+                });
+            }
+
+            sendPresenceHeartbeat();
+            setInterval(sendPresenceHeartbeat, 15000);
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') {
+                    sendPresenceHeartbeat();
+                }
+            });
+
+            var logoutForm = document.getElementById('adminLogoutForm');
+            if (logoutForm) {
+                logoutForm.addEventListener('submit', function () {
+                    if (navigator.sendBeacon) {
+                        var fd = new FormData();
+                        fd.append('cid', cid);
+                        navigator.sendBeacon('/Presence/Leave', fd);
                     }
                 });
             }

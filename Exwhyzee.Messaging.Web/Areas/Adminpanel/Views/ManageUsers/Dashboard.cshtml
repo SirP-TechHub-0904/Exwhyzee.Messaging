@@ -1,0 +1,519 @@
+@model Exwhyzee.Messaging.Core.Dtos.UserManagementStatsDto
+@{
+    ViewBag.Title = "User Analytics";
+}
+
+<style>
+    .xyz-um-hero {
+        background: linear-gradient(135deg, #0B0F19 0%, #1E1B4B 55%, #0F172A 100%);
+        border-radius: 16px;
+        padding: 24px 28px;
+        margin-bottom: 28px;
+        color: #FFFFFF;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .xyz-um-hero h2 {
+        margin: 0 0 6px;
+        font-weight: 800;
+        font-size: 1.55rem;
+        color: #FFFFFF;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .xyz-um-hero p {
+        margin: 0;
+        color: #94A3B8;
+        font-size: 0.92rem;
+    }
+
+    .xyz-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 28px 0 14px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #E2E8F0;
+    }
+
+    body.xyz-dark-theme .xyz-section-header {
+        border-bottom-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .xyz-section-header h3 {
+        margin: 0;
+        font-size: 1.12rem;
+        font-weight: 800;
+        color: #0F172A;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    body.xyz-dark-theme .xyz-section-header h3 {
+        color: #F8FAFC;
+    }
+
+    .xyz-cards-grid-5 {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 16px;
+    }
+
+    .xyz-cards-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+
+    .xyz-cards-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    @@media (max-width: 1280px) {
+        .xyz-cards-grid-5 { grid-template-columns: repeat(3, 1fr); }
+        .xyz-cards-grid-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @@media (max-width: 768px) {
+        .xyz-cards-grid-5, .xyz-cards-grid-4, .xyz-cards-grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .xyz-stat-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 20px 22px;
+        text-decoration: none !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: all 0.22s ease;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+        position: relative;
+        overflow: hidden;
+    }
+
+    body.xyz-dark-theme .xyz-stat-card {
+        background: #131B2E;
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .xyz-stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(79, 70, 229, 0.14);
+        border-color: #6366F1;
+    }
+
+    .xyz-stat-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+
+    .xyz-stat-label {
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #64748B;
+    }
+
+    body.xyz-dark-theme .xyz-stat-label { color: #94A3B8; }
+
+    .xyz-stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+
+    .xyz-stat-val {
+        font-size: 1.75rem;
+        font-weight: 900;
+        color: #0F172A;
+        font-family: 'JetBrains Mono', monospace;
+        line-height: 1.15;
+        margin-bottom: 6px;
+    }
+
+    body.xyz-dark-theme .xyz-stat-val { color: #FFFFFF; }
+
+    .xyz-stat-foot {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #6366F1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 10px;
+        border-top: 1px solid #F1F5F9;
+        margin-top: 6px;
+    }
+
+    body.xyz-dark-theme .xyz-stat-foot {
+        border-top-color: rgba(255, 255, 255, 0.06);
+        color: #818CF8;
+    }
+</style>
+
+<div class="container-fluid" style="padding-top: 8px;">
+    @Html.Partial("_ResponseMessagePartial")
+
+    <!-- HERO HEADER -->
+    <div class="xyz-um-hero">
+        <div>
+            <h2>
+                <i class="fa fa-chart-pie" style="color: #818CF8;"></i> User Management &amp; Units Analytics Hub
+            </h2>
+            <p>Click any metric card below to drill down, sort, and filter directly in Manage Users or Manage Units.</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-primary" style="font-weight: 800; border-radius: 10px; padding: 10px 18px; background: #4F46E5; border: none;">
+                <i class="fa fa-users"></i> Open Manage Users
+            </a>
+            <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-info" style="font-weight: 800; border-radius: 10px; padding: 10px 18px; background: #0284C7; border: none;">
+                <i class="fa fa-wallet"></i> Open Manage Units
+            </a>
+            <a href="@Url.Action("KycSettings", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-warning" style="font-weight: 800; border-radius: 10px; padding: 10px 18px; background: #059669; color: #FFF; border: none;">
+                <i class="fa fa-id-card-clip"></i> KYC &amp; Triggers
+            </a>
+            <a href="@Url.Action("Register", "Account", new { area = "" })" class="btn btn-default" style="font-weight: 800; border-radius: 10px; padding: 10px 18px; background: rgba(255,255,255,0.12); color: #FFF; border: 1px solid rgba(255,255,255,0.2);">
+                <i class="fa fa-user-plus"></i> Add New User
+            </a>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SECTION 1: USERS OVERVIEW (Total, Active < 1M, Active > 1M, Male, Female) -->
+    <!-- ========================================================================= -->
+    <div class="xyz-section-header">
+        <h3>
+            <i class="fa fa-users" style="color: #4F46E5;"></i> 1. Users Overview &amp; Activity Demographics
+        </h3>
+        <span style="font-size: 0.82rem; color: #64748B; font-weight: 700;">Click any card to open filtered Manage Users list &rarr;</span>
+    </div>
+
+    <div class="xyz-cards-grid-5">
+        <!-- Total Users -->
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "all" })" class="xyz-stat-card" style="border-top: 4px solid #4F46E5;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">Total Registered Users</span>
+                    <div class="xyz-stat-icon" style="background: #EEF2FF; color: #4F46E5;">
+                        <i class="fa fa-users"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val">@Model.TotalUsers.ToString("N0")</div>
+                <small style="color: #64748B; font-weight: 600;">Active platform accounts</small>
+            </div>
+            <div class="xyz-stat-foot">
+                <span>View All Users</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+
+        <!-- Active < 1 Month -->
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "active_under_1m" })" class="xyz-stat-card" style="border-top: 4px solid #10B981;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">Active (&lt; 1 Month)</span>
+                    <div class="xyz-stat-icon" style="background: #ECFDF5; color: #10B981;">
+                        <i class="fa fa-bolt"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val" style="color: #059669;">@Model.ActiveUnderOneMonth.ToString("N0")</div>
+                <small style="color: #64748B; font-weight: 600;">Active within last 30 days</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #059669;">
+                <span>Filter Active (&lt; 1M)</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+
+        <!-- Active > 1 Month -->
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "active_over_1m" })" class="xyz-stat-card" style="border-top: 4px solid #F59E0B;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">Active (&gt; 1 Month)</span>
+                    <div class="xyz-stat-icon" style="background: #FEF3C7; color: #D97706;">
+                        <i class="fa fa-clock-rotate-left"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val" style="color: #D97706;">@Model.ActiveOverOneMonth.ToString("N0")</div>
+                <small style="color: #64748B; font-weight: 600;">Last activity over 30 days ago</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #D97706;">
+                <span>Filter Over 1 Month</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+
+        <!-- Male Users -->
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "male" })" class="xyz-stat-card" style="border-top: 4px solid #0284C7;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">Male Users</span>
+                    <div class="xyz-stat-icon" style="background: #E0F2FE; color: #0284C7;">
+                        <i class="fa fa-mars"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val" style="color: #0284C7;">@Model.MaleUsers.ToString("N0")</div>
+                <small style="color: #64748B; font-weight: 600;">Gender: Male</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #0284C7;">
+                <span>Filter Male Users</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+
+        <!-- Female Users -->
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "female" })" class="xyz-stat-card" style="border-top: 4px solid #EC4899;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">Female Users</span>
+                    <div class="xyz-stat-icon" style="background: #FCE7F3; color: #DB2777;">
+                        <i class="fa fa-venus"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val" style="color: #DB2777;">@Model.FemaleUsers.ToString("N0")</div>
+                <small style="color: #64748B; font-weight: 600;">Gender: Female</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #DB2777;">
+                <span>Filter Female Users</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SECTION 2: UNITS & WALLET BALANCES (Total, < 1k, 1k-5k, > 5k)             -->
+    <!-- ========================================================================= -->
+    <div class="xyz-section-header">
+        <h3>
+            <i class="fa fa-wallet" style="color: #0284C7;"></i> 2. Units &amp; Wallet Balance Distribution
+        </h3>
+        <span style="font-size: 0.82rem; color: #64748B; font-weight: 700;">Click any card to open filtered Manage Units list &rarr;</span>
+    </div>
+
+    <div class="xyz-cards-grid-4">
+        <!-- Total Unit Balance -->
+        <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", sortBy = "balance_desc" })" class="xyz-stat-card" style="border-top: 4px solid #2563EB;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">Total User Unit Balance</span>
+                    <div class="xyz-stat-icon" style="background: #EFF6FF; color: #2563EB;">
+                        <i class="fa fa-coins"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val" style="color: #1D4ED8; font-size: 1.5rem;">@Model.TotalUnitsBalance.ToString("N2") <small style="font-size:0.8rem;">Units</small></div>
+                <small style="color: #64748B; font-weight: 600;">Across all @Model.TotalUsers.ToString("N0") active accounts</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #2563EB;">
+                <span>Sort by Highest Balance</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+
+        <!-- Users < 1,000 Units -->
+        <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", cardFilter = "bal_under_1k" })" class="xyz-stat-card" style="border-top: 4px solid #64748B;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">Users &lt; 1,000 Units</span>
+                    <div class="xyz-stat-icon" style="background: #F1F5F9; color: #475569;">
+                        <i class="fa fa-battery-quarter"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val">@Model.UsersUnder1kUnits.ToString("N0") <small style="font-size:0.85rem; color:#64748B;">Users</small></div>
+                <small style="color: #64748B; font-weight: 600;">Sum: @Model.UnitsSumUnder1k.ToString("N2") Units</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #475569;">
+                <span>View Users &lt; 1k Units</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+
+        <!-- Users 1,000 - 5,000 Units -->
+        <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", cardFilter = "bal_1k_5k" })" class="xyz-stat-card" style="border-top: 4px solid #8B5CF6;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">Users 1,000 – 5,000 Units</span>
+                    <div class="xyz-stat-icon" style="background: #F5F3FF; color: #7C3AED;">
+                        <i class="fa fa-battery-half"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val" style="color: #7C3AED;">@Model.Users1kTo5kUnits.ToString("N0") <small style="font-size:0.85rem;">Users</small></div>
+                <small style="color: #64748B; font-weight: 600;">Sum: @Model.UnitsSum1kTo5k.ToString("N2") Units</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #7C3AED;">
+                <span>View Users 1k – 5k Units</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+
+        <!-- Users > 5,000 Units -->
+        <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel", cardFilter = "bal_over_5k" })" class="xyz-stat-card" style="border-top: 4px solid #10B981;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">Users &gt; 5,000 Units</span>
+                    <div class="xyz-stat-icon" style="background: #ECFDF5; color: #059669;">
+                        <i class="fa fa-battery-full"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val" style="color: #059669;">@Model.UsersOver5kUnits.ToString("N0") <small style="font-size:0.85rem;">Users</small></div>
+                <small style="color: #64748B; font-weight: 600;">Sum: @Model.UnitsSumOver5k.ToString("N2") Units</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #059669;">
+                <span>View Users &gt; 5k Units</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SECTION 3: ROLES & ACCESS (Clients Only vs Administrative Users)          -->
+    <!-- ========================================================================= -->
+    <div class="xyz-section-header">
+        <h3>
+            <i class="fa fa-user-shield" style="color: #DC2626;"></i> 3. Roles &amp; Access Classification
+        </h3>
+        <span style="font-size: 0.82rem; color: #64748B; font-weight: 700;">Click any card to filter by role assignment &rarr;</span>
+    </div>
+
+    <div class="xyz-cards-grid-2" style="margin-bottom: 36px;">
+        <!-- Clients Only -->
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "client_only" })" class="xyz-stat-card" style="border-top: 4px solid #3B82F6;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">Clients Only (Standard Accounts)</span>
+                    <div class="xyz-stat-icon" style="background: #DBEAFE; color: #2563EB;">
+                        <i class="fa fa-user-check"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val" style="color: #1D4ED8;">@Model.ClientsOnlyCount.ToString("N0")</div>
+                <small style="color: #64748B; font-weight: 600;">Standard SMS portal customers without administrative privileges</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #2563EB;">
+                <span>Open Clients Directory</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+
+        <!-- Administrative Users -->
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "admins" })" class="xyz-stat-card" style="border-top: 4px solid #DC2626;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">Administrative Users (SuperAdmin &amp; Admin)</span>
+                    <div class="xyz-stat-icon" style="background: #FEE2E2; color: #DC2626;">
+                        <i class="fa fa-user-shield"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val" style="color: #DC2626;">@Model.AdminUsersCount.ToString("N0")</div>
+                <small style="color: #64748B; font-weight: 600;">Accounts with elevated SuperAdmin or Admin access roles</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #DC2626;">
+                <span>Open Administrative Users</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SECTION 4: KYC & IDENTITY VERIFICATION OVERVIEW                           -->
+    <!-- ========================================================================= -->
+    <div class="xyz-section-header">
+        <h3>
+            <i class="fa fa-id-card-clip" style="color: #059669;"></i> 4. KYC Verification &amp; Phone Confirmation Status
+        </h3>
+        <a href="@Url.Action("KycSettings", "ManageUsers", new { area = "Adminpanel" })" style="font-size: 0.85rem; color: #059669; font-weight: 800; text-decoration: none;">
+            <i class="fa fa-gears"></i> Configure KYC Trigger Rules &rarr;
+        </a>
+    </div>
+
+    <div class="xyz-cards-grid-4" style="margin-bottom: 36px;">
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "kyc_approved" })" class="xyz-stat-card" style="border-top: 4px solid #16A34A;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">KYC Verified / Approved</span>
+                    <div class="xyz-stat-icon" style="background: #DCFCE7; color: #16A34A;">
+                        <i class="fa fa-id-card"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val" style="color: #16A34A;">@Model.KycApprovedUsers.ToString("N0")</div>
+                <small style="color: #64748B; font-weight: 600;">Approved identity &amp; address</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #16A34A;">
+                <span>View KYC Verified Users</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "kyc_pending" })" class="xyz-stat-card" style="border-top: 4px solid #2563EB;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">Pending KYC Review</span>
+                    <div class="xyz-stat-icon" style="background: #DBEAFE; color: #2563EB;">
+                        <i class="fa fa-hourglass-half"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val" style="color: #2563EB;">@Model.KycPendingReviewUsers.ToString("N0")</div>
+                <small style="color: #64748B; font-weight: 600;">Submitted documents awaiting review</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #2563EB;">
+                <span>Review Pending KYC</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "kyc_triggered" })" class="xyz-stat-card" style="border-top: 4px solid #D97706;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">KYC Triggered / Action Needed</span>
+                    <div class="xyz-stat-icon" style="background: #FEF3C7; color: #D97706;">
+                        <i class="fa fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val" style="color: #D97706;">@Model.KycTriggeredUsers.ToString("N0")</div>
+                <small style="color: #64748B; font-weight: 600;">Reached SMS or funding threshold</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #D97706;">
+                <span>View Triggered Users</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "phone_verified" })" class="xyz-stat-card" style="border-top: 4px solid #0284C7;">
+            <div>
+                <div class="xyz-stat-top">
+                    <span class="xyz-stat-label">Phone Verified Users</span>
+                    <div class="xyz-stat-icon" style="background: #E0F2FE; color: #0284C7;">
+                        <i class="fa fa-phone-volume"></i>
+                    </div>
+                </div>
+                <div class="xyz-stat-val" style="color: #0284C7;">@Model.PhoneVerifiedUsers.ToString("N0")</div>
+                <small style="color: #64748B; font-weight: 600;">Confirmed phone numbers</small>
+            </div>
+            <div class="xyz-stat-foot" style="color: #0284C7;">
+                <span>Filter Phone Verified</span>
+                <i class="fa fa-arrow-right"></i>
+            </div>
+        </a>
+    </div>
+</div>
+

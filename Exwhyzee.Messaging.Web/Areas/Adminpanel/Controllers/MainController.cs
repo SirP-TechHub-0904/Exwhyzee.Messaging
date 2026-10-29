@@ -44,9 +44,18 @@ namespace Exwhyzee.Messaging.Web.Areas.Adminpanel.Controllers
             // Platform aggregate KPIs
             try
             {
-                ViewBag.TotalClientsCount = await db.Clients.CountAsync();
-                ViewBag.TotalClientUnitsLiability = await db.Clients.SumAsync(c => (decimal?)c.Units) ?? 0;
-                ViewBag.PendingSenderIdsCount = await db.XyzSenderIDs.CountAsync(x => x.XYZ_status == "Pending" || string.IsNullOrEmpty(x.XYZ_status));
+                var activeUserIds = (await db.Users.AsNoTracking()
+                    .Where(u => !u.Email.EndsWith("@anonymized.local") && !u.UserName.StartsWith("deleted_user_"))
+                    .Select(u => u.Id)
+                    .ToListAsync()).ToHashSet();
+
+                var allClients = await db.Clients.AsNoTracking().ToListAsync();
+
+                ViewBag.TotalClientsCount = activeUserIds.Count;
+                ViewBag.TotalClientUnitsLiability = allClients.Where(c => activeUserIds.Contains(c.UserId)).Sum(c => c.Units);
+                ViewBag.PendingSenderIdsCount = await db.XyzSenderIDs.AsNoTracking().CountAsync(x =>
+                    (x.XYZ_status == null || x.XYZ_status.ToLower().Contains("pending"))
+                    && (x.XYZ_msg == null || x.XYZ_msg.ToLower().Contains("pending") || x.XYZ_msg.ToLower().Contains("promotional") || x.XYZ_msg.ToLower().Contains("review")));
             }
             catch
             {

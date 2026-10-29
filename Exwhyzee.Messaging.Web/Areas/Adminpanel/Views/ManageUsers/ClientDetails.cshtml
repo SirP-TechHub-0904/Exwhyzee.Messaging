@@ -1,10 +1,31 @@
 @model Exwhyzee.Messaging.Core.Models.Client
 @{
-    ViewBag.Title = "Client Details Studio";
+    ViewBag.Title = "Full User Details Studio";
     var userDetails = ViewBag.Details as Exwhyzee.Messaging.Core.Models.ApplicationUser;
+    var userRoles = ViewBag.UserRoles as IList<string> ?? new List<string> { "Client" };
+    var senderIds = ViewBag.SenderIds as IList<Exwhyzee.Messaging.Core.Models.XyzSenderID> ?? new List<Exwhyzee.Messaging.Core.Models.XyzSenderID>();
+    var recentTxns = ViewBag.RecentTransactions as IList<Exwhyzee.Messaging.Core.Models.Transaction> ?? new List<Exwhyzee.Messaging.Core.Models.Transaction>();
+    var recentMsgs = ViewBag.RecentMessages as IList<Exwhyzee.Messaging.Core.Models.Message> ?? new List<Exwhyzee.Messaging.Core.Models.Message>();
+
+    int totalTxnsCount = ViewBag.TotalTransactionsCount ?? 0;
+    decimal totalFundedAmount = ViewBag.TotalFundedAmount ?? 0m;
+    decimal totalUnitsPurchased = ViewBag.TotalUnitsPurchased ?? 0m;
+    int totalBroadcastsCount = ViewBag.TotalBroadcastsCount ?? 0;
+    decimal totalUnitsBurned = ViewBag.TotalUnitsBurned ?? 0m;
+    DateTime? lastTimeSent = ViewBag.LastTimeSent as DateTime?;
+    int contactsCount = ViewBag.ContactsCount ?? 0;
+    int groupsCount = ViewBag.GroupsCount ?? 0;
+    string paystackPublicKey = ViewBag.PaystackPublicKey as string ?? "";
+
     string displayName = $"{Model.FirstName} {Model.Surname}".Trim();
     if (string.IsNullOrWhiteSpace(displayName)) { displayName = userDetails?.UserName ?? "Client Profile"; }
     string initials = !string.IsNullOrEmpty(displayName) && displayName.Length >= 2 ? displayName.Substring(0, 2).ToUpper() : "US";
+    string currentGender = userDetails?.Gender ?? "";
+
+    var kycProfile = ViewBag.KycProfile as Exwhyzee.Messaging.Core.Models.UserKycProfile ?? new Exwhyzee.Messaging.Core.Models.UserKycProfile();
+    var kycSetting = ViewBag.KycSetting as Exwhyzee.Messaging.Core.Models.KycSetting ?? new Exwhyzee.Messaging.Core.Models.KycSetting();
+    int totalSmsRecipientsSent = ViewBag.TotalSmsRecipientsSent != null ? (int)ViewBag.TotalSmsRecipientsSent : 0;
+    bool isPhoneVerified = (userDetails?.PhoneNumberConfirmed == true) || kycProfile.IsPhoneVerified;
 }
 
 <style>
@@ -12,9 +33,14 @@
         background: #FFFFFF;
         border: 1px solid #E2E8F0;
         border-radius: 14px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-        padding: 24px;
-        margin-bottom: 24px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+        padding: 22px 24px;
+        margin-bottom: 22px;
+    }
+
+    body.xyz-dark-theme .xyz-details-card {
+        background: #131B2E;
+        border-color: rgba(255, 255, 255, 0.08);
     }
 
     .xyz-profile-header {
@@ -23,261 +49,786 @@
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 20px;
-        background: linear-gradient(135deg, #0B0F19 0%, #1E293B 100%);
+        background: linear-gradient(135deg, #0B0F19 0%, #1E1B4B 55%, #0F172A 100%);
         color: #FFFFFF;
-        border-radius: 14px;
-        padding: 24px;
-        margin-bottom: 24px;
-        box-shadow: 0 4px 16px rgba(11, 15, 25, 0.15);
+        border-radius: 16px;
+        padding: 24px 28px;
+        margin-bottom: 22px;
+        box-shadow: 0 10px 28px rgba(11, 15, 25, 0.18);
     }
 
     .xyz-avatar-circle {
-        width: 64px;
-        height: 64px;
+        width: 68px;
+        height: 68px;
         background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
         color: #FFFFFF;
         font-weight: 800;
-        font-size: 1.5rem;
+        font-size: 1.55rem;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+        flex-shrink: 0;
     }
 
-    .xyz-balance-chip {
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 10px;
-        padding: 8px 16px;
-        font-family: 'JetBrains Mono', monospace;
-        color: #38BDF8;
-        font-weight: 800;
-        font-size: 1.1rem;
+    .xyz-user-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 14px;
+        margin-bottom: 22px;
     }
+
+    @@media (max-width: 1280px) {
+        .xyz-user-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @@media (max-width: 768px) {
+        .xyz-user-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .xyz-user-kpi {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 16px 18px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+
+    body.xyz-dark-theme .xyz-user-kpi {
+        background: #131B2E;
+        border-color: rgba(255,255,255,0.08);
+    }
+
+    .xyz-user-kpi small {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748B;
+        margin-bottom: 6px;
+    }
+
+    .xyz-user-kpi strong {
+        font-size: 1.25rem;
+        font-weight: 900;
+        font-family: 'JetBrains Mono', monospace;
+        color: #0F172A;
+        display: block;
+    }
+
+    body.xyz-dark-theme .xyz-user-kpi strong { color: #FFFFFF; }
 
     .xyz-form-label {
         font-weight: 700;
         color: #334155;
-        font-size: 0.85rem;
-        margin-bottom: 6px;
+        font-size: 0.82rem;
+        margin-bottom: 5px;
         display: block;
+        text-transform: uppercase;
     }
 
+    body.xyz-dark-theme .xyz-form-label { color: #94A3B8; }
+
     .xyz-form-control {
-        height: 42px;
+        height: 40px;
         border-radius: 8px;
         border: 1px solid #CBD5E1;
         font-size: 0.9rem;
-        padding: 8px 14px;
-        transition: all 0.2s ease;
-    }
-
-    .xyz-form-control:focus {
-        border-color: #4F46E5;
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        padding: 6px 12px;
     }
 </style>
 
-<div class="container-fluid" style="padding-top: 10px;">
+<div class="container-fluid" style="padding-top: 8px;">
     @Html.Partial("_ResponseMessagePartial")
 
-    <!-- EXECUTIVE PROFILE HEADER BANNER -->
+    <!-- 360° EXECUTIVE PROFILE HEADER -->
     <div class="xyz-profile-header">
-        <div style="display: flex; align-items: center; gap: 18px;">
+        <div style="display: flex; align-items: center; gap: 18px; flex-wrap: wrap;">
             <div class="xyz-avatar-circle">
                 @initials
             </div>
             <div>
-                <h3 style="font-weight: 800; margin: 0 0 4px 0; font-size: 1.4rem;">@displayName</h3>
-                <div style="color: #94A3B8; font-size: 0.9rem;">
-                    @@@(userDetails?.UserName ?? "user") &bull; <i class="fa fa-envelope" style="font-size:0.8rem;"></i> @(userDetails?.Email ?? "N/A")
-                    &bull; <i class="fa fa-phone" style="font-size:0.8rem;"></i> @(userDetails?.PhoneNumber ?? "N/A")
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                    <h3 style="font-weight: 800; margin: 0; font-size: 1.45rem; color: #FFFFFF;">@displayName</h3>
+                    @foreach (var r in userRoles)
+                    {
+                        <span style="background: rgba(99,102,241,0.25); border: 1px solid rgba(129,140,248,0.5); color: #C7D2FE; padding: 2px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">@r</span>
+                    }
+                    @if (!string.IsNullOrEmpty(currentGender))
+                    {
+                        <span style="background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.4); color: #A7F3D0; padding: 2px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 800;">@currentGender</span>
+                    }
+                </div>
+                <div style="color: #94A3B8; font-size: 0.88rem;">
+                    <strong style="color: #38BDF8;">@@@(userDetails?.UserName ?? "user")</strong>
+                    &bull; <i class="fa fa-envelope"></i> @(userDetails?.Email ?? "N/A")
+                    &bull; <i class="fa fa-phone"></i> @(userDetails?.PhoneNumber ?? "N/A")
+                    &bull; Client ID: <strong>#@Model.ClientId</strong>
                 </div>
             </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <div class="xyz-balance-chip">
-                <small style="display:block; color:#94A3B8; font-size:0.7rem; text-transform:uppercase; font-weight:700;">Wallet Balance</small>
-                @Model.Units.ToString("N2") Units
-            </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-info" style="font-weight: 800; border-radius: 8px; padding: 9px 14px; background: #09A5DB; border: none;" onclick="openAdminPaystackModal('@Model.UserId', '@(userDetails?.UserName)', '@Model.Units')">
+                <i class="fa fa-credit-card"></i> Paystack Top Up
+            </button>
 
-            <a href="@Url.Action("ManageRoles", "ManageUsers", new { area = "Adminpanel", id = Model.UserId })" class="btn btn-primary" style="font-weight: 800; border-radius: 8px; padding: 10px 16px; background: #7C3AED; border: none;">
-                <i class="fa fa-user-shield"></i> Manage Roles
+            <a href="@Url.Action("ManageRoles", "ManageUsers", new { area = "Adminpanel", id = Model.UserId })" class="btn btn-primary" style="font-weight: 800; border-radius: 8px; padding: 9px 14px; background: #7C3AED; border: none;">
+                <i class="fa fa-user-shield"></i> Roles
             </a>
 
-            <a href="@Url.Action("UserTransactions", "ManageUsers", new { area = "Adminpanel", id = Model.ClientId })" class="btn btn-info" style="font-weight: 800; border-radius: 8px; padding: 10px 16px;">
-                <i class="fa fa-list-alt"></i> Transactions
-            </a>
-
-            <a href="@Url.Action("AdminResetPassword", "ManageUsers", new { area = "Adminpanel", id = Model.UserId })" class="btn btn-warning" style="font-weight: 800; border-radius: 8px; padding: 10px 16px; color:#1E293B; background: #F59E0B; border: none;">
+            <a href="@Url.Action("AdminResetPassword", "ManageUsers", new { area = "Adminpanel", id = Model.UserId })" class="btn btn-warning" style="font-weight: 800; border-radius: 8px; padding: 9px 14px; color: #1E293B; background: #F59E0B; border: none;">
                 <i class="fa fa-key"></i> Reset Password
             </a>
 
-            <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-default" style="font-weight: 800; border-radius: 8px; padding: 10px 16px; background:#FFFFFF; color:#1E293B; border-color:#CBD5E1;">
-                <i class="fa fa-arrow-left"></i> Back to Users
+            <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-default" style="font-weight: 800; border-radius: 8px; padding: 9px 12px;">
+                <i class="fa fa-users"></i> Users
+            </a>
+
+            <a href="@Url.Action("ManageUnits", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-default" style="font-weight: 800; border-radius: 8px; padding: 9px 12px;">
+                <i class="fa fa-wallet"></i> Units
             </a>
         </div>
     </div>
 
-    <!-- MAIN FORM & DETAILS CARD -->
+    <!-- 6 USER TELEMETRY KPI CARDS -->
+    <div class="xyz-user-kpi-grid">
+        <div class="xyz-user-kpi" style="border-top: 3px solid #0284C7;">
+            <small>Wallet Unit Balance</small>
+            <strong style="color: #0284C7;" id="unit-balance-@Model.UserId">@Model.Units.ToString("N2") Units</strong>
+            <span style="font-size: 0.75rem; color: #64748B;">Threshold: @Model.LowUnitReminderThreshold.ToString("N0") Units</span>
+        </div>
+
+        <div class="xyz-user-kpi" style="border-top: 3px solid #10B981;">
+            <small>Total Wallet Funded</small>
+            <strong style="color: #059669;">&#8358;@totalFundedAmount.ToString("N2")</strong>
+            <span style="font-size: 0.75rem; color: #64748B;">+@totalUnitsPurchased.ToString("N0") Units (@totalTxnsCount Txns)</span>
+        </div>
+
+        <div class="xyz-user-kpi" style="border-top: 3px solid #E50914;">
+            <small>Total SMS &amp; Units Burned</small>
+            <strong style="color: #DC2626;">@totalUnitsBurned.ToString("N2") Units</strong>
+            <span style="font-size: 0.75rem; color: #64748B;">@totalBroadcastsCount.ToString("N0") Broadcasts Sent</span>
+        </div>
+
+        <div class="xyz-user-kpi" style="border-top: 3px solid #8B5CF6;">
+            <small>Last Time Sent (SMS)</small>
+            <strong style="font-size: 0.98rem; color: #7C3AED;">@(lastTimeSent.HasValue ? lastTimeSent.Value.ToString("dd MMM yyyy") : "Never Sent")</strong>
+            <span style="font-size: 0.75rem; color: #64748B;">@(lastTimeSent.HasValue ? lastTimeSent.Value.ToString("hh:mm tt") : "No dispatches yet")</span>
+        </div>
+
+        <div class="xyz-user-kpi" style="border-top: 3px solid #F59E0B;">
+            <small>Sender IDs &amp; Contacts</small>
+            <strong style="color: #D97706;">@senderIds.Count Sender IDs</strong>
+            <span style="font-size: 0.75rem; color: #64748B;">@groupsCount Groups &bull; @contactsCount Contacts</span>
+        </div>
+
+        <div class="xyz-user-kpi" style="border-top: 3px solid #4F46E5;">
+            <small>Date Registered</small>
+            <strong style="font-size: 0.98rem; color: #4F46E5;">@(userDetails != null && userDetails.DateRegitered > new DateTime(1990, 1, 1) ? userDetails.DateRegitered.ToString("dd MMM yyyy") : "Legacy Account")</strong>
+            <span style="font-size: 0.75rem; color: #64748B;">@(userDetails?.EmailConfirmed == true ? "Email Verified" : "Email Unverified")</span>
+        </div>
+    </div>
+
     <div class="row">
+        <!-- LEFT COLUMN: FULL PROFILE & IDENTITY FORM -->
         <div class="col-md-8">
             <div class="xyz-details-card">
-                <div style="border-bottom: 1px solid #E2E8F0; padding-bottom: 14px; margin-bottom: 20px;">
-                    <h4 style="font-weight: 800; color: #0F172A; margin: 0;">
-                        <i class="fa fa-user-gear" style="color: #4F46E5; margin-right: 6px;"></i> Edit Client Profile Information
+                <div style="border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center;">
+                    <h4 style="font-weight: 800; color: #0F172A; margin: 0; font-size: 1.05rem;">
+                        <i class="fa fa-id-card" style="color: #4F46E5; margin-right: 6px;"></i> Complete User Profile &amp; Identity Settings
                     </h4>
+                    <span style="font-size: 0.78rem; color: #64748B;">User ID: <code>@Model.UserId</code></span>
                 </div>
 
-                @using (Html.BeginForm())
+                @using (Html.BeginForm("ClientDetails", "ManageUsers", new { area = "Adminpanel" }, FormMethod.Post))
                 {
                     @Html.AntiForgeryToken()
-                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-
                     @Html.HiddenFor(model => model.ClientId)
                     @Html.HiddenFor(model => model.UserId)
                     @Html.HiddenFor(model => model.Units)
                     @Html.HiddenFor(model => model.Discount)
+                    @Html.HiddenFor(model => model.ApiKey)
+                    @Html.HiddenFor(model => model.GeminiApiKey)
 
                     <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="xyz-form-label">Surname</label>
-                            @Html.EditorFor(model => model.Surname, new { htmlAttributes = new { @class = "form-control xyz-form-control", placeholder = "Enter surname" } })
-                            @Html.ValidationMessageFor(model => model.Surname, "", new { @class = "text-danger" })
-                        </div>
-
-                        <div class="col-md-6 form-group">
+                        <div class="col-md-4 form-group">
                             <label class="xyz-form-label">First Name</label>
-                            @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control xyz-form-control", placeholder = "Enter first name" } })
-                            @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
+                            @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control xyz-form-control", placeholder = "First name" } })
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="xyz-form-label">Surname / Last Name</label>
+                            @Html.EditorFor(model => model.Surname, new { htmlAttributes = new { @class = "form-control xyz-form-control", placeholder = "Surname" } })
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="xyz-form-label">Other Names</label>
+                            @Html.EditorFor(model => model.OtherNames, new { htmlAttributes = new { @class = "form-control xyz-form-control", placeholder = "Middle/Other names" } })
                         </div>
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="xyz-form-label">Allow System Notifications</label>
+                        <div class="col-md-4 form-group">
+                            <label class="xyz-form-label">Email Address</label>
+                            <input type="email" name="Email" value="@(userDetails?.Email)" class="form-control xyz-form-control" required />
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="xyz-form-label">Phone Number</label>
+                            <input type="text" name="PhoneNumber" value="@(userDetails?.PhoneNumber)" class="form-control xyz-form-control" />
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="xyz-form-label">Gender</label>
+                            <select name="Gender" class="form-control xyz-form-control" style="font-weight: 700;">
+                                <option value="">-- Select Gender --</option>
+                                <option value="Male" selected="@(string.Equals(currentGender, "Male", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">Male</option>
+                                <option value="Female" selected="@(string.Equals(currentGender, "Female", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">Female</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 form-group">
+                            <label class="xyz-form-label">Date of Birth</label>
+                            <input type="date" name="DateOfBirth" value="@(userDetails != null && userDetails.DateOfBirth > new DateTime(1900, 1, 1) ? userDetails.DateOfBirth.ToString("yyyy-MM-dd") : "")" class="form-control xyz-form-control" />
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="xyz-form-label">System Notifications</label>
                             @Html.EnumDropDownListFor(model => model.AllowNotifications, htmlAttributes: new { @class = "form-control xyz-form-control" })
-                            @Html.ValidationMessageFor(model => model.AllowNotifications, "", new { @class = "text-danger" })
                         </div>
-
-                        <div class="col-md-6 form-group">
-                            <label class="xyz-form-label">Low Unit Reminder Limit (Units)</label>
-                            @Html.EditorFor(model => model.LowUnitReminderThreshold, new { htmlAttributes = new { @class = "form-control xyz-form-control", placeholder = "50.00" } })
-                            @Html.ValidationMessageFor(model => model.LowUnitReminderThreshold, "", new { @class = "text-danger" })
+                        <div class="col-md-4 form-group">
+                            <label class="xyz-form-label">Low Unit Reminder Limit</label>
+                            @Html.EditorFor(model => model.LowUnitReminderThreshold, new { htmlAttributes = new { @class = "form-control xyz-form-control" } })
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 form-group">
-                            <label class="xyz-form-label">Current Unit Balance (Locked)</label>
-                            <input type="text" class="form-control xyz-form-control" value="@Model.Units.ToString("N2") Units" disabled="disabled" style="background:#F8FAFC; font-weight:800; font-family:'JetBrains Mono', monospace;" />
+                    <div class="row" style="margin-top: 6px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 8px; margin-left: 0; margin-right: 0;">
+                        <div class="col-md-4">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; font-weight: 700; font-size: 0.85rem;">
+                                <input type="checkbox" name="EmailConfirmed" value="true" checked="@(userDetails?.EmailConfirmed == true ? "checked" : null)" style="width: 16px; height: 16px;" />
+                                <input type="hidden" name="EmailConfirmed" value="false" />
+                                Email Verified
+                            </label>
                         </div>
-
-                        <div class="col-md-6 form-group">
-                            <label class="xyz-form-label">Discount Rate (%) (Locked)</label>
-                            <input type="text" class="form-control xyz-form-control" value="@Model.Discount.ToString("N2")%" disabled="disabled" style="background:#F8FAFC; font-weight:700;" />
+                        <div class="col-md-4">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; font-weight: 700; font-size: 0.85rem;">
+                                <input type="checkbox" name="PhoneNumberConfirmed" value="true" checked="@(userDetails?.PhoneNumberConfirmed == true ? "checked" : null)" style="width: 16px; height: 16px;" />
+                                <input type="hidden" name="PhoneNumberConfirmed" value="false" />
+                                Phone Verified
+                            </label>
+                        </div>
+                        <div class="col-md-4">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; font-weight: 700; font-size: 0.85rem; color: #DC2626;">
+                                <input type="checkbox" name="LockoutEnabled" value="true" checked="@(userDetails?.LockoutEnd != null && userDetails.LockoutEnd > DateTimeOffset.UtcNow ? "checked" : null)" style="width: 16px; height: 16px;" />
+                                <input type="hidden" name="LockoutEnabled" value="false" />
+                                Lock User Account
+                            </label>
                         </div>
                     </div>
 
-                    <div style="margin-top: 24px; text-align: right;">
-                        <button type="submit" class="btn btn-primary" style="font-weight: 800; border-radius: 8px; padding: 10px 24px;">
-                            <i class="fa fa-save"></i> Save Profile Changes
+                    <div style="margin-top: 18px; text-align: right;">
+                        <button type="submit" class="btn btn-primary" style="font-weight: 800; border-radius: 8px; padding: 10px 24px; background: #4F46E5; border: none;">
+                            <i class="fa fa-save"></i> Save Full User Details
                         </button>
                     </div>
                 }
             </div>
-        </div>
 
-        <!-- SIDE PANEL SUMMARY & DANGER ZONE -->
-        <div class="col-md-4">
-            <div class="xyz-details-card">
-                <h4 style="font-weight: 800; color: #0F172A; margin: 0 0 16px 0; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px;">
-                    <i class="fa fa-shield-halved" style="color: #6366F1;"></i> Identity Overview
-                </h4>
-
-                <div style="font-size: 0.9rem; line-height: 2;">
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding: 6px 0;">
-                        <span style="color: #64748B;">Client ID:</span>
-                        <strong style="color: #0F172A;">#@Model.ClientId</strong>
+            <!-- KYC & IDENTITY VERIFICATION DOSSIER -->
+            <div class="xyz-details-card" style="border-top: 4px solid @(kycProfile.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Approved ? "#16A34A" : kycProfile.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.PendingReview ? "#2563EB" : kycProfile.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Triggered || kycProfile.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Rejected ? "#D97706" : "#64748B");">
+                <div style="border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h4 style="font-weight: 800; color: #0F172A; margin: 0; font-size: 1.05rem;">
+                            <i class="fa fa-id-card-clip" style="color: #059669; margin-right: 6px;"></i> KYC &amp; Identity Verification Dossier
+                        </h4>
+                        <small style="color: #64748B;">Address, Phone Confirmation, Passport Photograph &amp; Government ID (NIN / Voter's Card / Passport / CAC)</small>
                     </div>
-
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding: 6px 0;">
-                        <span style="color: #64748B;">Username:</span>
-                        <strong style="color: #0F172A;">@@@(userDetails?.UserName ?? "N/A")</strong>
-                    </div>
-
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding: 6px 0;">
-                        <span style="color: #64748B;">Email Confirmed:</span>
-                        @if (userDetails != null && userDetails.EmailConfirmed)
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        @if (kycProfile.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Approved)
                         {
-                            <span class="badge" style="background: #10B981;">Yes Verified</span>
+                            <span style="background:#DCFCE7; color:#166534; border:1px solid #BBF7D0; padding:5px 12px; border-radius:999px; font-weight:800; font-size:0.78rem;"><i class="fa fa-circle-check"></i> KYC APPROVED</span>
+                        }
+                        else if (kycProfile.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Exempted)
+                        {
+                            <span style="background:#E0F2FE; color:#0369A1; border:1px solid #BAE6FD; padding:5px 12px; border-radius:999px; font-weight:800; font-size:0.78rem;"><i class="fa fa-shield"></i> KYC EXEMPTED</span>
+                        }
+                        else if (kycProfile.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.PendingReview)
+                        {
+                            <span style="background:#DBEAFE; color:#1E40AF; border:1px solid #93C5FD; padding:5px 12px; border-radius:999px; font-weight:800; font-size:0.78rem;"><i class="fa fa-hourglass-half"></i> PENDING ADMIN REVIEW</span>
+                        }
+                        else if (kycProfile.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Triggered)
+                        {
+                            <span style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A; padding:5px 12px; border-radius:999px; font-weight:800; font-size:0.78rem;"><i class="fa fa-bolt"></i> KYC UPGRADE TRIGGERED</span>
+                        }
+                        else if (kycProfile.KycStatus == Exwhyzee.Messaging.Core.Models.KycVerificationStatus.Rejected)
+                        {
+                            <span style="background:#FEE2E2; color:#991B1B; border:1px solid #FECACA; padding:5px 12px; border-radius:999px; font-weight:800; font-size:0.78rem;"><i class="fa fa-circle-xmark"></i> KYC REJECTED</span>
                         }
                         else
                         {
-                            <span class="badge" style="background: #F59E0B;">Unverified</span>
+                            <span style="background:#F1F5F9; color:#475569; border:1px solid #CBD5E1; padding:5px 12px; border-radius:999px; font-weight:800; font-size:0.78rem;">UNVERIFIED (STARTER)</span>
                         }
+                    </div>
+                </div>
+
+                <!-- Trigger Threshold Progress Strip -->
+                <div class="row" style="margin-bottom: 16px;">
+                    <div class="col-md-4" style="margin-bottom: 8px;">
+                        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:10px 14px;">
+                            <small style="font-size:0.68rem; font-weight:800; color:#64748B; text-transform:uppercase; display:block;">SMS Sent vs KYC Trigger</small>
+                            <strong style="font-family:'JetBrains Mono', monospace; font-size:0.95rem; color:#0F172A;">
+                                @totalSmsRecipientsSent.ToString("N0") / @kycSetting.SmsSentThreshold.ToString("N0") SMS
+                            </strong>
+                        </div>
+                    </div>
+                    <div class="col-md-4" style="margin-bottom: 8px;">
+                        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:10px 14px;">
+                            <small style="font-size:0.68rem; font-weight:800; color:#64748B; text-transform:uppercase; display:block;">Units Funded vs KYC Trigger</small>
+                            <strong style="font-family:'JetBrains Mono', monospace; font-size:0.95rem; color:#0F172A;">
+                                @totalUnitsPurchased.ToString("N0") / @kycSetting.UnitsFundedThreshold.ToString("N0") Units
+                            </strong>
+                        </div>
+                    </div>
+                    <div class="col-md-4" style="margin-bottom: 8px;">
+                        <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between;">
+                            <div>
+                                <small style="font-size:0.68rem; font-weight:800; color:#64748B; text-transform:uppercase; display:block;">Phone Verification</small>
+                                <strong style="color:@(isPhoneVerified ? "#16A34A" : "#D97706"); font-size:0.88rem;">
+                                    @(isPhoneVerified ? "Verified" : "Unverified") (@(userDetails?.PhoneNumber ?? "N/A"))
+                                </strong>
+                            </div>
+                            @using (Html.BeginForm("TogglePhoneVerified", "ManageUsers", new { area = "Adminpanel" }, FormMethod.Post, true, new { style = "margin:0;" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@Model.UserId" />
+                                <input type="hidden" name="isVerified" value="@(isPhoneVerified ? "false" : "true")" />
+                                <button type="submit" class="btn btn-xs @(isPhoneVerified ? "btn-default" : "btn-success")" style="font-weight:800; border-radius:6px;">
+                                    @(isPhoneVerified ? "Unverify" : "Verify Now")
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(kycProfile.TriggerReason))
+                {
+                    <div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:0.84rem; color:#92400E;">
+                        <strong><i class="fa fa-bolt"></i> Trigger Reason:</strong> @kycProfile.TriggerReason
+                    </div>
+                }
+
+                <!-- Admin Upload / Edit KYC Form -->
+                @using (Html.BeginForm("AdminSaveUserKyc", "ManageUsers", new { area = "Adminpanel" }, FormMethod.Post, true, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="userId" value="@Model.UserId" />
+
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="xyz-form-label">Residential / Office Street Address</label>
+                            <input type="text" name="residentialAddress" value="@kycProfile.ResidentialAddress" class="form-control xyz-form-control" placeholder="e.g. 14 Admiralty Way, Lekki Phase 1" />
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label class="xyz-form-label">City / LGA</label>
+                            <input type="text" name="city" value="@kycProfile.City" class="form-control xyz-form-control" placeholder="e.g. Ikeja" />
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label class="xyz-form-label">State</label>
+                            <input type="text" name="state" value="@kycProfile.State" class="form-control xyz-form-control" placeholder="e.g. Lagos" />
+                        </div>
+                        <div class="col-md-2 form-group">
+                            <label class="xyz-form-label">Country</label>
+                            <input type="text" name="country" value="@(string.IsNullOrWhiteSpace(kycProfile.Country) ? "Nigeria" : kycProfile.Country)" class="form-control xyz-form-control" />
+                        </div>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #F1F5F9; padding: 6px 0;">
-                        <span style="color: #64748B;">Phone Confirmed:</span>
-                        @if (userDetails != null && userDetails.PhoneNumberConfirmed)
-                        {
-                            <span class="badge" style="background: #10B981;">Yes Verified</span>
-                        }
-                        else
-                        {
-                            <span class="badge" style="background: #64748B;">No</span>
-                        }
+                    <div class="row">
+                        <div class="col-md-4 form-group">
+                            <label class="xyz-form-label">Government ID Type</label>
+                            <select name="idType" class="form-control xyz-form-control" style="font-weight:700;">
+                                <option value="">-- Select ID Type --</option>
+                                <option value="NIN" selected="@(kycProfile.IdType == "NIN" ? "selected" : null)">NIN (National Identification Number)</option>
+                                <option value="VotersCard" selected="@(kycProfile.IdType == "VotersCard" ? "selected" : null)">Voter's Card (INEC PVC)</option>
+                                <option value="DriversLicense" selected="@(kycProfile.IdType == "DriversLicense" ? "selected" : null)">Driver's License (FRSC)</option>
+                                <option value="InternationalPassport" selected="@(kycProfile.IdType == "InternationalPassport" ? "selected" : null)">International Passport</option>
+                                <option value="CAC" selected="@(kycProfile.IdType == "CAC" ? "selected" : null)">CAC Certificate (Corporate)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="xyz-form-label">ID / NIN / VIN / RC Number</label>
+                            <input type="text" name="idNumber" value="@kycProfile.IdNumber" class="form-control xyz-form-control" placeholder="Enter 11-digit NIN or ID No" style="font-family:'JetBrains Mono', monospace; font-weight:700;" />
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label class="xyz-form-label">Passport Photograph Upload</label>
+                            <input type="file" name="passportFile" accept="image/*" class="form-control xyz-form-control" />
+                        </div>
                     </div>
 
-                    <div style="display: flex; justify-content: space-between; padding: 6px 0;">
-                        <span style="color: #64748B;">2FA Security:</span>
-                        @if (userDetails != null && userDetails.TwoFactorEnabled)
-                        {
-                            <span class="badge" style="background: #10B981;">Active: @userDetails.PreferredTwoFactorMethod</span>
-                        }
-                        else
-                        {
-                            <span class="badge" style="background: #EF4444;">2FA Disabled</span>
-                        }
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label class="xyz-form-label">ID Card Front / Slip Upload</label>
+                            <input type="file" name="idFrontFile" accept="image/*,.pdf" class="form-control xyz-form-control" />
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label class="xyz-form-label">ID Card Back Upload (Optional)</label>
+                            <input type="file" name="idBackFile" accept="image/*,.pdf" class="form-control xyz-form-control" />
+                        </div>
                     </div>
+
+                    <!-- Uploaded Documents Preview Row -->
+                    <div class="row" style="margin-top: 6px; margin-bottom: 14px;">
+                        <div class="col-md-4">
+                            <div style="border:1px dashed #CBD5E1; border-radius:10px; padding:10px; text-align:center; background:#F8FAFC;">
+                                <small style="font-weight:800; color:#475569; display:block; margin-bottom:6px;">Passport Photograph</small>
+                                @if (!string.IsNullOrWhiteSpace(kycProfile.PassportPhotoPath))
+                                {
+                                    <a href="@kycProfile.PassportPhotoPath" target="_blank">
+                                        <img src="@kycProfile.PassportPhotoPath" alt="Passport" style="max-height:95px; border-radius:8px; border:1px solid #E2E8F0;" />
+                                    </a>
+                                    <div style="margin-top:4px;"><a href="@kycProfile.PassportPhotoPath" target="_blank" style="font-size:0.75rem; font-weight:800;">View Full Photo &rarr;</a></div>
+                                }
+                                else
+                                {
+                                    <span style="color:#94A3B8; font-size:0.8rem;">Not uploaded yet</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div style="border:1px dashed #CBD5E1; border-radius:10px; padding:10px; text-align:center; background:#F8FAFC;">
+                                <small style="font-weight:800; color:#475569; display:block; margin-bottom:6px;">ID Document (Front / Slip)</small>
+                                @if (!string.IsNullOrWhiteSpace(kycProfile.IdDocumentFrontPath))
+                                {
+                                    <a href="@kycProfile.IdDocumentFrontPath" target="_blank">
+                                        <img src="@kycProfile.IdDocumentFrontPath" alt="ID Front" style="max-height:95px; border-radius:8px; border:1px solid #E2E8F0;" />
+                                    </a>
+                                    <div style="margin-top:4px;"><a href="@kycProfile.IdDocumentFrontPath" target="_blank" style="font-size:0.75rem; font-weight:800;">Open ID Front &rarr;</a></div>
+                                }
+                                else
+                                {
+                                    <span style="color:#94A3B8; font-size:0.8rem;">Not uploaded yet</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div style="border:1px dashed #CBD5E1; border-radius:10px; padding:10px; text-align:center; background:#F8FAFC;">
+                                <small style="font-weight:800; color:#475569; display:block; margin-bottom:6px;">ID Document (Back)</small>
+                                @if (!string.IsNullOrWhiteSpace(kycProfile.IdDocumentBackPath))
+                                {
+                                    <a href="@kycProfile.IdDocumentBackPath" target="_blank">
+                                        <img src="@kycProfile.IdDocumentBackPath" alt="ID Back" style="max-height:95px; border-radius:8px; border:1px solid #E2E8F0;" />
+                                    </a>
+                                    <div style="margin-top:4px;"><a href="@kycProfile.IdDocumentBackPath" target="_blank" style="font-size:0.75rem; font-weight:800;">Open ID Back &rarr;</a></div>
+                                }
+                                else
+                                {
+                                    <span style="color:#94A3B8; font-size:0.8rem;">Not uploaded yet</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="text-align:right; margin-bottom:16px;">
+                        <button type="submit" class="btn btn-sm btn-primary" style="background:#0284C7; border:none; font-weight:800; border-radius:8px; padding:8px 18px;">
+                            <i class="fa fa-upload"></i> Save / Upload KYC Documents
+                        </button>
+                    </div>
+                }
+
+                <!-- Admin KYC Decision Controls (Approve / Reject / Trigger / Exempt) -->
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:14px 16px;">
+                    @using (Html.BeginForm("ReviewUserKyc", "ManageUsers", new { area = "Adminpanel" }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="userId" value="@Model.UserId" />
+                        <div class="row" style="align-items:center;">
+                            <div class="col-md-6" style="margin-bottom:8px;">
+                                <input type="text" name="reviewNote" value="@kycProfile.AdminReviewNote" class="form-control" placeholder="Admin review note or rejection reason..." style="border-radius:8px; height:36px; font-size:0.85rem;" />
+                            </div>
+                            <div class="col-md-6" style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+                                <button type="submit" name="decision" value="approve" class="btn btn-xs btn-success" style="font-weight:800; padding:7px 12px; border-radius:6px;">
+                                    <i class="fa fa-check"></i> Approve KYC
+                                </button>
+                                <button type="submit" name="decision" value="reject" class="btn btn-xs btn-danger" style="font-weight:800; padding:7px 12px; border-radius:6px;">
+                                    <i class="fa fa-xmark"></i> Reject
+                                </button>
+                                <button type="submit" name="decision" value="trigger" class="btn btn-xs btn-warning" style="font-weight:800; padding:7px 12px; border-radius:6px; color:#1E293B;">
+                                    <i class="fa fa-bolt"></i> Trigger KYC
+                                </button>
+                                <button type="submit" name="decision" value="exempt" class="btn btn-xs btn-default" style="font-weight:800; padding:7px 12px; border-radius:6px;">
+                                    <i class="fa fa-shield"></i> Exempt
+                                </button>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
 
-            <!-- SUPERADMIN 2FA CONTROL CARD -->
-            @if (User.IsInRole("SuperAdmin") && userDetails != null && userDetails.TwoFactorEnabled)
-            {
-                <div class="xyz-details-card" style="border-color: #FCD34D; background: #FFFBEB; margin-bottom: 24px;">
-                    <h4 style="font-weight: 800; color: #92400E; margin: 0 0 10px 0;">
-                        <i class="fa fa-key"></i> SuperAdmin 2FA Controls
+            <!-- RECENT SMS BROADCASTS TABLE -->
+            <div class="xyz-details-card">
+                <div style="border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+                    <h4 style="font-weight: 800; color: #0F172A; margin: 0; font-size: 1rem;">
+                        <i class="fa fa-paper-plane" style="color: #0284C7; margin-right: 6px;"></i> Recent SMS Broadcasts (@totalBroadcastsCount Total)
                     </h4>
-                    <p style="color: #78350F; font-size: 0.85rem; margin-bottom: 12px;">
-                        User has 2FA enabled (@userDetails.PreferredTwoFactorMethod). You can disable 2FA if the user lost access.
-                    </p>
-                    @using (Html.BeginForm("DisableUserTwoFactor", "ManageUsers", new { area = "Adminpanel", userId = Model.UserId }, FormMethod.Post))
-                    {
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-warning btn-block" style="font-weight: 800; border-radius: 8px; color: #1E293B;">
-                            <i class="fa fa-unlock"></i> Emergency Disable 2FA for User
-                        </button>
-                    }
+                    <a href="@Url.Action("Messages", "Main", new { area = "Adminpanel", searchString = userDetails?.UserName })" class="btn btn-xs btn-default" style="font-weight: 700; border-radius: 6px;">
+                        View All User Messages &rarr;
+                    </a>
                 </div>
-            }
+                <div class="table-responsive">
+                    <table class="table table-hover" style="margin: 0; font-size: 0.84rem;">
+                        <thead style="background: #F8FAFC; font-weight: 800; font-size: 0.72rem; text-transform: uppercase; color: #475569;">
+                            <tr>
+                                <th>ID</th>
+                                <th>Sender ID</th>
+                                <th>Units Used</th>
+                                <th>Status</th>
+                                <th>Delivered Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (recentMsgs.Any())
+                            {
+                                foreach (var m in recentMsgs)
+                                {
+                                    <tr>
+                                        <td><a href="@Url.Action("MessageDetails", "Main", new { area = "Adminpanel", id = m.MessageId })" style="font-weight: 800;">#@m.MessageId</a></td>
+                                        <td><strong>@m.SenderId</strong></td>
+                                        <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">@m.UnitsUsed.ToString("N2")</td>
+                                        <td><span class="label @(m.Status == Exwhyzee.Messaging.Core.Models.MessageStatus.Sent ? "label-success" : "label-warning")">@m.Status</span></td>
+                                        <td>@((m.DeliveredDate ?? m.Scheduleddate)?.ToString("dd MMM yyyy, hh:mm tt") ?? "N/A")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 20px; color: #94A3B8;">No SMS broadcasts sent by this user yet.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: SECURITY, SENDER IDS & RECENT TRANSACTIONS -->
+        <div class="col-md-4">
+            <!-- REGISTERED SENDER IDS -->
+            <div class="xyz-details-card">
+                <h4 style="font-weight: 800; color: #0F172A; margin: 0 0 12px 0; font-size: 1rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px;">
+                    <i class="fa fa-tag" style="color: #F59E0B;"></i> Registered Sender IDs (@senderIds.Count)
+                </h4>
+                @if (senderIds.Any())
+                {
+                    <div style="max-height: 180px; overflow-y: auto;">
+                        @foreach (var s in senderIds)
+                        {
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #F1F5F9; font-size: 0.85rem;">
+                                <strong style="font-family: 'JetBrains Mono', monospace; color: #0F172A;">@s.SenderId</strong>
+                                <span class="badge" style="background: @(s.XYZ_status != null && s.XYZ_status.ToLower().Contains("approv") ? "#10B981" : "#F59E0B");">@(s.XYZ_status ?? "Pending")</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p style="color: #94A3B8; font-size: 0.85rem; margin: 0;">No Sender IDs registered by this user.</p>
+                }
+            </div>
+
+            <!-- RECENT WALLET TRANSACTIONS -->
+            <div class="xyz-details-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px; margin-bottom: 12px;">
+                    <h4 style="font-weight: 800; color: #0F172A; margin: 0; font-size: 1rem;">
+                        <i class="fa fa-receipt" style="color: #10B981;"></i> Recent Transactions (@totalTxnsCount)
+                    </h4>
+                    <a href="@Url.Action("UserTransactions", "ManageUsers", new { area = "Adminpanel", id = Model.ClientId })" class="btn btn-xs btn-default" style="font-weight: 700;">
+                        All &rarr;
+                    </a>
+                </div>
+                @if (recentTxns.Any())
+                {
+                    <div style="max-height: 240px; overflow-y: auto;">
+                        @foreach (var t in recentTxns)
+                        {
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #F1F5F9; font-size: 0.82rem;">
+                                <div>
+                                    <strong style="color: #0F172A;">#@t.TransactionId &bull; +@t.Units.ToString("N0") Units</strong>
+                                    <small style="display: block; color: #64748B;">@t.DateCreated.ToString("dd MMM yyyy") (@t.TransactionType)</small>
+                                </div>
+                                <div style="text-align: right;">
+                                    <strong style="font-family: 'JetBrains Mono', monospace; color: #059669; display: block;">&#8358;@((t.AmountPaid ?? t.Amount).ToString("N2"))</strong>
+                                    <span style="font-size: 0.7rem; font-weight: 800; color: @(t.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Approved ? "#10B981" : "#D97706");">@t.Status</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p style="color: #94A3B8; font-size: 0.85rem; margin: 0;">No transactions recorded for this user.</p>
+                }
+            </div>
+
+            <!-- SUPERADMIN 2FA & SECURITY CONTROLS -->
+            <div class="xyz-details-card">
+                <h4 style="font-weight: 800; color: #0F172A; margin: 0 0 12px 0; font-size: 1rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px;">
+                    <i class="fa fa-shield-halved" style="color: #6366F1;"></i> Security &amp; API Telemetry
+                </h4>
+                <div style="font-size: 0.85rem; line-height: 1.9;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #64748B;">2FA Status:</span>
+                        <strong>@(userDetails?.TwoFactorEnabled == true ? $"Active ({userDetails.PreferredTwoFactorMethod})" : "Disabled")</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #64748B;">API Key Configured:</span>
+                        <strong>@(!string.IsNullOrEmpty(Model.ApiKey) ? "Yes (Active)" : "Not Generated")</strong>
+                    </div>
+                </div>
+
+                @if (User.IsInRole("SuperAdmin") && userDetails != null && userDetails.TwoFactorEnabled)
+                {
+                    <div style="margin-top: 12px;">
+                        @using (Html.BeginForm("DisableUserTwoFactor", "ManageUsers", new { area = "Adminpanel", userId = Model.UserId }, FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-warning btn-sm btn-block" style="font-weight: 800; border-radius: 8px; color: #1E293B;">
+                                <i class="fa fa-unlock"></i> Emergency Disable 2FA
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
 
             <!-- DANGER ZONE CARD -->
             <div class="xyz-details-card" style="border-color: #FCA5A5; background: #FEF2F2;">
-                <h4 style="font-weight: 800; color: #991B1B; margin: 0 0 10px 0;">
+                <h4 style="font-weight: 800; color: #991B1B; margin: 0 0 8px 0; font-size: 1rem;">
                     <i class="fa fa-triangle-exclamation"></i> Danger Zone
                 </h4>
-                <p style="color: #7F1D1D; font-size: 0.85rem; margin-bottom: 14px;">
-                    Deleting this user will remove their wallet balance, messages, contacts, and account records.
+                <p style="color: #7F1D1D; font-size: 0.82rem; margin-bottom: 12px;">
+                    Soft-deleting this user anonymizes PII, zeros out remaining units, and permanently locks the account while preserving historical audit ledgers.
                 </p>
-                <a href="@Url.Action("DeleteUser", "ManageUsers", new { area = "Adminpanel", id = Model.UserId })" class="btn btn-danger btn-block" style="font-weight: 800; border-radius: 8px; height: 42px; display: flex; align-items: center; justify-content: center;">
-                    <i class="fa fa-trash" style="margin-right: 6px;"></i> Delete User Account
+                <a href="@Url.Action("DeleteUser", "ManageUsers", new { area = "Adminpanel", id = Model.UserId })" class="btn btn-danger btn-block" style="font-weight: 800; border-radius: 8px;">
+                    <i class="fa fa-trash"></i> Delete User Account
                 </a>
             </div>
         </div>
     </div>
 </div>
+
+<!-- ADMIN PAYSTACK TOP-UP MODAL -->
+<div class="modal fade" id="adminPaystackModal" tabindex="-1" role="dialog" aria-labelledby="paystackModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 440px;">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 20px 40px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #0B0F19 0%, #1E293B 100%); color: #FFF; border-radius: 16px 16px 0 0; padding: 20px 24px;">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#FFF; opacity:0.8;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="paystackModalLabel" style="font-weight: 800; font-size: 1.15rem;">
+                    <i class="fa fa-credit-card" style="color:#09A5DB;"></i> Paystack Top Up for User
+                </h4>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;">
+                    <small style="color: #64748B; display: block; font-weight: 700; text-transform: uppercase; font-size: 0.72rem;">Target Client</small>
+                    <strong style="color: #0F172A; font-size: 1.05rem;" id="modalTargetUsername">Username</strong>
+                    <span class="pull-right text-muted" id="modalCurrentBalance">0 Units</span>
+                </div>
+
+                <input type="hidden" id="modalTargetUserId" />
+
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label style="font-weight: 700; color: #334155;">Quantity of SMS Units to Credit</label>
+                    <div class="input-group">
+                        <input type="number" id="modalUnitsInput" class="form-control" placeholder="e.g. 500" min="1" step="1" style="height: 44px; font-size: 1.1rem; font-weight: 800; border-color: #CBD5E1;" />
+                        <span class="input-group-addon" style="font-weight:700; background:#F1F5F9;">Units</span>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-block btn-lg" id="btnInitiatePaystack" style="background: #09A5DB; color: #FFF; font-weight: 800; border-radius: 10px; height: 48px; font-size: 1rem;" onclick="processAdminPaystackPayment()">
+                    <i class="fa fa-shield-alt"></i> Proceed to Paystack Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+    const PAYSTACK_PUB_KEY = "@paystackPublicKey";
+
+    function openAdminPaystackModal(userId, username, currentBalance) {
+        document.getElementById('modalTargetUserId').value = userId;
+        document.getElementById('modalTargetUsername').innerText = '@@' + username;
+        document.getElementById('modalCurrentBalance').innerText = 'Current: ' + parseFloat(currentBalance).toLocaleString() + ' Units';
+        document.getElementById('modalUnitsInput').value = '';
+        $('#adminPaystackModal').modal('show');
+    }
+
+    function processAdminPaystackPayment() {
+        const userId = document.getElementById('modalTargetUserId').value;
+        const units = parseFloat(document.getElementById('modalUnitsInput').value);
+
+        if (!units || units <= 0) {
+            alert('Please enter a valid unit quantity greater than zero.');
+            return;
+        }
+
+        const btn = document.getElementById('btnInitiatePaystack');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Initializing Paystack...';
+
+        $.ajax({
+            url: '@Url.Action("InitializeAdminPaystackTopUp", "ManageUsers", new { area = "Adminpanel" })',
+            type: 'POST',
+            data: { targetUserId: userId, units: units },
+            success: function (res) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-shield-alt"></i> Proceed to Paystack Payment';
+
+                if (res.success) {
+                    $('#adminPaystackModal').modal('hide');
+
+                    let handler = PaystackPop.setup({
+                        key: res.publicKey || PAYSTACK_PUB_KEY,
+                        email: res.email,
+                        amount: res.amountInKobo,
+                        currency: "NGN",
+                        ref: 'EXW_ADM_' + Math.floor((Math.random() * 1000000000) + 1),
+                        callback: function (response) {
+                            verifyAdminPayment(response.reference, res.transactionId, userId);
+                        },
+                        onClose: function () {
+                            alert('Paystack transaction was cancelled.');
+                        }
+                    });
+                    handler.openIframe();
+                } else {
+                    alert(res.message || 'Failed to initialize Paystack transaction.');
+                }
+            },
+            error: function () {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa fa-shield-alt"></i> Proceed to Paystack Payment';
+                alert('Error connecting to server. Please try again.');
+            }
+        });
+    }
+
+    function verifyAdminPayment(reference, transactionId, userId) {
+        $.ajax({
+            url: '@Url.Action("VerifyAdminPaystackTopUp", "ManageUsers", new { area = "Adminpanel" })',
+            type: 'POST',
+            data: { reference: reference, transactionId: transactionId },
+            success: function (res) {
+                if (res.success) {
+                    alert('🎉 Success! ' + res.message);
+                    location.reload();
+                } else {
+                    alert('⚠️ Verification Warning: ' + res.message);
+                }
+            },
+            error: function () {
+                alert('Error verifying payment. Please refresh the page.');
+            }
+        });
+    }
+</script>

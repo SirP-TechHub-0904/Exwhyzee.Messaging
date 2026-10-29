@@ -484,6 +484,61 @@ namespace Exwhyzee.Messaging.Core.Migrations
                     b.ToTable("Group");
                 });
 
+            modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.KycSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AcceptedIdTypes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("EnforceBlockOnCompose")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EnforceBlockOnFunding")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsKycEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastUpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("LastUpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("RequireAddress")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("RequireGovernmentId")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("RequirePassportPhoto")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("RequirePhoneVerification")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("SingleTopUpUnitsThreshold")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SmsSentThreshold")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TriggerRule")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("UnitsFundedThreshold")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("KycSetting");
+                });
+
             modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.Message", b =>
                 {
                     b.Property<int>("MessageId")
@@ -996,6 +1051,88 @@ namespace Exwhyzee.Messaging.Core.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Transaction");
+                });
+
+            modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.UserKycProfile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminReviewNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("City")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ClientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Country")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IdDocumentBackPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IdDocumentFrontPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IdNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IdType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsPhoneVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("KycStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PassportPhotoPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneOtpCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("PhoneOtpExpiry")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PhoneVerifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResidentialAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReviewedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("State")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("SubmittedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TriggerReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("TriggeredDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserKycProfile");
                 });
 
             modelBuilder.Entity("Exwhyzee.Messaging.Core.Models.Voucher", b =>

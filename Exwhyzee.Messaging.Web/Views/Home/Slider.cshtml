@@ -101,6 +101,11 @@
                 <tbody>
                     @foreach(var slide in ViewBag.slides)
                     {
+                        string imgSrc = slide.ImageUrl != null ? slide.ImageUrl.ToString() : "";
+                        if (!imgSrc.StartsWith("http", StringComparison.OrdinalIgnoreCase) && !imgSrc.StartsWith("/"))
+                        {
+                            imgSrc = Url.Content("~/SliderImage/" + imgSrc);
+                        }
                         <tr>
                             <td>
                                 @slide.ImageName
@@ -112,7 +117,7 @@
                                 @slide.Status
                             </td>
                             <td>
-                                <img src="~/SliderImage/@slide.ImageUrl" class="img-responsive" style="max-height: 100px;" />
+                                <img src="@imgSrc" class="img-responsive" style="max-height: 100px;" />
                             </td>
                             <td>
                                 @Html.ActionLink("Delete", "DeleteSlider", new { id = slide.SliderId }, new { @class = "btn btn-info" })

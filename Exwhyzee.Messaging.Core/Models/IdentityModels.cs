@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
+using System.Linq;
 
 namespace Exwhyzee.Messaging.Core.Models
 {
@@ -12,6 +14,13 @@ namespace Exwhyzee.Messaging.Core.Models
         public DateTime DateOfBirth { get; set; }
         public DateTime DateRegitered { get; set; }
         public string Code { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public string Gender
+        {
+            get => (!string.IsNullOrWhiteSpace(Code) && (Code.Equals("Male", StringComparison.OrdinalIgnoreCase) || Code.Equals("Female", StringComparison.OrdinalIgnoreCase))) ? Code : null;
+            set => Code = value;
+        }
 
         // Multi-Option 2FA Properties
         public TwoFactorMethod PreferredTwoFactorMethod { get; set; }
@@ -117,6 +126,9 @@ namespace Exwhyzee.Messaging.Core.Models
                     optionsBuilder.UseSqlServer(connStr);
                 }
             }
+
+            optionsBuilder.ConfigureWarnings(w =>
+                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         }
 
         public DbSet<Contact> Contacts { get; set; }
@@ -141,6 +153,8 @@ namespace Exwhyzee.Messaging.Core.Models
         public DbSet<EmailLog> EmailLogs { get; set; }
         public DbSet<SystemErrorLog> SystemErrorLogs { get; set; }
         public DbSet<PaystackTransferOutflow> PaystackTransferOutflows { get; set; }
+        public DbSet<UserKycProfile> UserKycProfiles { get; set; }
+        public DbSet<KycSetting> KycSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

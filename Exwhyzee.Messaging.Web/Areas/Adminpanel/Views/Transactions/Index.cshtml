@@ -1,138 +1,538 @@
-@model X.PagedList.IPagedList<Exwhyzee.Messaging.Core.Models.Transaction>
-@using X.PagedList.Mvc.Core;
-<link href="~/Content/PagedList.css" rel="stylesheet" />
-@using Exwhyzee.Messaging.Core.Services
+@model X.PagedList.IPagedList<Exwhyzee.Messaging.Core.Dtos.TransactionLedgerDto>
+@using Exwhyzee.Messaging.Core.Dtos
+@using Exwhyzee.Messaging.Core.Models
 
 @{
-    ViewBag.Title = "Platform Transactions Ledger";
+    ViewBag.Title = "Platform Transactions Studio";
+    var stats = ViewBag.Stats as TransactionLedgerStatsDto ?? new TransactionLedgerStatsDto();
+
+    string searchString = ViewBag.SearchString as string ?? "";
+    string cardFilter = ViewBag.CardFilter as string ?? "";
+    string statusFilter = ViewBag.StatusFilter as string ?? "";
+    string sourceFilter = ViewBag.SourceFilter as string ?? "";
+    decimal? minAmount = ViewBag.MinAmount as decimal?;
+    decimal? maxAmount = ViewBag.MaxAmount as decimal?;
+    decimal? minUnits = ViewBag.MinUnits as decimal?;
+    decimal? maxUnits = ViewBag.MaxUnits as decimal?;
+    string dateFrom = ViewBag.DateFrom as string ?? "";
+    string dateTo = ViewBag.DateTo as string ?? "";
+    string datePreset = ViewBag.DatePreset as string ?? "";
+    string sortBy = ViewBag.SortBy as string ?? "date_desc";
+    int pageSize = ViewBag.PageSize != null ? (int)ViewBag.PageSize : 20;
+    int currentPage = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+    int totalPages = ViewBag.TotalPages != null ? (int)ViewBag.TotalPages : 1;
+    int totalFilteredCount = ViewBag.TotalFilteredCount != null ? (int)ViewBag.TotalFilteredCount : 0;
+
+    string BuildUrl(int? targetPage = null, string overrideCard = null, string overrideSort = null, string overridePreset = null)
+    {
+        return Url.Action("Index", "Transactions", new
+        {
+            area = "Adminpanel",
+            searchString = searchString,
+            cardFilter = overrideCard ?? cardFilter,
+            statusFilter = statusFilter,
+            sourceFilter = sourceFilter,
+            minAmount = minAmount,
+            maxAmount = maxAmount,
+            minUnits = minUnits,
+            maxUnits = maxUnits,
+            dateFrom = dateFrom,
+            dateTo = dateTo,
+            datePreset = overridePreset ?? datePreset,
+            sortBy = overrideSort ?? sortBy,
+            pageSize = pageSize,
+            page = targetPage ?? 1
+        });
+    }
+
+    string BuildExportUrl(string format)
+    {
+        return Url.Action("ExportTransactions", "Transactions", new
+        {
+            area = "Adminpanel",
+            format = format,
+            searchString = searchString,
+            cardFilter = cardFilter,
+            statusFilter = statusFilter,
+            sourceFilter = sourceFilter,
+            minAmount = minAmount,
+            maxAmount = maxAmount,
+            minUnits = minUnits,
+            maxUnits = maxUnits,
+            dateFrom = dateFrom,
+            dateTo = dateTo,
+            datePreset = datePreset,
+            sortBy = sortBy
+        });
+    }
 }
 
 <style>
+    .xyz-studio-header {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .xyz-mini-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .xyz-mini-card {
+        background: #FFFFFF;
+        border-radius: 14px;
+        border: 1px solid #E2E8F0;
+        padding: 16px 18px;
+        text-decoration: none !important;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.02);
+    }
+
+    .xyz-mini-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        border-color: #6366F1;
+    }
+
+    .xyz-mini-card.active-card {
+        border: 2px solid #4F46E5;
+        background: #EEF2FF;
+    }
+
+    .xyz-mini-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .xyz-mini-val {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #0F172A;
+        font-family: 'JetBrains Mono', monospace;
+        line-height: 1.15;
+    }
+
+    .xyz-mini-sub {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748B;
+        margin-top: 3px;
+    }
+
+    .xyz-mini-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+
+    .xyz-filter-panel {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+    }
+
+    .xyz-filter-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #475569;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        display: block;
+    }
+
     .xyz-id-chip {
         font-family: 'JetBrains Mono', monospace;
         font-weight: 800;
         font-size: 0.8rem;
         background: #F1F5F9;
         color: #334155;
-        padding: 2px 6px;
-        border-radius: 4px;
+        padding: 3px 8px;
+        border-radius: 6px;
         border: 1px solid #E2E8F0;
     }
+
     .xyz-badge {
         font-size: 0.72rem;
         font-weight: 800;
-        padding: 3px 8px;
+        padding: 4px 9px;
         border-radius: 6px;
         display: inline-block;
         text-transform: uppercase;
     }
+
     .xyz-badge-paystack { background: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD; }
     .xyz-badge-admin { background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF; }
     .xyz-badge-bank { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
     .xyz-badge-voucher { background: #E0E7FF; color: #3730A3; border: 1px solid #C7D2FE; }
+
+    .xyz-smart-pager {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+    }
+
+    .xyz-page-btn {
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 8px;
+        border: 1px solid #CBD5E1;
+        background: #FFFFFF;
+        color: #334155;
+        font-weight: 800;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none !important;
+        transition: all 0.15s ease;
+    }
+
+    .xyz-page-btn:hover {
+        background: #F1F5F9;
+        border-color: #6366F1;
+        color: #4F46E5;
+    }
+
+    .xyz-page-btn.active {
+        background: #4F46E5;
+        border-color: #4F46E5;
+        color: #FFFFFF;
+    }
+
+    .xyz-page-btn.disabled {
+        opacity: 0.45;
+        pointer-events: none;
+    }
 </style>
 
-<div class="xyz-panel-card" style="margin-bottom: 24px; padding: 20px; background:#ffffff; border-radius:12px; border:1px solid #E2E8F0; box-shadow:0 4px 20px rgba(0,0,0,0.04);">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-        <div>
-            <h2 style="margin:0 0 4px; font-weight:800; font-size:1.35rem; color:#0F172A;">
-                <i class="fa fa-receipt" style="color:#6366F1;"></i> All Platform Transactions
-            </h2>
-            <p style="margin:0; color:#64748B; font-size:0.88rem;">Audit ledger of all client wallet top-ups, admin credits, and online payments.</p>
-        </div>
-        <div style="display:flex; gap:10px;">
-            <a href="@Url.Action("PaystackOutflow", "Transactions", new { area = "Adminpanel" })" class="btn btn-sm btn-primary" style="font-weight:800; border-radius:8px; background:#0284C7; border:none;">
-                <i class="fa fa-credit-card"></i> Paystack Outflow Studio &rarr;
-            </a>
-            <a href="@Url.Action("Index", "Main", new { area = "Adminpanel" })" class="btn btn-sm btn-default" style="font-weight:800; border-radius:8px;">
-                &larr; Back to Dashboard
-            </a>
-        </div>
+<!-- Studio Header -->
+<div class="xyz-studio-header">
+    <div>
+        <h2 style="margin:0 0 4px; font-weight:800; font-size:1.4rem; color:#0F172A;">
+            <i class="fa fa-receipt" style="color:#4F46E5;"></i> Platform Transactions Studio
+        </h2>
+        <p style="margin:0; color:#64748B; font-size:0.9rem;">
+            Showing <strong>@totalFilteredCount.ToString("N0")</strong> filtered transaction(s). Click any card below to filter immediately.
+        </p>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <a href="@BuildExportUrl("excel")" class="btn btn-sm" style="background:#16A34A; color:#FFF; font-weight:800; border-radius:8px; padding:7px 13px;">
+            <i class="fa fa-file-excel"></i> Excel
+        </a>
+        <a href="@BuildExportUrl("word")" class="btn btn-sm" style="background:#2563EB; color:#FFF; font-weight:800; border-radius:8px; padding:7px 13px;">
+            <i class="fa fa-file-word"></i> Word
+        </a>
+        <a href="@BuildExportUrl("pdf")" target="_blank" class="btn btn-sm" style="background:#DC2626; color:#FFF; font-weight:800; border-radius:8px; padding:7px 13px;">
+            <i class="fa fa-file-pdf"></i> PDF
+        </a>
+        <a href="@Url.Action("ProfitAndLoss", "Transactions", new { area = "Adminpanel" })" class="btn btn-sm" style="background:#059669; color:#FFF; font-weight:800; border-radius:8px; padding:7px 13px; margin-left:4px;">
+            <i class="fa fa-chart-line"></i> Profit &amp; Loss Studio
+        </a>
+        <a href="@Url.Action("PaystackOutflow", "Transactions", new { area = "Adminpanel" })" class="btn btn-sm" style="background:#0284C7; color:#FFF; font-weight:800; border-radius:8px; padding:7px 13px;">
+            <i class="fa fa-credit-card"></i> Paystack Outflow &rarr;
+        </a>
     </div>
 </div>
 
-<div class="box" style="border-radius:12px; border:1px solid #E2E8F0; box-shadow:0 4px 20px rgba(0,0,0,0.04);">
-    <div class="box-header" style="padding:16px 20px; border-bottom:1px solid #E2E8F0; background:#FAFAFA; border-top-left-radius:12px; border-top-right-radius:12px;">
-        <h3 class="box-title" style="font-weight:800; font-size:1rem; color:#0F172A;">Transactions Ledger</h3>
-    </div>
-    <div class="box-body table-responsive" style="padding:20px;">
-        @using (Html.BeginForm("Index", "Transactions", FormMethod.Get, new { @class = "form-inline", style = "margin-bottom:20px;" }))
-        {
-            <div class="form-group">
-                <input type="text" name="SearchString" class="form-control" placeholder="Search by Username, Ref, Source..." value="@ViewContext.HttpContext.Request.Query["SearchString"]" style="width:300px; border-radius:8px;" />
-                <button type="submit" class="btn btn-primary" style="font-weight:800; border-radius:8px; margin-left:6px;">
-                    <i class="fa fa-search"></i> Search
-                </button>
-            </div>
-        }
+<!-- Reactive Mini-Dashboard Cards (Outcome of Active Filter) -->
+<div class="xyz-mini-grid">
+    <a href="@BuildUrl(1, "")" class="xyz-mini-card @(string.IsNullOrEmpty(cardFilter) ? "active-card" : "")">
+        <div>
+            <div class="xyz-mini-label">Total Filtered</div>
+            <div class="xyz-mini-val">@stats.TotalTransactions.ToString("N0")</div>
+            <div class="xyz-mini-sub">All matching records</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#EEF2FF; color:#4F46E5;"><i class="fa fa-list-check"></i></div>
+    </a>
 
-        <table class="table table-hover" style="vertical-align:middle; font-size:0.88rem;">
-            <thead style="background:#F8FAFC; font-weight:800; font-size:0.75rem; color:#475569; text-transform:uppercase;">
-                <tr>
-                    <th style="padding:10px 14px;">Trans ID</th>
-                    <th>Client</th>
-                    <th>Source &amp; Type</th>
+    <a href="@BuildUrl(1, "approved")" class="xyz-mini-card @(cardFilter == "approved" ? "active-card" : "")">
+        <div>
+            <div class="xyz-mini-label">Approved Revenue</div>
+            <div class="xyz-mini-val" style="color:#16A34A;">&#x20A6;@stats.ApprovedRevenueNgn.ToString("N0")</div>
+            <div class="xyz-mini-sub">@stats.ApprovedCount.ToString("N0") Approved Txns</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#DCFCE7; color:#16A34A;"><i class="fa fa-circle-check"></i></div>
+    </a>
+
+    <a href="@BuildUrl(1, "approved")" class="xyz-mini-card">
+        <div>
+            <div class="xyz-mini-label">Approved Units Credited</div>
+            <div class="xyz-mini-val" style="color:#0284C7;">@stats.ApprovedUnitsCredited.ToString("N0")</div>
+            <div class="xyz-mini-sub">Total SMS Units</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#E0F2FE; color:#0284C7;"><i class="fa fa-coins"></i></div>
+    </a>
+
+    <a href="@BuildUrl(1, "pending")" class="xyz-mini-card @(cardFilter == "pending" ? "active-card" : "")">
+        <div>
+            <div class="xyz-mini-label">Pending Recharges</div>
+            <div class="xyz-mini-val" style="color:#D97706;">@stats.PendingCount.ToString("N0")</div>
+            <div class="xyz-mini-sub">&#x20A6;@stats.PendingAmountNgn.ToString("N0") awaiting</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#FEF3C7; color:#D97706;"><i class="fa fa-clock"></i></div>
+    </a>
+
+    <a href="@BuildUrl(1, "paystack")" class="xyz-mini-card @(cardFilter == "paystack" ? "active-card" : "")">
+        <div>
+            <div class="xyz-mini-label">Paystack Online</div>
+            <div class="xyz-mini-val" style="color:#0369A1;">@stats.PaystackCount.ToString("N0")</div>
+            <div class="xyz-mini-sub">&#x20A6;@stats.PaystackRevenueNgn.ToString("N0") Approved</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#E0F2FE; color:#0369A1;"><i class="fa fa-credit-card"></i></div>
+    </a>
+
+    <a href="@BuildUrl(1, "bank")" class="xyz-mini-card @(cardFilter == "bank" ? "active-card" : "")">
+        <div>
+            <div class="xyz-mini-label">Bank Deposits</div>
+            <div class="xyz-mini-val" style="color:#92400E;">@stats.BankDepositCount.ToString("N0")</div>
+            <div class="xyz-mini-sub">&#x20A6;@stats.BankDepositRevenueNgn.ToString("N0") Approved</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#FEF3C7; color:#92400E;"><i class="fa fa-building-columns"></i></div>
+    </a>
+
+    <a href="@BuildUrl(1, "admin")" class="xyz-mini-card @(cardFilter == "admin" ? "active-card" : "")">
+        <div>
+            <div class="xyz-mini-label">Admin Top-Up / Voucher</div>
+            <div class="xyz-mini-val" style="color:#6B21A8;">@stats.AdminTopUpCount.ToString("N0")</div>
+            <div class="xyz-mini-sub">@stats.AdminTopUpUnits.ToString("N0") Units</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#F3E8FF; color:#6B21A8;"><i class="fa fa-user-shield"></i></div>
+    </a>
+
+    <a href="@BuildUrl(1, "failed")" class="xyz-mini-card @(cardFilter == "failed" ? "active-card" : "")">
+        <div>
+            <div class="xyz-mini-label">Failed / Revoked</div>
+            <div class="xyz-mini-val" style="color:#DC2626;">@stats.FailedOrCancelledCount.ToString("N0")</div>
+            <div class="xyz-mini-sub">Cancelled or Failed</div>
+        </div>
+        <div class="xyz-mini-icon" style="background:#FEE2E2; color:#DC2626;"><i class="fa fa-ban"></i></div>
+    </a>
+</div>
+
+<!-- Multi-Criteria Filter & Sort Bar -->
+<div class="xyz-filter-panel">
+    <form method="get" action="@Url.Action("Index", "Transactions", new { area = "Adminpanel" })">
+        <input type="hidden" name="cardFilter" value="@cardFilter" />
+
+        <div class="row">
+            <div class="col-md-3 col-sm-6" style="margin-bottom:12px;">
+                <label class="xyz-filter-label">Search Client, Ref or Trans ID</label>
+                <input type="text" name="searchString" value="@searchString" class="form-control" placeholder="Username, #ID, EXZ_Ref, Email..." style="border-radius:8px;" />
+            </div>
+
+            <div class="col-md-2 col-sm-6" style="margin-bottom:12px;">
+                <label class="xyz-filter-label">Status</label>
+                <select name="statusFilter" class="form-control" style="border-radius:8px;">
+                    <option value="">-- All Statuses --</option>
+                    <option value="Approved" selected="@(statusFilter.Equals("Approved", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">Approved</option>
+                    <option value="Pending" selected="@(statusFilter.Equals("Pending", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">Pending</option>
+                    <option value="Failed" selected="@(statusFilter.Equals("Failed", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">Failed</option>
+                    <option value="Cancelled" selected="@(statusFilter.Equals("Cancelled", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">Cancelled</option>
+                    <option value="Revoked" selected="@(statusFilter.Equals("Revoked", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">Revoked</option>
+                </select>
+            </div>
+
+            <div class="col-md-2 col-sm-6" style="margin-bottom:12px;">
+                <label class="xyz-filter-label">Payment Source</label>
+                <select name="sourceFilter" class="form-control" style="border-radius:8px;">
+                    <option value="">-- All Sources --</option>
+                    <option value="Paystack" selected="@(sourceFilter.Equals("Paystack", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">Paystack Online</option>
+                    <option value="BankDeposit" selected="@(sourceFilter.Equals("BankDeposit", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">Bank Deposit</option>
+                    <option value="AdminTopUp" selected="@(sourceFilter.Equals("AdminTopUp", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">Admin Top-Up</option>
+                    <option value="Voucher" selected="@(sourceFilter.Equals("Voucher", StringComparison.OrdinalIgnoreCase) ? "selected" : null)">Voucher</option>
+                </select>
+            </div>
+
+            <div class="col-md-3 col-sm-6" style="margin-bottom:12px;">
+                <label class="xyz-filter-label">Sort By</label>
+                <select name="sortBy" class="form-control" style="border-radius:8px;">
+                    <option value="date_desc" selected="@(sortBy == "date_desc" ? "selected" : null)">Date (Newest First)</option>
+                    <option value="date_asc" selected="@(sortBy == "date_asc" ? "selected" : null)">Date (Oldest First)</option>
+                    <option value="amount_desc" selected="@(sortBy == "amount_desc" ? "selected" : null)">Amount Paid (Highest ₦)</option>
+                    <option value="amount_asc" selected="@(sortBy == "amount_asc" ? "selected" : null)">Amount Paid (Lowest ₦)</option>
+                    <option value="units_desc" selected="@(sortBy == "units_desc" ? "selected" : null)">Units (Highest First)</option>
+                    <option value="units_asc" selected="@(sortBy == "units_asc" ? "selected" : null)">Units (Lowest First)</option>
+                    <option value="client_asc" selected="@(sortBy == "client_asc" ? "selected" : null)">Client Name (A–Z)</option>
+                </select>
+            </div>
+
+            <div class="col-md-2 col-sm-6" style="margin-bottom:12px;">
+                <label class="xyz-filter-label">Rows Per Page</label>
+                <select name="pageSize" class="form-control" style="border-radius:8px;" onchange="this.form.submit()">
+                    <option value="20" selected="@(pageSize == 20 ? "selected" : null)">1 - 20 Rows</option>
+                    <option value="50" selected="@(pageSize == 50 ? "selected" : null)">1 - 50 Rows</option>
+                    <option value="100" selected="@(pageSize == 100 ? "selected" : null)">1 - 100 Rows</option>
+                    <option value="200" selected="@(pageSize == 200 ? "selected" : null)">1 - 200 Rows</option>
+                    <option value="500" selected="@(pageSize == 500 ? "selected" : null)">1 - 500 Rows</option>
+                    <option value="0" selected="@(pageSize == 0 ? "selected" : null)">Show All (@totalFilteredCount)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row" style="margin-top:4px;">
+            <div class="col-md-2 col-sm-6" style="margin-bottom:10px;">
+                <label class="xyz-filter-label">Min Amount (₦)</label>
+                <input type="number" step="any" name="minAmount" value="@minAmount" class="form-control" placeholder="0" style="border-radius:8px;" />
+            </div>
+            <div class="col-md-2 col-sm-6" style="margin-bottom:10px;">
+                <label class="xyz-filter-label">Max Amount (₦)</label>
+                <input type="number" step="any" name="maxAmount" value="@maxAmount" class="form-control" placeholder="Any" style="border-radius:8px;" />
+            </div>
+            <div class="col-md-2 col-sm-6" style="margin-bottom:10px;">
+                <label class="xyz-filter-label">Min Units</label>
+                <input type="number" step="any" name="minUnits" value="@minUnits" class="form-control" placeholder="0" style="border-radius:8px;" />
+            </div>
+            <div class="col-md-2 col-sm-6" style="margin-bottom:10px;">
+                <label class="xyz-filter-label">Date From</label>
+                <input type="date" name="dateFrom" value="@dateFrom" class="form-control" style="border-radius:8px;" />
+            </div>
+            <div class="col-md-2 col-sm-6" style="margin-bottom:10px;">
+                <label class="xyz-filter-label">Date To</label>
+                <input type="date" name="dateTo" value="@dateTo" class="form-control" style="border-radius:8px;" />
+            </div>
+            <div class="col-md-2 col-sm-12" style="margin-bottom:10px; display:flex; align-items:flex-end; gap:8px; padding-top:18px;">
+                <button type="submit" class="btn btn-primary" style="background:#4F46E5; border:none; font-weight:800; border-radius:8px; flex:1;">
+                    <i class="fa fa-filter"></i> Apply
+                </button>
+                <a href="@Url.Action("Index", "Transactions", new { area = "Adminpanel" })" class="btn btn-default" style="font-weight:800; border-radius:8px;" title="Reset Filters">
+                    <i class="fa fa-rotate-left"></i>
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Transactions Table -->
+<div class="box" style="border-radius:16px; border:1px solid #E2E8F0; box-shadow:0 4px 16px rgba(15, 23, 42, 0.03); overflow:hidden;">
+    <div class="box-body table-responsive" style="padding:0;">
+        <table class="table table-hover" style="margin:0; vertical-align:middle;">
+            <thead style="background:#F8FAFC; border-bottom:2px solid #E2E8F0;">
+                <tr style="font-size:0.75rem; font-weight:800; color:#475569; text-transform:uppercase;">
+                    <th style="padding:14px 16px; width:55px;">S/N</th>
+                    <th>Trans ID</th>
+                    <th>Client &amp; Account</th>
+                    <th>Source &amp; Reference</th>
                     <th>Amount Paid</th>
                     <th>Units</th>
                     <th>Date</th>
                     <th>Status</th>
-                    <th style="text-align:right; padding:10px 14px;">Actions</th>
+                    <th style="text-align:right; padding-right:20px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
+                @{
+                    int sn = (currentPage - 1) * (pageSize <= 0 ? Math.Max(1, totalFilteredCount) : pageSize) + 1;
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="9" style="text-align:center; padding:48px 20px; color:#64748B;">
+                            <i class="fa fa-receipt" style="font-size:2rem; color:#CBD5E1; margin-bottom:10px; display:block;"></i>
+                            <strong>No transactions match your current filter criteria.</strong>
+                        </td>
+                    </tr>
+                }
                 @foreach (var item in Model)
                 {
                     <tr>
-                        <td style="padding:10px 14px;">
+                        <td style="padding:12px 16px; font-weight:700; color:#64748B;">@(sn++)</td>
+                        <td>
                             <span class="xyz-id-chip">#@item.TransactionId</span>
                         </td>
                         <td>
-                            <strong style="color:#1E293B;">@GeneralServices.ClientName(item.ClientId)</strong>
-                            <small style="color:#64748B; display:block;">By: @GeneralServices.UserName(item.UserId)</small>
-                        </td>
-                        <td>
-                            @if (!string.IsNullOrEmpty(item.PaymentSource) && item.PaymentSource.Equals("Paystack", StringComparison.OrdinalIgnoreCase))
+                            @if (!string.IsNullOrEmpty(item.UserId))
                             {
-                                <span class="xyz-badge xyz-badge-paystack">
-                                    <i class="fa fa-credit-card"></i> Paystack
-                                </span>
-                            }
-                            else if (item.TransactionType == Exwhyzee.Messaging.Core.Models.TransactionType.BankDeposit)
-                            {
-                                <span class="xyz-badge xyz-badge-bank">
-                                    <i class="fa fa-building-columns"></i> Bank Deposit
-                                </span>
-                            }
-                            else if (item.TransactionType == Exwhyzee.Messaging.Core.Models.TransactionType.ByVoucher)
-                            {
-                                <span class="xyz-badge xyz-badge-voucher">
-                                    <i class="fa fa-ticket"></i> Voucher
-                                </span>
+                                <a href="@Url.Action("ClientDetails", "ManageUsers", new { area = "Adminpanel", id = item.UserId })" style="font-weight:800; color:#0F172A; text-decoration:none;">
+                                    @item.ClientFullName
+                                </a>
                             }
                             else
                             {
-                                <span class="xyz-badge xyz-badge-admin">
-                                    <i class="fa fa-user-gear"></i> Admin Top-Up
-                                </span>
+                                <strong style="color:#0F172A;">@item.ClientFullName</strong>
+                            }
+                            <div style="font-size:0.78rem; color:#64748B;">
+                                @if (!string.IsNullOrEmpty(item.Username))
+                                {
+                                    <span>@@@item.Username</span>
+                                }
+                                @if (!string.IsNullOrEmpty(item.Email))
+                                {
+                                    <span> &bull; @item.Email</span>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            @if (item.SourceCategory == "Paystack")
+                            {
+                                <span class="xyz-badge xyz-badge-paystack"><i class="fa fa-credit-card"></i> Paystack</span>
+                            }
+                            else if (item.SourceCategory == "BankDeposit")
+                            {
+                                <span class="xyz-badge xyz-badge-bank"><i class="fa fa-building-columns"></i> Bank Deposit</span>
+                            }
+                            else if (item.SourceCategory == "Voucher")
+                            {
+                                <span class="xyz-badge xyz-badge-voucher"><i class="fa fa-ticket"></i> Voucher</span>
+                            }
+                            else
+                            {
+                                <span class="xyz-badge xyz-badge-admin"><i class="fa fa-user-gear"></i> Admin Top-Up</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(item.TransactionReference))
+                            {
+                                <div style="font-size:0.74rem; color:#64748B; font-family:'JetBrains Mono', monospace; margin-top:2px;">
+                                    Ref: @item.TransactionReference
+                                </div>
                             }
                         </td>
                         <td>
-                            <strong style="color:#10B981; font-family:'JetBrains Mono', monospace;">
-                                &#x20A6;@((item.AmountPaid.HasValue && item.AmountPaid > 0 ? item.AmountPaid.Value : item.Amount).ToString("N2"))
+                            <strong style="color:#16A34A; font-family:'JetBrains Mono', monospace; font-size:0.95rem;">
+                                &#x20A6;@item.EffectiveAmountPaid.ToString("N2")
                             </strong>
                         </td>
                         <td>
                             <span class="xyz-id-chip">+@item.Units.ToString("N0") Units</span>
                         </td>
                         <td>
-                            <small style="color:#64748B;">@(item.DateApproved != null ? item.DateApproved.Value.ToString("yyyy-MM-dd HH:mm") : item.DateCreated.ToString("yyyy-MM-dd"))</small>
+                            <div style="font-weight:700; color:#334155; font-size:0.84rem;">@item.EffectiveDate.ToString("yyyy-MM-dd")</div>
+                            <div style="font-size:0.74rem; color:#64748B;">@item.EffectiveDate.ToString("HH:mm")</div>
                         </td>
                         <td>
-                            @if (item.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Approved || item.DateApproved != null)
+                            @if (item.Status == TransactionStatus.Approved || item.DateApproved.HasValue)
                             {
                                 <span class="xyz-badge" style="background:#DCFCE7; color:#166534; border:1px solid #BBF7D0;">Approved</span>
                             }
-                            else if (item.Status == Exwhyzee.Messaging.Core.Models.TransactionStatus.Pending)
+                            else if (item.Status == TransactionStatus.Pending)
                             {
                                 <span class="xyz-badge" style="background:#FEF3C7; color:#92400E; border:1px solid #FDE68A;">Pending</span>
                             }
@@ -141,17 +541,56 @@
                                 <span class="xyz-badge" style="background:#FEE2E2; color:#991B1B; border:1px solid #FECACA;">@item.Status</span>
                             }
                         </td>
-                        <td style="text-align:right; padding:10px 14px;">
-                            @Html.ActionLink("Details", "Details", new { id = item.TransactionId }, new { @class = "btn btn-primary btn-xs", style = "font-weight:700; border-radius:6px;" })
+                        <td style="text-align:right; padding-right:20px;">
+                            <a href="@Url.Action("Details", "Transactions", new { area = "Adminpanel", id = item.TransactionId })" class="btn btn-xs btn-primary" style="background:#4F46E5; border:none; font-weight:800; padding:5px 12px; border-radius:6px;">
+                                <i class="fa fa-eye"></i> Audit Details
+                            </a>
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
-
-        <div class="container text-center page" style="margin-top:20px;">
-            <p>Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount</p>
-            @Html.PagedListPager(Model, page => Url.Action("Index", new { page }))
-        </div>
     </div>
+
+    <!-- Smart Pagination Bar -->
+    @if (totalPages > 1)
+    {
+        <div style="padding:16px 20px; border-top:1px solid #E2E8F0; background:#F8FAFC; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+            <div style="font-size:0.85rem; color:#64748B; font-weight:700;">
+                Page <strong>@currentPage</strong> of <strong>@totalPages</strong> (@totalFilteredCount.ToString("N0") total transactions)
+            </div>
+            <div class="xyz-smart-pager" style="margin:0;">
+                <a href="@BuildUrl(1)" class="xyz-page-btn @(currentPage <= 1 ? "disabled" : "")" title="First Page">&laquo;</a>
+                <a href="@BuildUrl(Math.Max(1, currentPage - 1))" class="xyz-page-btn @(currentPage <= 1 ? "disabled" : "")" title="Previous Page">&lsaquo;</a>
+
+                @{
+                    int startP = Math.Max(1, currentPage - 2);
+                    int endP = Math.Min(totalPages, currentPage + 2);
+                    if (startP > 1)
+                    {
+                        <a href="@BuildUrl(1)" class="xyz-page-btn">1</a>
+                        if (startP > 2)
+                        {
+                            <span style="padding:0 4px; color:#94A3B8; font-weight:800;">...</span>
+                        }
+                    }
+                    for (int p = startP; p <= endP; p++)
+                    {
+                        <a href="@BuildUrl(p)" class="xyz-page-btn @(p == currentPage ? "active" : "")">@p</a>
+                    }
+                    if (endP < totalPages)
+                    {
+                        if (endP < totalPages - 1)
+                        {
+                            <span style="padding:0 4px; color:#94A3B8; font-weight:800;">...</span>
+                        }
+                        <a href="@BuildUrl(totalPages)" class="xyz-page-btn">@totalPages</a>
+                    }
+                }
+
+                <a href="@BuildUrl(Math.Min(totalPages, currentPage + 1))" class="xyz-page-btn @(currentPage >= totalPages ? "disabled" : "")" title="Next Page">&rsaquo;</a>
+                <a href="@BuildUrl(totalPages)" class="xyz-page-btn @(currentPage >= totalPages ? "disabled" : "")" title="Last Page">&raquo;</a>
+            </div>
+        </div>
+    }
 </div>

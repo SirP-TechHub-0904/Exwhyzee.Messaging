@@ -213,6 +213,13 @@ namespace Exwhyzee.Messaging.Web.Areas.ClientPanel.Controllers
 
             var modal = await db.ModalInfos.FirstOrDefaultAsync();
             ViewBag.Modal = modal;
+
+            try
+            {
+                await KycService.EvaluateAndTriggerUserAsync(db, userId, userclient?.ClientId);
+            }
+            catch { }
+
             return View();
         }
 
@@ -686,6 +693,19 @@ STRICT NON-NEGOTIABLE RULES:
                         return View(model);
                     }
 
+                    // Evaluate KYC Trigger Rules (SMS Sent Threshold)
+                    try
+                    {
+                        var kycSetting = await KycService.GetOrCreateSettingAsync(db);
+                        var kycEval = await KycService.EvaluateAndTriggerUserAsync(db, userId, client?.ClientId, null, fNumbers.Count);
+                        if (kycSetting.IsKycEnabled && kycSetting.EnforceBlockOnCompose && kycEval.IsBlocked)
+                        {
+                            TempData["error"] = $"Mandatory KYC Upgrade Required ({kycEval.Reason}). Please verify your Phone, Address, Passport & ID below to continue sending broadcasts.";
+                            return RedirectToAction("Details");
+                        }
+                    }
+                    catch { }
+
                     // Parse Schedule Date cleanly without throwing FormatException
                     DateTime parsedScheduleDate = DateTime.Now.AddMinutes(30);
                     if (model.ScheduleDate != null && !string.IsNullOrWhiteSpace(model.ScheduleDate.ToString()))
@@ -1155,21 +1175,13 @@ STRICT NON-NEGOTIABLE RULES:
             }
 
             ///MM/dd/yyyy
-            ///Reading Contacts from .txt file
+            ///Reading Contacts from .txt file in memory
             ///
-            if (file != null && file.Length > 0)
+            if (file != null && file.Length > 0 && file.FileName.ToLower().Contains("txt"))
             {
-                string directory = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", "Uploads/Contacts/");
-                int genNumber = randomInteger.Next(1000000000);
-                string line;
-                if (file.FileName.ToLower().Contains("txt"))
-                {
-                    var fileName = Path.GetFileName(file.FileName);
-                    using (var stream = new System.IO.FileStream(Path.Combine(directory, genNumber + fileName), System.IO.FileMode.Create)) { file.CopyTo(stream); }
-                    line = System.IO.File.ReadAllText(directory + genNumber + fileName);
-                    model.Recipients = line.Replace("\r\n", ",").Replace(" ", ",");
-                    System.IO.File.Delete(directory + genNumber + fileName);
-                }
+                using var reader = new System.IO.StreamReader(file.OpenReadStream());
+                string line = await reader.ReadToEndAsync();
+                model.Recipients = (line ?? "").Replace("\r\n", ",").Replace("\n", ",").Replace(" ", ",");
             }
 
             var groups = db.Groups.OrderBy(x => x.Name).Where(x => x.Name != null && x.UserId == userId).Select(g => new
@@ -1647,6 +1659,21 @@ STRICT NON-NEGOTIABLE RULES:
             var user = await UserManager.FindByNameAsync(User.Identity.Name);
             var client = await _clientService.GetClientDetailsByUserId(user.Id);
 
+            try
+            {
+                var kycSetting = await KycService.GetOrCreateSettingAsync(db);
+                var kycEval = await KycService.EvaluateAndTriggerUserAsync(db, user.Id, client?.ClientId, units, 0);
+                if (kycSetting.IsKycEnabled && kycSetting.EnforceBlockOnFunding && kycEval.IsBlocked)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"Mandatory KYC Upgrade Required ({kycEval.Reason}). Please complete your KYC verification in 'My Profile' to continue funding above the limit."
+                    });
+                }
+            }
+            catch { }
+
             Transaction transaction = new Transaction
             {
                 Units = units,
@@ -1785,7 +1812,21 @@ STRICT NON-NEGOTIABLE RULES:
             {
                 try
                 {
-                    var client = await _clientService.GetClientDetailsByUserId(User.Identity.GetUserId());
+                    string userId = User.Identity.GetUserId();
+                    var client = await _clientService.GetClientDetailsByUserId(userId);
+
+                    try
+                    {
+                        var kycSetting = await KycService.GetOrCreateSettingAsync(db);
+                        var kycEval = await KycService.EvaluateAndTriggerUserAsync(db, userId, client?.ClientId, model.Units, 0);
+                        if (kycSetting.IsKycEnabled && kycSetting.EnforceBlockOnFunding && kycEval.IsBlocked)
+                        {
+                            TempData["error"] = $"Mandatory KYC Upgrade Required ({kycEval.Reason}). Please complete your KYC verification in 'My Profile' to continue funding above the limit.";
+                            return RedirectToAction("Details");
+                        }
+                    }
+                    catch { }
+
                     Transaction transaction = new Transaction();
                     transaction.Units = model.Units;
                     if (model.PaymentMethod == "OnlinePayment")
@@ -2108,11 +2149,217 @@ STRICT NON-NEGOTIABLE RULES:
             }
         }
 
-        //user profile
+        //user profile & KYC Verification Studio
         public async Task<ActionResult> Details()
         {
-            var client = await _clientService.GetClientDetailsByUserId(User.Identity.GetUserId());
+            string userId = User.Identity.GetUserId();
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var client = await _clientService.GetClientDetailsByUserId(userId);
+
+            await KycService.EvaluateAndTriggerUserAsync(db, userId, client?.ClientId);
+            var kycProfile = await KycService.GetOrCreateUserKycAsync(db, userId, client?.ClientId);
+            var kycSetting = await KycService.GetOrCreateSettingAsync(db);
+
+            var userMsgs = await db.Messages.AsNoTracking()
+                .Where(m => m.UserId == userId && m.Status == MessageStatus.Sent)
+                .Select(m => new { m.UnitsUsed, m.Response_page })
+                .ToListAsync();
+            int totalSmsSent = userMsgs.Sum(m =>
+            {
+                int pages = m.Response_page > 0 ? m.Response_page : 1;
+                return m.UnitsUsed > 0 ? Math.Max(1, (int)Math.Round(m.UnitsUsed / (pages * 2.0m))) : 1;
+            });
+
+            decimal totalUnitsFunded = 0m;
+            if (client != null)
+            {
+                var approvedUnits = await db.Transactions.AsNoTracking()
+                    .Where(t => t.ClientId == client.ClientId && t.Status == TransactionStatus.Approved)
+                    .Select(t => t.Units)
+                    .ToListAsync();
+                totalUnitsFunded = approvedUnits.Sum();
+            }
+
+            ViewBag.UserAccount = user;
+            ViewBag.KycProfile = kycProfile;
+            ViewBag.KycSetting = kycSetting;
+            ViewBag.TotalSmsSent = totalSmsSent;
+            ViewBag.TotalUnitsFunded = totalUnitsFunded;
+
             return View(client);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SendKycPhoneOtp(string phoneNumber)
+        {
+            try
+            {
+                string userId = User.Identity.GetUserId();
+                var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user == null) return Json(new { success = false, message = "User session expired." });
+
+                string phone = !string.IsNullOrWhiteSpace(phoneNumber) ? phoneNumber.Trim() : user.PhoneNumber;
+                if (string.IsNullOrWhiteSpace(phone))
+                {
+                    return Json(new { success = false, message = "Please enter a valid phone number first." });
+                }
+
+                user.PhoneNumber = phone;
+                var profile = await KycService.GetOrCreateUserKycAsync(db, userId);
+                string otp = new Random().Next(100000, 999999).ToString();
+                profile.PhoneOtpCode = otp;
+                profile.PhoneOtpExpiry = DateTime.UtcNow.AddMinutes(15);
+                await db.SaveChangesAsync();
+
+                try
+                {
+                    await _clientService.SendSms("XYZSMS", $"Your Exwhyzee Bulk SMS phone verification code is {otp}. Valid for 15 minutes.", phone);
+                }
+                catch { }
+
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(user.Email))
+                    {
+                        await _zeptoMail.SendCustomEmailAsync(
+                            user.Email,
+                            user.UserName ?? "Client",
+                            "Your Exwhyzee KYC Verification Code",
+                            $"<div style='font-family:sans-serif;padding:20px;'><h2 style='color:#0f172a;'>KYC Verification Code</h2><p>Your 6-digit phone/KYC verification code for <strong>{phone}</strong> is:</p><div style='font-size:28px;font-weight:800;letter-spacing:4px;color:#4f46e5;padding:12px 0;'>{otp}</div><p style='color:#64748b;font-size:13px;'>This code is valid for 15 minutes.</p></div>");
+                    }
+                }
+                catch { }
+
+                return Json(new { success = true, message = $"A 6-digit verification code has been sent to {phone} (and backup copy to your email)." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> VerifyKycPhoneOtp(string otpCode)
+        {
+            try
+            {
+                string userId = User.Identity.GetUserId();
+                var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                var profile = await KycService.GetOrCreateUserKycAsync(db, userId);
+
+                if (string.IsNullOrWhiteSpace(otpCode) || profile.PhoneOtpCode != otpCode.Trim())
+                {
+                    return Json(new { success = false, message = "Invalid 6-digit verification code." });
+                }
+
+                if (profile.PhoneOtpExpiry.HasValue && profile.PhoneOtpExpiry.Value < DateTime.UtcNow)
+                {
+                    return Json(new { success = false, message = "Verification code has expired. Please request a new code." });
+                }
+
+                profile.IsPhoneVerified = true;
+                profile.PhoneVerifiedDate = DateTime.UtcNow.AddHours(1);
+                profile.PhoneOtpCode = null;
+                if (user != null)
+                {
+                    user.PhoneNumberConfirmed = true;
+                }
+                await db.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Phone number verified successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> SubmitKycProfile(
+            string FirstName,
+            string Surname,
+            string OtherNames,
+            string PhoneNumber,
+            string Gender,
+            string ResidentialAddress,
+            string City,
+            string State,
+            string Country,
+            string IdType,
+            string IdNumber,
+            IFormFile passportFile,
+            IFormFile idFrontFile,
+            IFormFile idBackFile)
+        {
+            string userId = User.Identity.GetUserId();
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            var client = await db.Clients.FirstOrDefaultAsync(c => c.UserId == userId);
+            var profile = await KycService.GetOrCreateUserKycAsync(db, userId, client?.ClientId);
+
+            if (client != null)
+            {
+                if (!string.IsNullOrWhiteSpace(FirstName)) client.FirstName = FirstName.Trim();
+                if (!string.IsNullOrWhiteSpace(Surname)) client.Surname = Surname.Trim();
+                if (OtherNames != null) client.OtherNames = OtherNames.Trim();
+            }
+
+            if (user != null)
+            {
+                if (!string.IsNullOrWhiteSpace(PhoneNumber) && user.PhoneNumber != PhoneNumber.Trim())
+                {
+                    user.PhoneNumber = PhoneNumber.Trim();
+                }
+                if (!string.IsNullOrWhiteSpace(Gender))
+                {
+                    user.Gender = Gender.Trim();
+                }
+            }
+
+            if (ResidentialAddress != null) profile.ResidentialAddress = ResidentialAddress.Trim();
+            if (City != null) profile.City = City.Trim();
+            if (State != null) profile.State = State.Trim();
+            if (!string.IsNullOrWhiteSpace(Country)) profile.Country = Country.Trim();
+            if (!string.IsNullOrWhiteSpace(IdType)) profile.IdType = IdType.Trim();
+            if (IdNumber != null) profile.IdNumber = IdNumber.Trim();
+
+            var env = HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Hosting.IWebHostEnvironment>();
+            var cloudinary = HttpContext.RequestServices.GetService<ICloudinaryService>()
+                ?? new CloudinaryService(Exwhyzee.Messaging.Web.AppConfig.Configuration, env);
+            string shortUser = !string.IsNullOrWhiteSpace(userId) ? userId.Substring(0, Math.Min(8, userId.Length)) : "user";
+
+            if (passportFile != null && passportFile.Length > 0)
+            {
+                profile.PassportPhotoPath = await cloudinary.UploadFileAsync(passportFile, "kyc", $"passport_{shortUser}");
+            }
+            if (idFrontFile != null && idFrontFile.Length > 0)
+            {
+                profile.IdDocumentFrontPath = await cloudinary.UploadFileAsync(idFrontFile, "kyc", $"idfront_{shortUser}");
+            }
+            if (idBackFile != null && idBackFile.Length > 0)
+            {
+                profile.IdDocumentBackPath = await cloudinary.UploadFileAsync(idBackFile, "kyc", $"idback_{shortUser}");
+            }
+
+            bool hasKycSubmission = !string.IsNullOrWhiteSpace(profile.ResidentialAddress)
+                && !string.IsNullOrWhiteSpace(profile.IdType)
+                && !string.IsNullOrWhiteSpace(profile.IdNumber)
+                && (!string.IsNullOrWhiteSpace(profile.PassportPhotoPath) || !string.IsNullOrWhiteSpace(profile.IdDocumentFrontPath));
+
+            if (hasKycSubmission && profile.KycStatus != KycVerificationStatus.Approved && profile.KycStatus != KycVerificationStatus.Exempted)
+            {
+                profile.KycStatus = KycVerificationStatus.PendingReview;
+                profile.SubmittedDate = DateTime.UtcNow.AddHours(1);
+            }
+
+            profile.LastUpdated = DateTime.UtcNow.AddHours(1);
+            await db.SaveChangesAsync();
+
+            TempData["success"] = hasKycSubmission
+                ? "Your Profile & KYC Verification Dossier has been submitted for Admin verification!"
+                : "Your profile details have been updated successfully.";
+
+            return RedirectToAction("Details");
         }
 
         #region TWO-FACTOR SECURITY SETTINGS

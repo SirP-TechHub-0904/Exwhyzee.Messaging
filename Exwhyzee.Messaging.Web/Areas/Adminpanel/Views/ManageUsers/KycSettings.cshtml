@@ -1,0 +1,304 @@
+@model Exwhyzee.Messaging.Core.Models.KycSetting
+@using Exwhyzee.Messaging.Core.Dtos
+
+@{
+    ViewBag.Title = "KYC Verification & Automated Trigger Settings";
+    var stats = ViewBag.Stats as UserManagementStatsDto ?? new UserManagementStatsDto();
+    var accepted = (Model.AcceptedIdTypes ?? "NIN,VotersCard,DriversLicense,InternationalPassport,CAC")
+        .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(s => s.Trim())
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+}
+
+<style>
+    .xyz-kyc-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        padding: 24px 28px;
+        margin-bottom: 22px;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+    }
+
+    .xyz-kyc-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .xyz-stat-pill {
+        background: #FFFFFF;
+        border-radius: 14px;
+        border: 1px solid #E2E8F0;
+        padding: 16px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
+    }
+
+    .xyz-stat-pill:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        border-color: #4F46E5;
+    }
+
+    .xyz-toggle-box {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .xyz-id-option {
+        background: #F8FAFC;
+        border: 1px solid #CBD5E1;
+        border-radius: 10px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        color: #1E293B;
+        cursor: pointer;
+    }
+</style>
+
+<!-- Header -->
+<div class="xyz-kyc-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+    <div>
+        <h2 style="margin:0 0 4px; font-weight:800; font-size:1.4rem; color:#0F172A;">
+            <i class="fa fa-id-card-clip" style="color:#4F46E5;"></i> KYC Verification &amp; Automated Upgrade Triggers
+        </h2>
+        <p style="margin:0; color:#64748B; font-size:0.9rem;">
+            Configure when users must upgrade their KYC (by <strong>Total SMS Sent</strong> or <strong>Units Funded</strong>) and which identity documents are required.
+        </p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        @using (Html.BeginForm("RunKycRetroactiveScan", "ManageUsers", new { area = "Adminpanel" }, FormMethod.Post, true, new { style = "margin:0;" }))
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-sm" style="background:#D97706; color:#FFF; font-weight:800; border-radius:8px; padding:8px 14px;">
+                <i class="fa fa-bolt"></i> Scan &amp; Flag Existing Users Now
+            </button>
+        }
+        <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel" })" class="btn btn-sm btn-default" style="font-weight:800; border-radius:8px; padding:8px 14px;">
+            &larr; Manage Users
+        </a>
+    </div>
+</div>
+
+<!-- Live KYC Telemetry Cards (Clickable to Filter Manage Users) -->
+<div class="xyz-kyc-grid">
+    <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "kyc_approved" })" class="xyz-stat-pill">
+        <div>
+            <div style="font-size:0.72rem; font-weight:800; color:#64748B; text-transform:uppercase;">KYC Verified / Approved</div>
+            <div style="font-size:1.45rem; font-weight:800; color:#16A34A; font-family:'JetBrains Mono', monospace;">@stats.KycApprovedUsers.ToString("N0")</div>
+            <div style="font-size:0.75rem; color:#64748B; font-weight:700;">Click to view verified users</div>
+        </div>
+        <div style="width:44px; height:44px; border-radius:10px; background:#DCFCE7; color:#16A34A; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fa fa-user-check"></i>
+        </div>
+    </a>
+
+    <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "kyc_pending" })" class="xyz-stat-pill">
+        <div>
+            <div style="font-size:0.72rem; font-weight:800; color:#64748B; text-transform:uppercase;">Pending Admin Review</div>
+            <div style="font-size:1.45rem; font-weight:800; color:#2563EB; font-family:'JetBrains Mono', monospace;">@stats.KycPendingReviewUsers.ToString("N0")</div>
+            <div style="font-size:0.75rem; color:#64748B; font-weight:700;">Submitted ID &amp; Passport</div>
+        </div>
+        <div style="width:44px; height:44px; border-radius:10px; background:#DBEAFE; color:#2563EB; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fa fa-hourglass-half"></i>
+        </div>
+    </a>
+
+    <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "kyc_triggered" })" class="xyz-stat-pill">
+        <div>
+            <div style="font-size:0.72rem; font-weight:800; color:#64748B; text-transform:uppercase;">Triggered / Action Needed</div>
+            <div style="font-size:1.45rem; font-weight:800; color:#D97706; font-family:'JetBrains Mono', monospace;">@stats.KycTriggeredUsers.ToString("N0")</div>
+            <div style="font-size:0.75rem; color:#64748B; font-weight:700;">Reached SMS or Funding limit</div>
+        </div>
+        <div style="width:44px; height:44px; border-radius:10px; background:#FEF3C7; color:#D97706; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fa fa-triangle-exclamation"></i>
+        </div>
+    </a>
+
+    <a href="@Url.Action("Index", "ManageUsers", new { area = "Adminpanel", cardFilter = "phone_verified" })" class="xyz-stat-pill">
+        <div>
+            <div style="font-size:0.72rem; font-weight:800; color:#64748B; text-transform:uppercase;">Phone Verified Users</div>
+            <div style="font-size:1.45rem; font-weight:800; color:#0284C7; font-family:'JetBrains Mono', monospace;">@stats.PhoneVerifiedUsers.ToString("N0")</div>
+            <div style="font-size:0.75rem; color:#64748B; font-weight:700;">Confirmed phone numbers</div>
+        </div>
+        <div style="width:44px; height:44px; border-radius:10px; background:#E0F2FE; color:#0284C7; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fa fa-phone-volume"></i>
+        </div>
+    </a>
+</div>
+
+@using (Html.BeginForm("KycSettings", "ManageUsers", new { area = "Adminpanel" }, FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+
+    <!-- Section 1: Trigger Rules & Volume Thresholds -->
+    <div class="xyz-kyc-card">
+        <h4 style="margin:0 0 16px; padding-bottom:10px; border-bottom:1px solid #E2E8F0; font-weight:800; color:#0F172A;">
+            <i class="fa fa-sliders" style="color:#4F46E5;"></i> 1. Automated KYC Upgrade Trigger Rules
+        </h4>
+
+        <div class="xyz-toggle-box" style="background:#EEF2FF; border-color:#C7D2FE;">
+            <div>
+                <div style="font-weight:800; color:#1E1B4B; font-size:0.98rem;">Enable Automated KYC System</div>
+                <div style="font-size:0.82rem; color:#4338CA;">When enabled, the platform monitors user SMS volume and wallet top-ups and triggers KYC upgrades automatically.</div>
+            </div>
+            @Html.CheckBoxFor(m => m.IsKycEnabled, new { style = "width:22px; height:22px; cursor:pointer;" })
+        </div>
+
+        <div class="row" style="margin-top:16px;">
+            <div class="col-md-4 form-group">
+                <label style="font-weight:800; font-size:0.85rem; color:#334155;">Trigger Condition Mode</label>
+                <select name="TriggerRule" class="form-control" style="border-radius:8px; height:42px; font-weight:700;">
+                    <option value="Either" selected="@(Model.TriggerRule == "Either" ? "selected" : null)">Use Either (Total SMS Sent OR Units Funded)</option>
+                    <option value="SmsOnly" selected="@(Model.TriggerRule == "SmsOnly" ? "selected" : null)">Use Total SMS Sent Only</option>
+                    <option value="UnitsOnly" selected="@(Model.TriggerRule == "UnitsOnly" ? "selected" : null)">Use Units Funded Only</option>
+                    <option value="Both" selected="@(Model.TriggerRule == "Both" ? "selected" : null)">Require Both (SMS Sent AND Units Funded)</option>
+                    <option value="ManualOnly" selected="@(Model.TriggerRule == "ManualOnly" ? "selected" : null)">Manual Admin Trigger Only</option>
+                </select>
+                <small style="color:#64748B; display:block; margin-top:4px;">Choose whether SMS volume, wallet funding, or either triggers KYC.</small>
+            </div>
+
+            <div class="col-md-4 form-group">
+                <label style="font-weight:800; font-size:0.85rem; color:#334155;">Total SMS Sent Trigger Threshold</label>
+                @Html.EditorFor(m => m.SmsSentThreshold, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:800;", type = "number", min = "0" } })
+                <small style="color:#64748B; display:block; margin-top:4px;">Trigger KYC upgrade once a user sends this total number of SMS recipients.</small>
+            </div>
+
+            <div class="col-md-4 form-group">
+                <label style="font-weight:800; font-size:0.85rem; color:#334155;">Cumulative Units Funded Trigger</label>
+                @Html.EditorFor(m => m.UnitsFundedThreshold, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:800;", type = "number", step = "any", min = "0" } })
+                <small style="color:#64748B; display:block; margin-top:4px;">Trigger KYC upgrade once a user's total approved wallet funding reaches this unit amount.</small>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 form-group">
+                <label style="font-weight:800; font-size:0.85rem; color:#334155;">Single Top-Up Units Trigger (Instant)</label>
+                @Html.EditorFor(m => m.SingleTopUpUnitsThreshold, new { htmlAttributes = new { @class = "form-control", style = "border-radius:8px; height:42px; font-weight:800;", type = "number", step = "any", min = "0" } })
+                <small style="color:#64748B; display:block; margin-top:4px;">Trigger KYC immediately if a user funds this many units in a single recharge (`0` = disabled).</small>
+            </div>
+
+            <div class="col-md-4">
+                <div class="xyz-toggle-box" style="margin-top:6px;">
+                    <div>
+                        <div style="font-weight:800; font-size:0.88rem; color:#1E293B;">Pause SMS Broadcasts When Triggered</div>
+                        <div style="font-size:0.76rem; color:#64748B;">Redirect user to complete KYC before sending new SMS.</div>
+                    </div>
+                    @Html.CheckBoxFor(m => m.EnforceBlockOnCompose, new { style = "width:20px; height:20px; cursor:pointer;" })
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="xyz-toggle-box" style="margin-top:6px;">
+                    <div>
+                        <div style="font-weight:800; font-size:0.88rem; color:#1E293B;">Pause Large Top-Ups When Triggered</div>
+                        <div style="font-size:0.76rem; color:#64748B;">Require KYC submission before funding above threshold.</div>
+                    </div>
+                    @Html.CheckBoxFor(m => m.EnforceBlockOnFunding, new { style = "width:20px; height:20px; cursor:pointer;" })
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Required KYC Pillars & Accepted Government IDs -->
+    <div class="xyz-kyc-card">
+        <h4 style="margin:0 0 16px; padding-bottom:10px; border-bottom:1px solid #E2E8F0; font-weight:800; color:#0F172A;">
+            <i class="fa fa-passport" style="color:#059669;"></i> 2. Required KYC Fields &amp; Accepted Nigerian Identity Cards
+        </h4>
+
+        <div class="row">
+            <div class="col-md-3">
+                <div class="xyz-toggle-box">
+                    <div>
+                        <div style="font-weight:800; font-size:0.88rem;">Verify Phone Number</div>
+                        <div style="font-size:0.75rem; color:#64748B;">6-Digit SMS OTP</div>
+                    </div>
+                    @Html.CheckBoxFor(m => m.RequirePhoneVerification, new { style = "width:20px; height:20px;" })
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="xyz-toggle-box">
+                    <div>
+                        <div style="font-weight:800; font-size:0.88rem;">Residential Address</div>
+                        <div style="font-size:0.75rem; color:#64748B;">Street, City &amp; State</div>
+                    </div>
+                    @Html.CheckBoxFor(m => m.RequireAddress, new { style = "width:20px; height:20px;" })
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="xyz-toggle-box">
+                    <div>
+                        <div style="font-weight:800; font-size:0.88rem;">Passport Photograph</div>
+                        <div style="font-size:0.75rem; color:#64748B;">Clear Headshot Photo</div>
+                    </div>
+                    @Html.CheckBoxFor(m => m.RequirePassportPhoto, new { style = "width:20px; height:20px;" })
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="xyz-toggle-box">
+                    <div>
+                        <div style="font-weight:800; font-size:0.88rem;">Government ID Card</div>
+                        <div style="font-size:0.75rem; color:#64748B;">ID Number + Upload</div>
+                    </div>
+                    @Html.CheckBoxFor(m => m.RequireGovernmentId, new { style = "width:20px; height:20px;" })
+                </div>
+            </div>
+        </div>
+
+        <label style="font-weight:800; font-size:0.85rem; color:#334155; margin-top:10px; display:block;">Accepted Identity Document Types</label>
+        <div class="row" style="margin-top:8px;">
+            <div class="col-md-4" style="margin-bottom:10px;">
+                <label class="xyz-id-option">
+                    <input type="checkbox" name="selectedIdTypes" value="NIN" @(accepted.Contains("NIN") ? "checked" : "") style="width:18px; height:18px;" />
+                    <span><strong>NIN</strong> (National Identification Number Slip/Card)</span>
+                </label>
+            </div>
+            <div class="col-md-4" style="margin-bottom:10px;">
+                <label class="xyz-id-option">
+                    <input type="checkbox" name="selectedIdTypes" value="VotersCard" @(accepted.Contains("VotersCard") ? "checked" : "") style="width:18px; height:18px;" />
+                    <span><strong>Voter's Card</strong> (INEC Permanent Voter's Card)</span>
+                </label>
+            </div>
+            <div class="col-md-4" style="margin-bottom:10px;">
+                <label class="xyz-id-option">
+                    <input type="checkbox" name="selectedIdTypes" value="DriversLicense" @(accepted.Contains("DriversLicense") ? "checked" : "") style="width:18px; height:18px;" />
+                    <span><strong>Driver's License</strong> (FRSC National License)</span>
+                </label>
+            </div>
+            <div class="col-md-4" style="margin-bottom:10px;">
+                <label class="xyz-id-option">
+                    <input type="checkbox" name="selectedIdTypes" value="InternationalPassport" @(accepted.Contains("InternationalPassport") ? "checked" : "") style="width:18px; height:18px;" />
+                    <span><strong>International Passport</strong> (NIS Data Page)</span>
+                </label>
+            </div>
+            <div class="col-md-4" style="margin-bottom:10px;">
+                <label class="xyz-id-option">
+                    <input type="checkbox" name="selectedIdTypes" value="CAC" @(accepted.Contains("CAC") ? "checked" : "") style="width:18px; height:18px;" />
+                    <span><strong>CAC Certificate</strong> (Corporate RC/BN Certificate)</span>
+                </label>
+            </div>
+        </div>
+
+        <div style="margin-top:18px;">
+            <button type="submit" class="btn btn-primary btn-block" style="background:#4F46E5; border:none; font-weight:800; font-size:1rem; padding:14px; border-radius:10px;">
+                <i class="fa fa-save"></i> Save KYC &amp; Trigger Configuration
+            </button>
+        </div>
+    </div>
+}
+

@@ -39,7 +39,8 @@ Exwhyzee.Messaging.Web.AppConfig.Configuration = builder.Configuration;
 var connString = builder.Configuration.GetConnectionString("ZyxsmsDbConnection") 
     ?? builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connString));
+    options.UseSqlServer(connString)
+           .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
 
 // Register Identity Services
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -95,6 +96,10 @@ builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.INotificationService
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.IGeminiContactExtractorService, Exwhyzee.Messaging.Core.Services.GeminiContactExtractorService>();
 
+// Register Unified Cloudinary Upload Service
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.ICloudinaryService, Exwhyzee.Messaging.Core.Services.CloudinaryService>();
+builder.Services.AddScoped<Exwhyzee.Messaging.Core.Services.CloudinaryService>();
+
 // Register Scheduled Message Queue Background Worker
 builder.Services.AddHostedService<Exwhyzee.Messaging.Core.Services.ScheduledMessageProcessorBackgroundService>();
 
@@ -106,6 +111,17 @@ builder.Services.AddHostedService<Exwhyzee.Messaging.Core.Services.DailyLowUnitC
 builder.Services.AddHostedService<Exwhyzee.Messaging.Core.Services.SenderIdVerificationBackgroundService>();
 
 var app = builder.Build();
+
+// Ensure KYC tables exist on startup
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Exwhyzee.Messaging.Core.Services.KycService.EnsureSchemaAsync(db).GetAwaiter().GetResult();
+    }
+    catch { }
+}
 
 if (!app.Environment.IsDevelopment())
 {
@@ -119,6 +135,11 @@ app.UseStaticFiles();
 // Linux case-compatibility fallback providers
 var webRoot = app.Environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
 var uploadsDir = Path.Combine(webRoot, "Uploads");
+try
+{
+    Directory.CreateDirectory(Path.Combine(uploadsDir, "kyc"));
+}
+catch { }
 if (Directory.Exists(uploadsDir))
 {
     app.UseStaticFiles(new StaticFileOptions
