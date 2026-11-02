@@ -364,7 +364,13 @@ FodyWeavers.xsd
 
 # Environment Secrets & Local AppSettings
 .env
-*.env
+
 .env.*
 appsettings.Local.json
 appsettings.Production.json
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example

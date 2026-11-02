@@ -93,7 +93,7 @@ namespace Exwhyzee.Messaging.Core.Services
                     ?? Environment.GetEnvironmentVariable("PayStackSecretKey");
                 if (!string.IsNullOrWhiteSpace(key)) return key;
 
-                return "[REDACTED_PAYMENT_KEY]";
+                return string.Empty;
             }
         }
 

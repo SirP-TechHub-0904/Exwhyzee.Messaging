@@ -29,7 +29,7 @@ namespace Exwhyzee.Messaging.Web
                 key = LoadFromEnvFile("PaystackSettings__SecretKey") ?? LoadFromEnvFile("PayStackSecretKey");
                 if (!string.IsNullOrWhiteSpace(key)) return key;
 
-                return "[REDACTED_PAYMENT_KEY]";
+                return string.Empty;
             }
         }
 
@@ -54,7 +54,7 @@ namespace Exwhyzee.Messaging.Web
                 key = LoadFromEnvFile("PaystackSettings__PublicKey") ?? LoadFromEnvFile("PayStackPublicKey");
                 if (!string.IsNullOrWhiteSpace(key)) return key;
 
-                return "[REDACTED_PAYMENT_KEY]";
+                return string.Empty;
             }
         }
 
